@@ -1,0 +1,26 @@
+{
+  "lock": true,
+  "tasks": {
+    "test": "deno test -RWN --allow-run=deno,bun,node,npx --clean --trace-leaks",
+    "start": "deno run -A packages/examples/server.ts",
+    "dev": "deno run -A --watch packages/examples/server.ts"
+  },
+  "imports": {
+    "hono": "npm:hono@^4",
+    "zod": "npm:zod",
+    "@hono/zod-validator": "npm:@hono/zod-validator",
+    "@libs/testing": "jsr:@libs/testing@^2.2.3",
+    "@std/http": "jsr:@std/http@^1",
+    "@std/async": "jsr:@std/async@^1",
+    "@std/assert": "jsr:@std/assert@^1",
+    "@std/expect": "jsr:@std/expect@^1.0.0",
+    "#/": "./"
+  },
+  "compilerOptions": {
+    "checkJs": true,
+    "lib": ["deno.window", "deno.unstable", "deno.ns"],
+    "strict": true,
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  }
+}

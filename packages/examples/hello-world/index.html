@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CustomEventLoader MVP1 - Event Delegation</title>
+    <style>
+      .completed {
+        text-decoration: line-through;
+        color: gray;
+      }
+    </style>
+  </head>
+  <body>
+    <button on:click="clickHandler1.js">Click Me 1</button>
+    <button on:click="clickHandler2.js">Click Me 2</button>
+
+    <script type="module">
+      import CustomEventLoader from './customEventLoader.js';
+      import handlerRegistry from './handlerRegistry.js';
+
+      // Initialize the CustomEventLoader
+      const customEventLoader = new CustomEventLoader(handlerRegistry);
+      customEventLoader.init();
+    </script>
+  </body>
+</html>
