@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hello World Example</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add this line to include the live reload script -->
@@ -11,7 +11,8 @@
   <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div
       class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
-      data-container="root">
+      data-container="root"
+    >
       <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
         Hello World Example
       </h1>
@@ -44,16 +45,16 @@
     </div>
 
     <script type="module">
-      import { CustomEventLoader, HandlerRegistry } from './async-framework.js';
+      import { CustomEventLoader, HandlerRegistry } from "./async-framework.js";
 
       // Initialize the CustomEventLoader
-      const events = ['click'];
-      const eventPrefix = 'on:';
+      const events = ["click"];
+      const eventPrefix = "on:";
       const handlerRegistry = new HandlerRegistry();
       const customEventLoader = new CustomEventLoader({
         // eventPrefix: 'data-on-',
         // events, // discover custom events
-        handlerRegistry
+        handlerRegistry,
       });
 
       customEventLoader.init();

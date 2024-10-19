@@ -13,7 +13,7 @@ app.use(logger());
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
   await getDirectoryContents("./packages/examples"),
-  (dir) => `<li><a href="/examples/${dir}/">${dir}</a></li>`
+  (dir) => `<li><a href="/examples/${dir}/">${dir}</a></li>`,
 );
 
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
@@ -24,7 +24,7 @@ app.use(
   "/examples/*",
   serveStatic({
     root: "./packages",
-  })
+  }),
 );
 
 // WebSocket connections for live reload
@@ -56,7 +56,7 @@ if (Deno.args.includes("--livereload")) {
   for await (const event of Deno.watchFs("./packages/examples")) {
     if (event.kind === "modify") {
       const filePath = event.paths[0];
-      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html")
+      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html");
       if (fileType) {
         console.log("livereload: File changed:", filePath);
         clients.forEach((client) => {

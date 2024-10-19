@@ -1,2 +1,2 @@
-export * from './customEventLoader.js';
-export * from './handlerRegistry.js';
+export * from "./customEventLoader.js";
+export * from "./handlerRegistry.js";

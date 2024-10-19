@@ -36,7 +36,7 @@ export class CustomEventLoader {
       this.handleNewContainer(rootElement);
     } else {
       const containers = Array.from(
-        rootElement.querySelectorAll("[data-container]")
+        rootElement.querySelectorAll("[data-container]"),
       );
       containers.forEach((container) => this.handleNewContainer(container));
     }
@@ -78,7 +78,7 @@ export class CustomEventLoader {
           await this.handleContainerEvent(container, event);
           // Use capturing phase to ensure the handler runs before other listeners
         },
-        true
+        true,
       );
     });
     // console.log('setupContainerListeners: container listeners', this.containers);
@@ -89,7 +89,7 @@ export class CustomEventLoader {
   parseElementForEvent(container, element, eventName, eventAttr) {
     const processedElementEvent = getCachedSet(
       this.parsedElementsEvents,
-      element
+      element,
     );
 
     // If this event has already been processed for this element, return
@@ -142,7 +142,7 @@ export class CustomEventLoader {
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
     const elements = container.querySelectorAll(
-      `[${escapeSelector(eventAttr)}]`
+      `[${escapeSelector(eventAttr)}]`,
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
     elements.forEach((element) => {
@@ -213,7 +213,7 @@ export class CustomEventLoader {
     if (!listeners) {
       console.warn(
         "handleContainerEvent: no listeners found for container",
-        container
+        container,
       );
       return;
     }
@@ -224,7 +224,7 @@ export class CustomEventLoader {
         "handleContainerEvent: no event listeners found for event",
         event.type,
         "in container",
-        container
+        container,
       );
       return;
     }
@@ -292,7 +292,7 @@ export class CustomEventLoader {
             value = undefined;
             console.error(
               `handleContainerEvent: Error executing handler at ${scriptPath}:`,
-              error
+              error,
             ); // Log any errors during handler execution
           }
         }
@@ -322,4 +322,8 @@ function getCachedSet(map, key) {
     map.set(key, set);
   }
   return set;
+}
+
+function isPromise(value) {
+  return value && typeof value === "object" && typeof value.then === "function";
 }

@@ -1,5 +1,8 @@
 // deno-lint-ignore require-await
-export async function findAvailablePort(startPort: number, endPort: number): Promise<number> {
+export async function findAvailablePort(
+  startPort: number,
+  endPort: number,
+): Promise<number> {
   for (let port = startPort; port <= endPort; port++) {
     try {
       const listener = Deno.listen({ port });
@@ -11,5 +14,7 @@ export async function findAvailablePort(startPort: number, endPort: number): Pro
       }
     }
   }
-  throw new Error(`No available port found between ${startPort} and ${endPort}`);
+  throw new Error(
+    `No available port found between ${startPort} and ${endPort}`,
+  );
 }

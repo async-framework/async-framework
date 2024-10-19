@@ -2,7 +2,7 @@
 let count = 0;
 
 export default function clickHandler2({ element }) {
-  count++
+  count++;
   element.textContent = `Clicked Me! ${count}`;
-  return count
+  return count;
 }

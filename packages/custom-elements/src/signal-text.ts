@@ -1,16 +1,16 @@
-import { Signal, signalStore } from './signal-store';
+import { Signal, signalStore } from "./signal-store";
 
 class SignalContent extends HTMLElement {
   static observedAttributes = [
-    'data-id',
-    'data-transformers',
-    'data-dangerous-html',
+    "data-id",
+    "data-transformers",
+    "data-dangerous-html",
   ];
 
   attributes!: NamedNodeMap & {
-    'data-id': string;
-    'data-transformers': string;
-    'data-dangerous-html'?: boolean;
+    "data-id": string;
+    "data-transformers": string;
+    "data-dangerous-html"?: boolean;
   };
 
   signal: null | Signal<any> = null;
@@ -23,9 +23,9 @@ class SignalContent extends HTMLElement {
 
   connectedCallback() {
     this.mounted = true;
-    this.signal = signalStore.get(JSON.parse(this.attributes['data-id'])) ??
+    this.signal = signalStore.get(JSON.parse(this.attributes["data-id"])) ??
       null;
-    const transformers = JSON.parse(this.attributes['data-transformers']) ??
+    const transformers = JSON.parse(this.attributes["data-transformers"]) ??
       null;
 
     if (Array.isArray(transformers)) {
@@ -64,7 +64,7 @@ class SignalContent extends HTMLElement {
         newValue,
       );
 
-    if (this.attributes['data-dangerous-html'] != null) {
+    if (this.attributes["data-dangerous-html"] != null) {
       this.innerHTML = String(transformedValue);
     } else {
       this.innerText = String(transformedValue);

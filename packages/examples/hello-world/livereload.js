@@ -10,7 +10,9 @@ socket.onmessage = (event) => {
 };
 
 socket.onclose = () => {
-  console.log("livereload: LiveReload connection closed. Reconnecting in 5 seconds...");
+  console.log(
+    "livereload: LiveReload connection closed. Reconnecting in 5 seconds...",
+  );
   setTimeout(() => {
     window.location.reload();
   }, 5000);
