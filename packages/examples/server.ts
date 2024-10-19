@@ -54,13 +54,17 @@ if (import.meta.main) {
 if (Deno.args.includes("--livereload")) {
   console.log("livereload: Watching for file changes...");
   for await (const event of Deno.watchFs("./packages/examples")) {
-    if (event.kind === "modify" && event.paths[0].endsWith(".js")) {
-      console.log("livereload: File changed:", event.paths[0]);
-      clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send("reload");
-        }
-      });
+    if (event.kind === "modify") {
+      const filePath = event.paths[0];
+      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html")
+      if (fileType) {
+        console.log("livereload: File changed:", filePath);
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send("reload");
+          }
+        });
+      }
     }
   }
 }
