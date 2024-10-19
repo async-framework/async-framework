@@ -61,9 +61,13 @@ export class CustomEventLoader {
     // Why: Reduces the number of event listeners by delegating events to a single listener per event type.
     const supportedEvents = this.events; // Extend as needed
     supportedEvents.forEach(eventType => {
+      // console.log('adding event listener for', eventType);
       container.addEventListener(eventType, async (event) => {
-        await this.handleContainerEvent(container, event); // Handle the event when it occurs
-      }, true); // Use capturing phase to ensure the handler runs before other listeners
+        // console.log('event triggered', event);
+        // Handle the event when it occurs
+        await this.handleContainerEvent(container, event);
+      // Use capturing phase to ensure the handler runs before other listeners
+      }, true);
     });
 
     this.parseContainerElements(container); // Parse and register specific event handlers within the container
@@ -100,9 +104,30 @@ export class CustomEventLoader {
     listeners.get(eventName).set(element, scriptPaths); // Map script paths to the element for the given event
   }
 
+  // Why: Dispatches an event to all elements that have registered handlers for the event
+  dispatch(eventName, detail) {
+    // create the custom event
+    const event = new CustomEvent(eventName, {
+      bubbles: true,
+      cancelable: true,
+      detail: detail
+    });
+    // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
+    this.containers.forEach(listeners => {
+      if (listeners.has(eventName)) {
+        listeners.get(eventName).forEach((_handlers, element) => {
+          element.dispatchEvent(event);
+        });
+      }
+    });
+  }
+
 // Handles an event occurring within a container
   // Why: Executes all relevant handlers for the event, ensuring proper signal updates and rendering.
   async handleContainerEvent(container, event) {
+    // deno-lint-ignore no-this-alias
+    const self = this;
+    // console.log('handling container event', event);
     const listeners = this.containers.get(container);
     if (!listeners) return;
 
@@ -111,12 +136,16 @@ export class CustomEventLoader {
 
     let element = event.target;
     while (element && element !== container) {
+      // console.log('handling event for element', element.tagName, event.type, eventListeners);
       if (eventListeners.has(element)) {
         const scriptPaths = eventListeners.get(element);
 
         // Define the context with getters for accessing current state and elements
         let value = undefined;
         const context = {
+          get dispatch() {
+            return self.dispatch.bind(self);
+          },
           get value() { 
             return value;
           },
