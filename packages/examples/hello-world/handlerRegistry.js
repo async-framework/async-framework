@@ -2,6 +2,7 @@
 export class HandlerRegistry {
   constructor() {
     this.registry = new Map();
+    this.splitIndex = ',';
   }
 
   /**
