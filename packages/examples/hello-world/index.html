@@ -36,9 +36,11 @@
 
       // Initialize the CustomEventLoader
       const events = ['click'];
+      const eventPrefix = 'on:';
       const handlerRegistry = new HandlerRegistry();
       const customEventLoader = new CustomEventLoader({
-        events,
+        // eventPrefix: 'data-on-',
+        // events,
         handlerRegistry
       });
 

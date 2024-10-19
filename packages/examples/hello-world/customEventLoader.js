@@ -1,10 +1,15 @@
 
+function escapeSelector(selector) {
+  return selector.replace(/[^\w\s-]/g, (match) => `\\${match}`);
+}
+
 export class CustomEventLoader {
   constructor(config) {
+    this.eventPrefix = config.eventPrefix || 'on:';
     this.processedContainers = config.processedContainers || new WeakSet();
     this.containers = config.containers || new Map();
     this.handlerRegistry = config.handlerRegistry;
-    this.events = config.events;
+    this.events = config.events || this.discoverCustomEvents(document.body);
   }
 
     // Initializes the event handling system by parsing the DOM
@@ -12,9 +17,16 @@ export class CustomEventLoader {
   init() {
     this.parseDOM(document.body); // Start parsing from the body element
   }
-  // init() {
-  //   this.setupGlobalListeners();
-  // }
+  discoverCustomEvents(container) {
+    const customEventAttributes = Array.from(container.querySelectorAll('*'))
+      .flatMap(el => Array.from(el.attributes))
+      .filter(attr => attr.name.startsWith(this.eventPrefix))
+      .map(attr => attr.name.slice(this.eventPrefix.length));
+
+    const events = [...new Set(customEventAttributes)]; // Remove duplicates
+    console.log('discovered custom events:', events);
+    return events;
+  }
 
   // Parses a root element to identify and handle new containers
   // Why: Dynamically supports containers added after initial load, ensuring event handling remains consistent.
@@ -61,13 +73,13 @@ export class CustomEventLoader {
   parseContainerElements(container) {
     // Select elements with 'on:event' attributes
     this.events.map((evt) => {
-      const elements = container.querySelectorAll(`[on\\:${evt}]`);
+      const elements = container.querySelectorAll(`[${escapeSelector(this.eventPrefix)}${evt}]`);
       elements.forEach(element => {
         Array.from(element.attributes).forEach(attr => {
-          if (attr.name.startsWith('on:')) {
+          if (attr.name.startsWith(this.eventPrefix)) {
             const splitIndex = ',';
             // Extract the event name (e.g., 'click' from 'on:click')
-            const eventName = attr.name.slice(3);
+            const eventName = attr.name.slice(this.eventPrefix.length);
             // Handle multiple handlers separated by commas
             const scriptPaths = attr.value.split(splitIndex).map(path => path.trim()).filter(path => path);
             // Register the event listener
