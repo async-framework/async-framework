@@ -268,9 +268,18 @@ export class CustomEventLoader {
         for (const scriptPath of scriptPaths) {
           try {
             // Retrieve the handler from the registry
-            const handler = await self.handlerRegistry.getHandler(scriptPath);
+            let handler = self.handlerRegistry.getHandler(scriptPath);
+            // If we need to grab an async handler, wait for it to resolve
+            if (isPromise(handler)) {
+              handler = await handler;
+            }
             if (typeof handler === "function") {
-              const returnedValue = await handler(context); // Execute the handler asynchronously
+              let returnedValue = handler(context);
+              // if the handler returns a promise, wait for it to resolve
+              if (isPromise(returnedValue)) {
+                // Execute the handler asynchronously
+                returnedValue = await returnedValue;
+              }
               // If the handler returns a value, store it
               if (returnedValue !== undefined) {
                 value = returnedValue;
