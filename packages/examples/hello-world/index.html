@@ -9,18 +9,22 @@
     <script type="module" src="livereload.js"></script>
   </head>
   <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div data-container="root" class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Hello World Example</h1>
+    <div
+      class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
+      data-container="root">
+      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+        Hello World Example
+      </h1>
       <div class="space-y-4">
         <button
-          on:click="clickHandler1.js,logger.js"
           class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+          on:click="clickHandler1.js,logger.js"
         >
           Click me (Handler 1)
         </button>
         <button
-          on:click="clickHandler2.js,logger.js"
           class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+          on:click="clickHandler2.js,logger.js"
         >
           Click me (Handler 2)
         </button>
