@@ -57,7 +57,8 @@
         handlerRegistry,
       });
 
-      customEventLoader.init();
+      const rootContainer = document.body.querySelector('[data-container="root"]');
+      customEventLoader.init(rootContainer);
     </script>
   </body>
 </html>

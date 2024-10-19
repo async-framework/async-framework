@@ -15,8 +15,8 @@ export class CustomEventLoader {
 
   // Initializes the event handling system by parsing the DOM
   // Why: Sets up event listeners and observers for all relevant containers upon initialization.
-  init() {
-    this.parseDOM(document.body); // Start parsing from the body element
+  init(containerElement = document.body) {
+    this.parseDOM(containerElement); // Start parsing from the body element
   }
   discoverCustomEvents(container) {
     const customEventAttributes = Array.from(container.querySelectorAll("*"))
@@ -31,14 +31,19 @@ export class CustomEventLoader {
 
   // Parses a root element to identify and handle new containers
   // Why: Dynamically supports containers added after initial load, ensuring event handling remains consistent.
-  parseDOM(rootElement) {
-    if (rootElement.hasAttribute("data-container")) {
-      this.handleNewContainer(rootElement);
-    } else {
+  parseDOM(containerElement) {
+    if (!containerElement) {
       const containers = Array.from(
-        rootElement.querySelectorAll("[data-container]"),
+        document.body.querySelectorAll("[data-container]"),
       );
       containers.forEach((container) => this.handleNewContainer(container));
+    }
+    if (Array.isArray(containerElement)) {
+      containers.forEach((container) => this.handleNewContainer(container));
+    } else if (containerElement.hasAttribute("data-container")) {
+      this.handleNewContainer(containerElement);
+    } else {
+      console.warn("parseDOM: no container element provided");
     }
   }
 
