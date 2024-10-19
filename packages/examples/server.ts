@@ -7,9 +7,6 @@ import { getDirectoryContents } from "./getDirectoryContents.ts";
 import { findAvailablePort } from "./findAvailablePort.ts";
 import { renderDirectoryListing } from "./renderDirectoryListing.ts";
 
-// Add these imports using JSR
-
-
 const app = new Hono();
 app.use(logger());
 
@@ -30,9 +27,40 @@ app.use(
   })
 );
 
+// WebSocket connections for live reload
+const clients = new Set<WebSocket>();
+
+app.get("/livereload", (c) => {
+  const { response, socket } = Deno.upgradeWebSocket(c.req.raw);
+  clients.add(socket);
+
+  socket.onclose = () => {
+    clients.delete(socket);
+  };
+
+  return response;
+});
+
 // Replace the existing port assignment and console.log with this
 const port = await findAvailablePort(3000, 3100);
 console.log(`HTTP server running on http://localhost:${port}`);
 
-// Modify the export to include serving the app
-Deno.serve({ port: port }, app.fetch) 
+// Use Deno.serve with the --watch flag
+if (import.meta.main) {
+  Deno.serve({ port: port }, app.fetch);
+}
+
+// File watcher for livereload
+if (Deno.args.includes("--livereload")) {
+  console.log("livereload: Watching for file changes...");
+  for await (const event of Deno.watchFs("./packages/examples")) {
+    if (event.kind === "modify" && event.paths[0].endsWith(".js")) {
+      console.log("livereload: File changed:", event.paths[0]);
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send("reload");
+        }
+      });
+    }
+  }
+}

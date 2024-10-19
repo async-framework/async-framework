@@ -2,25 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>CustomEventLoader MVP1 - Event Delegation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World Example</title>
     <style>
       .completed {
         text-decoration: line-through;
         color: gray;
       }
     </style>
+        <!-- Add this line to include the live reload script -->
+    <script type="module" src="livereload.js"></script>
+
   </head>
   <body>
-    <button on:click="clickHandler1.js">Click Me 1</button>
-    <button on:click="clickHandler2.js">Click Me 2</button>
+    <div data-container="root">
+      <button on:click="clickHandler1.js,logger.js">Click me!</button>
+      <button on:click="clickHandler2.js,logger.js">Click me!</button>
+    </div>
 
     <script type="module">
-      import CustomEventLoader from './customEventLoader.js';
-      import handlerRegistry from './handlerRegistry.js';
+      import { CustomEventLoader, HandlerRegistry } from './async-framework.js';
 
       // Initialize the CustomEventLoader
-      const customEventLoader = new CustomEventLoader(handlerRegistry);
+      const events = ['click'];
+      const handlerRegistry = new HandlerRegistry();
+      const customEventLoader = new CustomEventLoader({
+        events,
+        handlerRegistry
+      });
+
       customEventLoader.init();
     </script>
+
   </body>
 </html>

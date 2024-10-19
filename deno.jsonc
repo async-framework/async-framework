@@ -3,7 +3,7 @@
   "tasks": {
     "test": "deno test -RWN --allow-run=deno,bun,node,npx --clean --trace-leaks",
     "start": "deno run -A packages/examples/server.ts",
-    "dev": "deno run -A --watch packages/examples/server.ts"
+    "dev": "deno run -A --watch packages/examples/server.ts --livereload"
   },
   "imports": {
     "hono": "npm:hono@^4",
@@ -17,7 +17,7 @@
     "#/": "./"
   },
   "compilerOptions": {
-    "checkJs": true,
+    "checkJs": false,
     "lib": ["deno.window", "deno.unstable", "deno.ns"],
     "strict": true,
     "jsx": "precompile",
