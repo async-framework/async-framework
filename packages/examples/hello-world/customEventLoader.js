@@ -103,9 +103,10 @@ export class CustomEventLoader {
         const scriptPaths = eventListeners.get(element);
 
         // Define the context with getters for accessing current state and elements
+        let value = undefined;
         const context = {
           get value() { 
-            return context._value;
+            return value;
           },
           get element() {
             return element;
@@ -116,6 +117,8 @@ export class CustomEventLoader {
           get container() {
             return container;
           },
+          // If the handler sets break to true, stop processing further handlers for this event
+          break: false,
           // TODO: controller/signal
           // get controller() {
           //   return container._controller;
@@ -131,18 +134,27 @@ export class CustomEventLoader {
             const handler = await this.handlerRegistry.getHandler(scriptPath);
             if (typeof handler === 'function') {
               const returnedValue = await handler(context); // Execute the handler asynchronously
+              // If the handler returns a value, store it
               if (returnedValue !== undefined) {
-                context._value = returnedValue;
+                value = returnedValue;
               }
+              // If the handler sets break to true, stop processing further handlers for this event
+              if (context.break) break;
             }
           } catch (error) {
+            // Reset value if there's an error
+            value = undefined;
             console.error(`Error executing handler at ${scriptPath}:`, error); // Log any errors during handler execution
           }
         }
-
-        if (!event.bubbles) break; // If the event doesn't bubble, stop after handling the first matching element
+        // clear and references to avoid memory leak
+        value = undefined;
+        
+        // If the event doesn't bubble, stop after handling the first matching element
+        if (!event.bubbles) break;
       }
-      element = element.parentElement; // Traverse up the DOM tree for event delegation
+      // Traverse up the DOM tree for event delegation
+      element = element.parentElement;
     }
   }
 
