@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo App Example</title>
+    <link rel="stylesheet" href="/tailwind.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "async-framework": "./async-framework"
+        }
+      }
+    </script>
+    <script type="module" src="livereload.js"></script>
+    <link rel="modulepreload" href="./async-framework" />
+    <link rel="modulepreload" href="prevent-default.js" />
+    <link rel="modulepreload" href="keydown.js" />
+    <link rel="modulepreload" href="STATE.js" />
+    <link rel="modulepreload" href="updateTodoList.js" />
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div
+      class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
+      data-container="root"
+    >
+      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Todo App</h1>
+      <div class="space-y-4">
+        <form
+          class="space-y-4"
+          on:submit="prevent-default.js, addTodo.js"
+        >
+          <input
+            type="text"
+            class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter a new todo"
+            on:keydown="keydown.js"
+            autofocus
+          />
+          <div class="flex justify-center">
+            <button
+              type="submit"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+            >
+              Add Todo
+            </button>
+          </div>
+        </form>
+        <ul class="space-y-2" on:update-todo-list="updateTodoList.js"></ul>
+      </div>
+    </div>
+
+    <script type="module">
+      import { CustomEventLoader, HandlerRegistry } from "async-framework";
+      import preventDefault from './prevent-default.js';
+      import keydown from './keydown.js';
+      import updateTodoList from './updateTodoList.js';
+      import { getState, setState, saveState, loadState } from './STATE.js';
+
+      const handlerRegistry = new HandlerRegistry({
+        // preload handlers
+        registry: new Map([
+          ['prevent-default.js', preventDefault],
+          ['keydown.js', keydown],
+          ['update-todo-list', updateTodoList]
+        ]),
+        basePath: location.pathname,
+      });
+
+      const customEventLoader = new CustomEventLoader({
+        handlerRegistry,
+      });
+
+      const rootContainer = document.body.querySelector('[data-container="root"]');
+      customEventLoader.init(rootContainer);
+
+      // Initialize todo list
+      setState('todos', loadState('todos'));
+
+      customEventLoader.dispatch('update-todo-list', getState('todos'));
+
+      window.addEventListener('unload', (event) => {
+        console.log('-----unloading todo app-----');
+        saveState('todos');
+      });
+    </script>
+  </body>
+</html>
