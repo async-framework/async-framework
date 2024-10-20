@@ -2,10 +2,12 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
+import { dirname, fromFileUrl } from "@std/path";
 
 import { getDirectoryContents } from "./getDirectoryContents.ts";
 import { findAvailablePort } from "./findAvailablePort.ts";
 import { renderDirectoryListing } from "./renderDirectoryListing.ts";
+import { createBundler } from './bundler.ts';
 
 const app = new Hono();
 app.use(logger());
@@ -16,9 +18,12 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
   (dir) => `<li><a href="/examples/${dir}/">${dir}</a></li>`,
 );
 
+
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
+// Get the directory of the current file
+const bundle = createBundler(dirname(fromFileUrl(import.meta.url)));
 // Serve static files from the packages/examples directory
 app.use(
   "/examples/*",
@@ -26,6 +31,28 @@ app.use(
     root: "./packages",
   }),
 );
+
+// bundle framework code
+app.get('/examples/*/async-framework', async (c) => {
+  try {
+    const bundleContent = await bundle(
+      "./__async-framework__/async-framework.js",
+      "AsyncFramework",
+    );
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error for @async/framework:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
+});
+
 
 // WebSocket connections for live reload
 const clients = new Set<WebSocket>();
@@ -39,6 +66,29 @@ app.get("/livereload", (c) => {
   };
 
   return response;
+});
+
+// Update the /bundle route
+app.get("/bundle", async (c) => {
+  const entryPoint = c.req.query("entry");
+  if (!entryPoint) {
+    return c.text("No entry point specified", 400);
+  }
+
+  try {
+    const bundleContent = await bundle(entryPoint);
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
 });
 
 // Replace the existing port assignment and console.log with this

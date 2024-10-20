@@ -1,10 +1,13 @@
 // handlerRegistry.js
 export class HandlerRegistry {
-  constructor() {
+  constructor(config = {}) {
     this.registry = new Map();
-    this.splitIndex = ",";
-    this.basePath = "./";
-    this.origin = "";
+    // The character used to split the script path into its components
+    this.splitIndex = config.splitIndex || ",";
+    this.basePath = config.basePath || "./";
+    this.origin = config.origin || "";
+
+    console.log('HandlerRegistry.constructor: basePath', config.basePath);
   }
 
   /**

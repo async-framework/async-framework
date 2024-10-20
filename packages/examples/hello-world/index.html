@@ -6,7 +6,15 @@
     <title>Hello World Example</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add this line to include the live reload script -->
+    <script type="importmap">
+      {
+        "imports": {
+          "async-framework": "./async-framework"
+        }
+      }
+    </script>
     <script type="module" src="livereload.js"></script>
+
   </head>
   <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div
@@ -45,12 +53,14 @@
     </div>
 
     <script type="module">
-      import { CustomEventLoader, HandlerRegistry } from "./async-framework.js";
+      import { CustomEventLoader, HandlerRegistry } from "async-framework";
 
       // Initialize the CustomEventLoader
       const events = ["click"];
       const eventPrefix = "on:";
-      const handlerRegistry = new HandlerRegistry();
+      const handlerRegistry = new HandlerRegistry({
+        basePath: location.pathname,
+      });
       const customEventLoader = new CustomEventLoader({
         // eventPrefix: 'data-on-',
         // events, // discover custom events
