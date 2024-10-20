@@ -93,12 +93,16 @@ export class CustomEventLoader {
           this.parseContainerElement(container, eventName);
           // Handle the event when it occurs
           await this.handleContainerEvent(container, event);
+          // console.log('setupContainerListeners: event handled', res);
           // Use capturing phase to ensure the handler runs before other listeners
         },
         true
       );
     });
     // console.log('setupContainerListeners: container listeners', this.containers);
+
+    // eager parse all events for the container
+    // this.parseContainerElements(container, this.events);
   }
 
   // Parses an element to identify and register event handlers
@@ -146,6 +150,7 @@ export class CustomEventLoader {
   // Parses elements within a container to identify and register event handlers
   // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
   parseContainerElement(container, eventName) {
+    // console.log('parseContainerElement: parsing container elements', eventName);
     // Get the Set of processed events for this container, or create a new one if it doesn't exist
     const processedEvents = getCachedSet(this.parsedElements, container);
 
@@ -169,7 +174,7 @@ export class CustomEventLoader {
         this.parseElementForEvent(container, element, eventName, eventAttr);
       } else {
         // Parse the element for the event type before handling the event
-        Array.from(element.attributes).forEach((attr) => {
+        Array.from(element.attributes).forEach((attr: any) => {
           if (attr.name.startsWith(this.eventPrefix)) {
             // console.log('parseContainerElement: parsing element attribute', attr.name);
             this.parseElementForEvent(container, element, eventName, attr.name);
@@ -288,12 +293,14 @@ export class CustomEventLoader {
             let handler = self.handlerRegistry.getHandler(scriptPath);
             // If we need to grab an async handler, wait for it to resolve
             if (isPromise(handler)) {
+              // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
               handler = await handler;
             }
             if (typeof handler === "function") {
               let returnedValue = handler(context);
               // if the handler returns a promise, wait for it to resolve
               if (isPromise(returnedValue)) {
+                // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
                 // Execute the handler asynchronously
                 returnedValue = await returnedValue;
               }

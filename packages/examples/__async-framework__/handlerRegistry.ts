@@ -8,7 +8,7 @@ export class HandlerRegistry {
   private origin: string;
 
   constructor(config: any = {}) {
-    this.registry = new Map();
+    this.registry = config.registry || new Map();
     // The character used to split the script path into its components
     this.splitIndex = config.splitIndex || ",";
     this.basePath = config.basePath || "./";
