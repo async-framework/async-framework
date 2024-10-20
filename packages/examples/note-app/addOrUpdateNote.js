@@ -32,6 +32,10 @@ export default function addOrUpdateNote({ element, dispatch }) {
     titleInput.value = '';
     contentInput.value = '';
     submitButton.textContent = 'Add Note';
+
+    // Show the note list
+    document.getElementById('note-list-container').style.display = 'block';
+
     dispatch('update-note-list', newNotes);
   }
 }

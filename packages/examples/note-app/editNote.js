@@ -12,7 +12,12 @@ export default function editNote({ event }) {
     form.querySelector('#note-id').value = noteToEdit.id;
     form.querySelector('#note-title').value = noteToEdit.title;
     form.querySelector('#note-content').value = noteToEdit.content;
+    form.querySelector('#note-title').focus();
+
     // change the button text to update
     form.querySelector('button[type="submit"]').textContent = 'Update Note';
+
+    // Hide the note list
+    document.getElementById('note-list-container').style.display = 'none';
   }
 }

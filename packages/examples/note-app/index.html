@@ -61,7 +61,7 @@
             </button>
           </div>
         </form>
-        <div class="space-y-2" on:update-note-list="updateNoteList.js">
+        <div id="note-list-container" class="space-y-2" on:update-note-list="updateNoteList.js">
           <!-- hardcoded empty list to show loading state until we get SSR -->
           <ul class="divide-y divide-gray-200">
             <li class="py-4 text-center text-gray-500 italic">No notes found</li>

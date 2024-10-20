@@ -38,4 +38,7 @@ export default function updateNoteList({ event, element }) {
       }
     </ul>
   `;
+
+  // Ensure the note list container is visible
+  element.style.display = 'block';
 }
