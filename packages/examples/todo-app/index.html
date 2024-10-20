@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Todo App Example</title>
-    <link rel="stylesheet" href="/tailwind.css">
+    <!-- /tailwind.css is the same as https://cdn.tailwindcss.com/3.4.5 -->
+    <!-- <link rel="stylesheet" href="/tailwind.css"> -->
+    <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <script type="importmap">
       {
         "imports": {
@@ -46,7 +48,9 @@
             </button>
           </div>
         </form>
-        <ul class="space-y-2" on:update-todo-list="updateTodoList.js"></ul>
+        <div class="space-y-2" on:update-todo-list="updateTodoList.js">
+          <p class="text-center text-gray-500 italic">No todos found</p>
+        </div>
       </div>
     </div>
 
@@ -67,7 +71,10 @@
         basePath: location.pathname,
       });
 
+      const todoListEvents = ['change', 'click'];
+
       const customEventLoader = new CustomEventLoader({
+        events: ['submit', 'keydown', 'update-todo-list', ...todoListEvents],
         handlerRegistry,
       });
 

@@ -108,16 +108,16 @@ export class CustomEventLoader {
   // Parses an element to identify and register event handlers
   // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
   parseElementForEvent(container, element, eventName, eventAttr) {
-    const processedElementEvent = getCachedSet(
-      this.parsedElementsEvents,
-      element
-    );
+    // const processedElementEvent = getCachedSet(
+    //   this.parsedElementsEvents,
+    //   element
+    // );
 
     // If this event has already been processed for this element, return
-    if (processedElementEvent.has(eventName)) {
+    // if (processedElementEvent.has(eventName)) {
       // console.log('parseElementForEvent: event already processed', eventName, 'for element', element);
-      return;
-    }
+    //   return;
+    // }
 
     const attrValue = element.getAttribute(eventAttr);
     // console.log('parseElementForEvent: event attribute value', attrValue, eventAttr, eventName);
@@ -137,7 +137,7 @@ export class CustomEventLoader {
       this.addListener(container, eventName, element, scriptPaths);
     }
 
-    processedElementEvent.add(eventName);
+    // processedElementEvent.add(eventName);
   }
   // Parses elements within a container to identify and register event handlers
   // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
@@ -152,13 +152,13 @@ export class CustomEventLoader {
   parseContainerElement(container, eventName) {
     // console.log('parseContainerElement: parsing container elements', eventName);
     // Get the Set of processed events for this container, or create a new one if it doesn't exist
-    const processedEvents = getCachedSet(this.parsedElements, container);
+    // const processedEvents = getCachedSet(this.parsedElements, container);
 
     // If this event has already been processed for this container, return
-    if (processedEvents.has(eventName)) {
+    // if (processedEvents.has(eventName)) {
       // console.log('parseContainerElement: event already processed', eventName, 'for container', container);
-      return;
-    }
+    //   return;
+    // }
     // console.log('parseContainerElement: processing event', eventName, 'for container', container);
 
     // Select elements with 'on:{event}' attributes for example 'on:click'
@@ -184,7 +184,7 @@ export class CustomEventLoader {
     });
 
     // Mark this event as processed for this container
-    processedEvents.add(eventName);
+    // processedEvents.add(eventName);
   }
 
   // Registers event listeners for specific elements within a container
@@ -199,7 +199,15 @@ export class CustomEventLoader {
       // console.log('addListener: adding event listener for', eventName, 'to container', container);
       listeners.set(eventName, new Map());
     }
-    listeners.get(eventName).set(element, scriptPaths); // Map script paths to the element for the given event
+    if (!listeners.get(eventName).has(element)) {
+      listeners.get(eventName).set(element, scriptPaths); // Map script paths to the element for the given event
+    } else {
+      /*
+        if an element doesn't have any event listeners,
+        it means it's a new element or just an element with an attribute like 'on:click'
+      */
+      // console.warn('addListener: event listener already exists for', eventName, 'on element', element);
+    }
     // console.log('addListener: listeners', listeners);
   }
 
@@ -233,21 +241,26 @@ export class CustomEventLoader {
     // console.log('handleContainerEvent: handling container event', event);
     const listeners = this.containers.get(container);
     if (!listeners) {
-      console.warn(
-        "handleContainerEvent: no listeners found for container",
-        container
-      );
+      // console.error(
+      //   "handleContainerEvent: no listeners found for container",
+      //   container
+      // );
+      // this.parseContainerElement(container, event.type);
+      // return this.handleContainerEvent(container, event);
       return;
     }
 
     const eventListeners = listeners.get(event.type);
     if (!eventListeners) {
-      console.warn(
-        "handleContainerEvent: no event listeners found for event",
-        event.type,
-        "in container",
-        container
-      );
+      // if click on elements that don't have event listeners
+      // console.error(
+      //   "handleContainerEvent: no event listeners found for event",
+      //   event.type,
+      //   "in container",
+      //   container
+      // );
+      // this.parseContainerElement(container, event.type);
+      // return this.handleContainerEvent(container, event);
       return;
     }
 
@@ -339,14 +352,14 @@ function escapeSelector(selector) {
 
 // Memoization/Caching helper function
 // Why: Implements a "compute once, use many times" pattern to efficiently manage Sets for various keys
-function getCachedSet(map, key) {
-  let set = map.get(key);
-  if (!set) {
-    set = new Set();
-    map.set(key, set);
-  }
-  return set;
-}
+// function getCachedSet(map, key) {
+//   let set = map.get(key);
+//   if (!set) {
+//     set = new Set();
+//     map.set(key, set);
+//   }
+//   return set;
+// }
 
 function isPromise(value) {
   return value && typeof value === "object" && typeof value.then === "function";
