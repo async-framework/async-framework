@@ -2,14 +2,19 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
-import { dirname, fromFileUrl } from "@std/path";
+import { dirname, fromFileUrl, join } from "@std/path";
 
 import { getDirectoryContents } from "./getDirectoryContents.ts";
 import { findAvailablePort } from "./findAvailablePort.ts";
 import { renderDirectoryListing } from "./renderDirectoryListing.ts";
 import { createBundler } from './bundler.ts';
+import { createCache } from "./request-cache.ts";
 
+const rootDir = dirname(fromFileUrl(import.meta.url));
+const cacheResponse = createCache(new Map(), 3600);
 const app = new Hono();
+
+
 app.use(logger());
 
 // Handle both root and /examples routes
@@ -22,18 +27,26 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
+app.get('/tailwind.css', cacheResponse, async (c) => {
+  try {
+    const tailwindCss = await Deno.readTextFile(join(rootDir, './tailwind.css'));
+    return c.body(tailwindCss, 200, {
+      "Content-Type": "text/css",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'name' in error) {
+      console.error('GET: /tailwind.css', error.name);
+    } else {
+      console.error("Error reading tailwind.css:");
+    }
+    return c.text("/* Error reading tailwind.css */", 500);
+  }
+});
 // Get the directory of the current file
-const bundle = createBundler(dirname(fromFileUrl(import.meta.url)));
-// Serve static files from the packages/examples directory
-app.use(
-  "/examples/*",
-  serveStatic({
-    root: "./packages",
-  }),
-);
-
+const bundle = createBundler(rootDir);
 // bundle framework code
-app.get('/examples/*/async-framework', async (c) => {
+app.get('/examples/*/async-framework', cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
       "./__async-framework__/async-framework.js",
@@ -41,6 +54,7 @@ app.get('/examples/*/async-framework', async (c) => {
     );
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
     });
   } catch (error: unknown | Error) {
     console.error("Bundling error for @async/framework:", error);
@@ -52,6 +66,39 @@ app.get('/examples/*/async-framework', async (c) => {
     );
   }
 });
+
+// Update the /bundle route
+app.get("/bundle", cacheResponse, async (c) => {
+  const entryPoint = c.req.query("entry");
+  if (!entryPoint) {
+    return c.text("No entry point specified", 400);
+  }
+
+  try {
+    const bundleContent = await bundle(entryPoint);
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
+});
+
+// Serve static files from the packages/examples directory
+app.use(
+  "/examples/*",
+  serveStatic({
+    root: "./packages",
+  }),
+);
+
 
 
 // WebSocket connections for live reload
@@ -66,29 +113,6 @@ app.get("/livereload", (c) => {
   };
 
   return response;
-});
-
-// Update the /bundle route
-app.get("/bundle", async (c) => {
-  const entryPoint = c.req.query("entry");
-  if (!entryPoint) {
-    return c.text("No entry point specified", 400);
-  }
-
-  try {
-    const bundleContent = await bundle(entryPoint);
-    return c.body(bundleContent, 200, {
-      "Content-Type": "application/javascript",
-    });
-  } catch (error: unknown | Error) {
-    console.error("Bundling error:", error);
-    return c.text(
-      `Error creating bundle: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      500,
-    );
-  }
 });
 
 // Replace the existing port assignment and console.log with this
