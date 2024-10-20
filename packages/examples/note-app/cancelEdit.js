@@ -1,0 +1,7 @@
+export default function cancelEdit({ element }) {
+  const form = document.getElementById('note-form');
+  form.querySelector('#note-id').value = '';
+  form.querySelector('#note-title').value = '';
+  form.querySelector('#note-content').value = '';
+  form.querySelector('button[type="submit"]').textContent = 'Add Note';
+}
