@@ -49,7 +49,10 @@
           </div>
         </form>
         <div class="space-y-2" on:update-todo-list="updateTodoList.js">
-          <p class="text-center text-gray-500 italic">No todos found</p>
+          <!-- hardcoded empty list to show loading state until we get SSR -->
+          <ul class="divide-y divide-gray-200">
+            <li class="py-4 text-center text-gray-500 italic">No todos found</li>
+          </ul>
         </div>
       </div>
     </div>
