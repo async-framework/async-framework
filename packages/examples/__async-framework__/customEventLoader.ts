@@ -89,7 +89,7 @@ export class CustomEventLoader {
         eventName,
         async (event) => {
           // console.log('setupContainerListeners: event triggered', event);
-          // Parse the element for the event type before handling the event
+          // Lazy parse the element for the event type before handling the event
           this.parseContainerElement(container, eventName);
           // Handle the event when it occurs
           await this.handleContainerEvent(container, event);
@@ -100,9 +100,9 @@ export class CustomEventLoader {
       );
     });
     // console.log('setupContainerListeners: container listeners', this.containers);
-
+    
     // eager parse all events for the container
-    // this.parseContainerElements(container, this.events);
+    // this.parseContainerElements(container, supportedEvents);
   }
 
   // Parses an element to identify and register event handlers
