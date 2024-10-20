@@ -18,12 +18,14 @@
     "@std/assert": "jsr:@std/assert@^1",
     "@std/expect": "jsr:@std/expect@^1.0.0",
     "rollup": "npm:rollup@^3.25.1",
+    "@rollup/plugin-typescript": "npm:@rollup/plugin-typescript@^11.1.6",
+    "tslib": "npm:tslib@^2.3.0",
     "#/": "./"
   },
   "compilerOptions": {
     "noImplicitAny": false,
     "checkJs": false,
-    "lib": ["deno.window", "deno.unstable", "deno.ns"],
+    "lib": ["deno.window", "deno.unstable", "deno.ns", "dom"],
     "strict": true,
     "jsx": "precompile",
     "jsxImportSource": "hono/jsx"

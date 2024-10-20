@@ -49,7 +49,7 @@ const bundle = createBundler(rootDir);
 app.get('/examples/*/async-framework', cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      "./__async-framework__/async-framework.js",
+      "./__async-framework__/async-framework.ts",
       "AsyncFramework",
     );
     return c.body(bundleContent, 200, {

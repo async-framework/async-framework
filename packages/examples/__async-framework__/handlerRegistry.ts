@@ -1,6 +1,13 @@
+// deno-lint-ignore-file no-explicit-any
 // handlerRegistry.js
+
 export class HandlerRegistry {
-  constructor(config = {}) {
+  public splitIndex: string;
+  private registry: Map<string, any>;
+  private basePath: string;
+  private origin: string;
+
+  constructor(config: any = {}) {
     this.registry = new Map();
     // The character used to split the script path into its components
     this.splitIndex = config.splitIndex || ",";

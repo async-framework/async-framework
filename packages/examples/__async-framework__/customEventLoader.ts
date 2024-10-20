@@ -1,5 +1,15 @@
+// deno-lint-ignore-file no-explicit-any
+
 export class CustomEventLoader {
-  constructor(config) {
+  private eventPrefix: string;
+  private containers: Map<any, any>;
+  private handlerRegistry: any;
+  private events: string[];
+  private processedContainers: WeakSet<any>;
+  private parsedElements: WeakMap<any, any>;
+  private parsedElementsEvents: WeakMap<any, any>;
+
+  constructor(config: any) {
     this.eventPrefix = config.eventPrefix || "on:";
     this.containers = config.containers || new Map();
     this.handlerRegistry = config.handlerRegistry;
@@ -8,9 +18,9 @@ export class CustomEventLoader {
     // Set of processed containers
     this.processedContainers = config.processedContainers || new WeakSet();
     // Map of elements to their processed events
-    this.parsedElements = new WeakMap();
+    this.parsedElements = config.parsedElements || new WeakMap();
     // Map of elements to their processed events
-    this.parsedElementsEvents = new WeakMap();
+    this.parsedElementsEvents = config.parsedElementsEvents || new WeakMap();
   }
 
   // Initializes the event handling system by parsing the DOM
@@ -20,9 +30,9 @@ export class CustomEventLoader {
   }
   discoverCustomEvents(container) {
     const customEventAttributes = Array.from(container.querySelectorAll("*"))
-      .flatMap((el) => Array.from(el.attributes))
-      .filter((attr) => attr.name.startsWith(this.eventPrefix))
-      .map((attr) => attr.name.slice(this.eventPrefix.length));
+      .flatMap((el: any) => Array.from(el.attributes))
+      .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
+      .map((attr: any) => attr.name.slice(this.eventPrefix.length));
 
     const events = [...new Set(customEventAttributes)]; // Remove duplicates
     console.log("discoverCustomEvents: discovered custom events:", events);
@@ -31,16 +41,18 @@ export class CustomEventLoader {
 
   // Parses a root element to identify and handle new containers
   // Why: Dynamically supports containers added after initial load, ensuring event handling remains consistent.
-  parseDOM(containerElement) {
+  parseDOM(containerElement: undefined | any[] | any) {
     if (!containerElement) {
       const containers = Array.from(
-        document.body.querySelectorAll("[data-container]"),
+        document.body.querySelectorAll("[data-container]")
       );
       containers.forEach((container) => this.handleNewContainer(container));
     }
     if (Array.isArray(containerElement)) {
-      containers.forEach((container) => this.handleNewContainer(container));
-    } else if (containerElement.hasAttribute("data-container")) {
+      containerElement.forEach((container) =>
+        this.handleNewContainer(container)
+      );
+    } else if (containerElement?.hasAttribute?.("data-container")) {
       this.handleNewContainer(containerElement);
     } else {
       console.warn("parseDOM: no container element provided");
@@ -83,7 +95,7 @@ export class CustomEventLoader {
           await this.handleContainerEvent(container, event);
           // Use capturing phase to ensure the handler runs before other listeners
         },
-        true,
+        true
       );
     });
     // console.log('setupContainerListeners: container listeners', this.containers);
@@ -94,7 +106,7 @@ export class CustomEventLoader {
   parseElementForEvent(container, element, eventName, eventAttr) {
     const processedElementEvent = getCachedSet(
       this.parsedElementsEvents,
-      element,
+      element
     );
 
     // If this event has already been processed for this element, return
@@ -147,7 +159,7 @@ export class CustomEventLoader {
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
     const elements = container.querySelectorAll(
-      `[${escapeSelector(eventAttr)}]`,
+      `[${escapeSelector(eventAttr)}]`
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
     elements.forEach((element) => {
@@ -218,7 +230,7 @@ export class CustomEventLoader {
     if (!listeners) {
       console.warn(
         "handleContainerEvent: no listeners found for container",
-        container,
+        container
       );
       return;
     }
@@ -229,7 +241,7 @@ export class CustomEventLoader {
         "handleContainerEvent: no event listeners found for event",
         event.type,
         "in container",
-        container,
+        container
       );
       return;
     }
@@ -297,7 +309,7 @@ export class CustomEventLoader {
             value = undefined;
             console.error(
               `handleContainerEvent: Error executing handler at ${scriptPath}:`,
-              error,
+              error
             ); // Log any errors during handler execution
           }
         }
