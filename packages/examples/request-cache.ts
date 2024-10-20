@@ -13,11 +13,11 @@ type CacheType = {
 export const createCache = (cache: CacheType | Map<string, string>, seconds: number): (c: Context, next: Next) => Promise<void | Response> => {
   return async (c: Context, next: Next) => {
     // Get cached response from Redis
-    let res = await cache.get(c.req.url);
+    const url = new URL(c.req.url);
+    let res = await cache.get(url.pathname);
     res = res ? JSON.parse(res) : null;
     if (res && typeof res === 'object' && 'body' in res && 'headers' in res && 'status' in res) {
       try {
-        const url = new URL(c.req.url);
         console.log("GET: Cache hit for", url.pathname);
         // Parse the cached response
         const {body, status, headers}: CacheResponse = res;
@@ -73,7 +73,7 @@ export const createCache = (cache: CacheType | Map<string, string>, seconds: num
       });
 
       // Store the response in cache
-      await cache.set(c.req.url, JSON.stringify(cacheResponse), { ex: seconds });
+      await cache.set(url.pathname, JSON.stringify(cacheResponse), { ex: seconds });
 
       c.res.headers.set("X-Cache", "MISS");
     }
