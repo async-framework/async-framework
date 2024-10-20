@@ -11,7 +11,8 @@ import { createBundler } from './bundler.ts';
 import { createCache } from "./request-cache.ts";
 
 const rootDir = dirname(fromFileUrl(import.meta.url));
-const cacheResponse = createCache(new Map(), 3600);
+const CACHE = new Map();
+const cacheResponse = createCache(CACHE, 3600);
 const app = new Hono();
 
 
@@ -130,11 +131,20 @@ if (Deno.args.includes("--livereload")) {
   for await (const event of Deno.watchFs("./packages/examples")) {
     if (event.kind === "modify") {
       const filePath = event.paths[0];
-      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html");
+      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html") || filePath.endsWith(".ts");
+
       if (fileType) {
         console.log("livereload: File changed:", filePath);
         clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
+            if (filePath.endsWith(".ts")) {
+              CACHE.forEach((_value, key) => {
+                if (/async-framework/.test(key)) {
+                  console.log('livereload: clearing cache for', key);
+                  CACHE.delete(key);
+                }
+              });
+            }
             client.send("reload");
           }
         });
