@@ -74,11 +74,11 @@ const firstNameInput = document.getElementById('firstNameInput');
 const lastNameInput = document.getElementById('lastNameInput');
 
 firstNameInput.addEventListener('input', (e) => {
-    firstNameSignal.set(e.target.value);
+  firstNameSignal.set(e.target.value);
 });
 
 lastNameInput.addEventListener('input', (e) => {
-    lastNameSignal.set(e.target.value);
+  lastNameSignal.set(e.target.value);
 });
 
 // Todo List
@@ -88,31 +88,37 @@ const addTodoBtn = document.getElementById('addTodoBtn');
 const todoListItems = document.getElementById('todoListItems');
 
 function renderTodos() {
-    todoListItems.innerHTML = todosSignal.value.map((todo, index) => /*html*/`
-        <li class="mb-2">
-            <span class="mr-2">${todo}</span>
-            <button onclick="removeTodo(${index})" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">Remove</button>
-        </li>
-    `).join('');
+  todoListItems.innerHTML = todosSignal.get().map((todo, index) => /*html*/`
+<li class="mb-2">
+    <span class="mr-2">${todo}</span>
+    <button onclick="removeTodo(${index})" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">Remove</button>
+</li>
+  `).join('');
 }
 
-addTodoBtn.addEventListener('click', () => {
-    const newTodo = todoInput.value.trim();
-    if (newTodo) {
-        todosSignal.set([...todosSignal.get(), newTodo]);
-        todoInput.value = '';
-        renderTodos();
-      }
-    });
-    
+function addTodo() {
+  const newTodo = todoInput.value.trim();
+  if (newTodo) {
+    todosSignal.set([...todosSignal.get(), newTodo]);
+    todoInput.value = '';
+  }
+}
+
+todoInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    addTodo();
+  }
+});
+addTodoBtn.addEventListener('click', addTodo);
+
 // onclick="removeTodo(index)"
 window.removeTodo = (index) => {
   todosSignal.set(todosSignal.get().filter((_, i) => i !== index));
-  renderTodos();
 };
 
 // Initial render
 renderTodos();
+todosSignal.subscribe(renderTodos);
 
 </script>
 </body>
