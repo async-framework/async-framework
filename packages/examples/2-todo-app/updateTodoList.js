@@ -1,6 +1,6 @@
 export default function updateTodoList({ event, element }) {
   const todos = event.detail;
-  console.log("Update todo list event:", JSON.stringify(todos, null, 2));
+  console.log("Update todo list event:", todos.length);
 
   element.innerHTML = /*html*/ `
     <ul class="divide-y divide-gray-200">

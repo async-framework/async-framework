@@ -217,7 +217,12 @@ export class AsyncLoader {
       listeners.set(eventName, eventListeners);
     }
     if (!eventListeners.has(element)) {
-      eventListeners.set(element, attrValue); // Map script paths to the element for the given event
+      if (element.isConnected) {
+        eventListeners.set(element, attrValue); // Map script paths to the element for the given event
+      } else {
+        console.warn('addEventData: element is not connected', element);
+        eventListeners.delete(element);
+      }
     } else {
       /*
         if an element doesn't have any event listeners,
@@ -252,9 +257,16 @@ export class AsyncLoader {
         // Parse the container for the event type before handling the event
         const eventListeners = listeners.get(eventName);
         if (eventListeners) {
+          const cleanup: Element[] = [];
           eventListeners.forEach((_attrValue, element) => {
-            // console.log('dispatch: dispatching event', eventName, 'to element', element);
-            element.dispatchEvent(customEvent);
+            if (element.isConnected) {
+              element.dispatchEvent(customEvent);
+            } else {
+              cleanup.push(element);
+            }
+          });
+          cleanup.forEach((element) => {
+            eventListeners.delete(element);
           });
         }
       }
@@ -365,10 +377,10 @@ export class AsyncLoader {
     }
   }
 }
-
 // Why: Escapes special characters in selectors to ensure they are treated as literal characters in CSS selectors
 function escapeSelector(selector) {
   return selector.replace(/[^\w\s-]/g, (match) => `\\${match}`);
 }
+
 
 

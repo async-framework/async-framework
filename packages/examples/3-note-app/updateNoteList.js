@@ -1,6 +1,6 @@
 export default function updateNoteList({ event, element }) {
   const notes = event.detail;
-  console.log("Update note list event:", JSON.stringify(notes, null, 2));
+  console.log("Update note list event:", notes.length);
 
   element.innerHTML = /*html*/ `
     <ul class="divide-y divide-gray-200">

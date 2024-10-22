@@ -1,5 +1,4 @@
-export default function preventDefault({ event, element }) {
+export default function preventDefault({ event }) {
   event.preventDefault();
   event.stopPropagation();
-  console.log("Prevent default event:", element.tagName, event.cancelBubble);
 }
