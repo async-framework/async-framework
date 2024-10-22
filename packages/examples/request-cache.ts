@@ -37,7 +37,7 @@ export const createCache = (cache: CacheType | Map<string, string>, seconds: num
     } else {
       try {
         await next();
-      } catch (e) {
+      } catch (_e) {
         console.error("Error in cache middleware:");
         return;
       }

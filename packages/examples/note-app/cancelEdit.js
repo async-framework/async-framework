@@ -1,4 +1,4 @@
-export default function cancelEdit({ element }) {
+export default function cancelEdit() {
   const form = document.getElementById('note-form');
   form.querySelector('#note-id').value = '';
   form.querySelector('#note-title').value = '';
