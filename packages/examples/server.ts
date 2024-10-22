@@ -21,7 +21,16 @@ app.use(logger());
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
   await getDirectoryContents("./packages/examples"),
-  (dir) => `<li><a href="/examples/${dir}/">${dir}</a></li>`,
+  (dir) => {
+    const dirName = dir.replace(/-/g, ' ');
+    return /*html*/ `
+  <li>
+    <a class="hover:underline text-blue-600" href="/examples/${dir}/">
+      ${dirName}
+    </a>
+  </li>
+  `;
+  },
 );
 
 
