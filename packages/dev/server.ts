@@ -2,16 +2,20 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
-import { dirname, fromFileUrl, join, relative } from "@std/path";
+import { join, relative, dirname, fromFileUrl } from "@std/path";
 
-import { getDirectoryContents } from "./getDirectoryContents.ts";
-import { findAvailablePort } from "./findAvailablePort.ts";
-import { renderDirectoryListing } from "./renderDirectoryListing.ts";
-import { createBundler } from "./bundler.ts";
-import { createCache } from "./request-cache.ts";
+import { findAvailablePort } from "./server-utils/findAvailablePort.ts";
+import { renderDirectoryListing, getDirectoryContents } from "./server-utils/renderDirectoryListing.ts";
+import { createBundler } from "./server-utils/bundler.ts";
+import { createCache } from "./server-utils/request-cache.ts";
 
-const rootDir = dirname(fromFileUrl(import.meta.url));
 const rootRepoDir = Deno.cwd();
+const serverDirectory = dirname(fromFileUrl(import.meta.url));
+const packagesDirectory = join(rootRepoDir, "packages");
+const exampleDirectory = join(packagesDirectory, "examples");
+console.log("CWD directory:", rootRepoDir);
+console.log("Examples directory:", exampleDirectory);
+
 const CACHE = new Map();
 const cacheResponse = createCache(CACHE, 3600);
 const app = new Hono();
@@ -20,7 +24,9 @@ app.use(logger());
 
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
-  await getDirectoryContents("./packages/examples"),
+  await getDirectoryContents(
+    Deno.readDir(exampleDirectory),
+  ),
   (dir) => {
     // Add this function to provide descriptions for each example
     function getExampleDescription(dir: string): string {
@@ -59,7 +65,7 @@ app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/tailwind.css", cacheResponse, async (c) => {
   try {
     const tailwindCss = await Deno.readTextFile(
-      join(rootDir, "..", "dev", "tailwind.css"),
+      join(serverDirectory, "tailwind.css"),
     );
     return c.body(tailwindCss, 200, {
       "Content-Type": "text/css",
@@ -76,12 +82,12 @@ app.get("/tailwind.css", cacheResponse, async (c) => {
 });
 
 // Get the directory of the current file
-const bundle = createBundler(rootDir);
+const bundle = createBundler(rootRepoDir);
 // bundle framework code
 app.get("/async-framework.js", cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      "../async-framework/index.ts",
+      join(packagesDirectory, "async-framework/index.ts"),
       "AsyncFramework",
     );
     return c.body(bundleContent, 200, {
@@ -103,7 +109,7 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
 app.get("/custom-element-signals.js", cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      "../custom-element-signals/src/index.ts",
+      join(packagesDirectory, "custom-element-signals/src/index.ts"),
       "CustomElementSignals",
     );
     return c.body(bundleContent, 200, {
@@ -149,7 +155,7 @@ app.get("/bundle", cacheResponse, async (c) => {
 app.use(
   "/examples/*",
   serveStatic({
-    root: "./packages",
+    root: packagesDirectory,
   }),
 );
 
@@ -171,7 +177,7 @@ app.get("/livereload", (c) => {
 app.get("/livereload.js", cacheResponse, async (c) => {
   try {
     const livereloadJs = await Deno.readTextFile(
-      join(rootDir, "..", "dev", "livereload.js"),
+      join(serverDirectory, "livereload.js"),
     );
     return c.body(livereloadJs, 200, {
       "Content-Type": "application/javascript",
@@ -190,7 +196,6 @@ app.get("/livereload.js", cacheResponse, async (c) => {
 // Replace the existing port assignment and console.log with this
 const port = await findAvailablePort(3000, 3100);
 console.log(`HTTP server running on http://localhost:${port}`);
-console.log("Root directory:", rootDir);
 
 // Use Deno.serve with the --watch flag
 if (import.meta.main) {

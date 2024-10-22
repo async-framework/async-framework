@@ -1,6 +1,6 @@
 import { getState, setState } from "./STATE.js";
 
-export default function deleteTask({ event, element, dispatch }) {
+export default function deleteTask({ element, dispatch }) {
   const el = element.closest('[data-id]');
   const taskId = parseInt(el.dataset.id);
   const board = getState("board");

@@ -1,11 +1,11 @@
 {
   "lock": true,
   "tasks": {
-    "lint": "deno lint packages/examples/ packages/libs/ --ignore=packages/custom-elements/",
-    "fmt": "deno fmt packages/examples/ packages/libs/ --ignore=packages/custom-elements/",
+    "lint": "deno lint packages/examples/ packages/async-framework/ --ignore=packages/custom-element-signals/",
+    "fmt": "deno fmt packages/examples/ packages/async-framework/ --ignore=packages/custom-element-signals/",
     "test": "deno test -RWN --allow-run=deno,bun,node,npx --clean --trace-leaks",
-    "start": "deno run -A packages/examples/server.ts",
-    "dev": "deno run -A --watch packages/examples/server.ts --livereload"
+    "start": "deno run -A packages/dev/server.ts",
+    "dev": "deno run -A --watch packages/dev/server.ts --livereload"
   },
   "imports": {
     "hono": "npm:hono@^4",

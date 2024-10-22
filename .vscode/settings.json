@@ -1,7 +1,11 @@
 {
   "deno.enable": true,
   "deno.lint": true,
-  "deno.enablePaths": ["./packages/examples", "./packages/async-loader"],
+  "deno.enablePaths": [
+    "./packages/examples",
+    "./packages/async-loader",
+    "./packages/dev"
+  ],
   "editor.formatOnSave": true,
   "deno.config": "./deno.jsonc",
   "typescript.enablePromptUseWorkspaceTsdk": true,

@@ -1,5 +1,23 @@
 import type { Context } from "hono";
-import { generateDirectoryListing } from "./generateDirectoryListing.ts";
+
+// Function to get directory contents
+export async function getDirectoryContents(directories: AsyncIterable<Deno.DirEntry>): Promise<string[]> {
+  const entries: string[] = [];
+  for await (const entry of directories) {
+    if (entry.isDirectory && !entry.name.startsWith("__")) {
+      entries.push(entry.name);
+    }
+  }
+  return entries;
+}
+
+// Generate HTML for directory listing
+export function generateDirectoryListing(
+  directories: string[],
+  renderLink: (dir: string) => string,
+) {
+  return directories.sort().map((dir) => renderLink(dir)).join("");
+}
 
 // Render the directory listing
 export function renderDirectoryListing(
