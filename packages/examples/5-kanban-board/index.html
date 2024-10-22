@@ -88,10 +88,11 @@
         basePath: location.pathname,
       });
 
-      const boardEvents = ['dragstart', 'dragover', 'drop'];
+      const boardItemEvents = ['dragstart', 'click'];
+      const boardBoardEvents = ['dragover', 'drop'];
 
       const asyncLoader = new AsyncLoader({
-        events: ['submit', 'update-board', ...boardEvents],
+        events: ['submit', 'update-board', ...boardBoardEvents, ...boardItemEvents],
         handlerRegistry,
       });
 
