@@ -6,7 +6,7 @@
  * @param {any} value - The value to check.
  * @returns {boolean} - True if the value is a promise, false otherwise.
  */
-function isPromise(value) {
+function isPromise(value: any): value is Promise<any> {
   return value && typeof value === "object" && typeof value.then === "function";
 }
 
@@ -86,29 +86,32 @@ export class HandlerRegistry {
    * @returns {Promise<any>} - The value returned by the handlers.
    */
   async handler(context: any) {
+    // context.eventName, context.attrValue, context.value, context.break
     const attrValue = context.attrValue;
-    // let value = context._value;
     const processedAttrValue = Array.isArray(attrValue) ? attrValue : this.parseAttribute(attrValue);
     for (const scriptPath of processedAttrValue) {
       try {
         // Retrieve the handler from the registry
         //                                              context.eventName
-        let handler = await this.getHandler(scriptPath, context);
+        let handler = this.getHandler(scriptPath, context);
         // If we need to grab an async handler, wait for it to resolve
         if (isPromise(handler)) {
           // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
-          handler = await handler;
+          handler = await (handler as Promise<any>);
         }
         if (typeof handler === "function") {
-          let returnedValue = handler(context);
+          type handlerType = (context: any) => Promise<any> | any;
+          // returnedValue = handler(context);
+          let returnedValue = (handler as handlerType)(context);
           // if the handler returns a promise, wait for it to resolve
           if (isPromise(returnedValue)) {
             // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
             // Execute the handler asynchronously
-            returnedValue = await returnedValue;
+            returnedValue = await (returnedValue as Promise<any>);
           }
           // If the handler returns a value, store it
           if (returnedValue !== undefined) {
+            // pass the returned value to the next handler
             context.value = returnedValue;
           }
           // If the handler sets break to true, stop processing further handlers for this event
@@ -133,7 +136,7 @@ export class HandlerRegistry {
    * @param {string} scriptPath - The relative path to the handler script.
    * @returns {Function} - The handler function.
    */
-  async getHandler(scriptPath, context) {
+  async getHandler(scriptPath, context): Promise<(context: any) => Promise<any> | (context: any) => any> {
     if (this.registry.has(scriptPath)) {
       // console.log('HandlerRegistry.getHandler: returning cached handler for', scriptPath);
       return this.registry.get(scriptPath);
