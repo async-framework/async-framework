@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
-import { dirname, fromFileUrl, join } from "@std/path";
+import { dirname, fromFileUrl, join, relative } from "@std/path";
 
 import { getDirectoryContents } from "./getDirectoryContents.ts";
 import { findAvailablePort } from "./findAvailablePort.ts";
@@ -11,6 +11,7 @@ import { createBundler } from "./bundler.ts";
 import { createCache } from "./request-cache.ts";
 
 const rootDir = dirname(fromFileUrl(import.meta.url));
+const rootRepoDir = Deno.cwd();
 const CACHE = new Map();
 const cacheResponse = createCache(CACHE, 3600);
 const app = new Hono();
@@ -99,11 +100,11 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
 });
 
 // custom-element signals
-app.get("/custom-element-signals.js", cacheResponse, async (c) => {
+app.get("/custom-element-signals.js", async (c) => {
   try {
     const bundleContent = await bundle(
-      "../custom-element/src/index.ts",
-      "AsyncFramework",
+      "../custom-elements/src/index.ts",
+      "CustomElementSignals",
     );
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
@@ -198,21 +199,35 @@ if (import.meta.main) {
 
 // File watcher for livereload
 if (Deno.args.includes("--livereload")) {
-  console.log("livereload: Watching for file changes...");
-  for await (const event of Deno.watchFs("./packages/examples")) {
+  const watchPath = "./packages";
+  const packageDirectory = Array.from(Deno.readDirSync(watchPath)).map(
+    (dir) => relative(rootRepoDir, watchPath + "/" + dir.name),
+  );
+  console.log(
+    "livereload: Watching for file changes in",
+    packageDirectory,
+  );
+  for await (const event of Deno.watchFs(watchPath)) {
     if (event.kind === "modify") {
       const filePath = event.paths[0];
       const fileType = filePath.endsWith(".js") || filePath.endsWith(".html") ||
         filePath.endsWith(".ts");
 
       if (fileType) {
-        console.log("livereload: File changed:", filePath);
+        console.log("livereload: File changed:", filePath.replace(rootRepoDir, ""));
         clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             if (filePath.endsWith(".ts")) {
               CACHE.forEach((_value, key) => {
-                if (/async-framework/.test(key)) {
-                  console.log("livereload: clearing cache for", key);
+                console.log("cache", key);
+                const changedFile = packageDirectory.some((dir) =>
+                  key.includes(dir),
+                );
+                if (changedFile && CACHE.has(key)) {
+                  console.log(
+                    "livereload: clearing cache for",
+                    key.replace(rootRepoDir, ""),
+                  );
                   CACHE.delete(key);
                 }
               });

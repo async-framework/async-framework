@@ -14,6 +14,7 @@
     </script>
     <script type="module" src="/livereload.js"></script>
     <link rel="modulepreload" href="/custom-element-signals.js" />
+    <script type="module" src="/custom-element-signals.js"></script>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-4">
@@ -22,7 +23,7 @@
         <section id="counter" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-2xl font-semibold mb-4">Counter</h2>
             <define-signal data-id="counter" initial-value="0"></define-signal>
-            <p class="mb-4">Count: <signal-text data-id="counter" class="font-bold"></signal-text></p>
+            <p class="mb-4">Count: <signal-text data-id="counter" data-dangerous-html="true" class="font-bold"></signal-text></p>
             <button id="incrementBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">Increment</button>
             <button id="decrementBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Decrement</button>
         </section>
@@ -57,11 +58,13 @@ const incrementBtn = document.getElementById('incrementBtn');
 const decrementBtn = document.getElementById('decrementBtn');
 
 incrementBtn.addEventListener('click', () => {
-    counterSignal.value++;
+  counterSignal.set(counterSignal.get() + 1);
+  console.log('incrementBtn', counterSignal.get());
 });
 
 decrementBtn.addEventListener('click', () => {
-    counterSignal.value--;
+  counterSignal.set(counterSignal.get() - 1);
+  console.log('decrementBtn', counterSignal.get());
 });
 
 // Name Input
