@@ -30,4 +30,3 @@ export class Signal<T> {
   }
 }
 
-export const signalStore = new Map<string, Signal<any>>();

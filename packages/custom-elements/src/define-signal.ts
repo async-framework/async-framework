@@ -1,6 +1,6 @@
 import { Signal, signalStore } from "./signal-store";
 
-class DefineSignal<T> extends HTMLElement {
+export class DefineSignal<T> extends HTMLElement {
   static observedAttributes = ["data-id"];
 
   signal: null | Signal<T> = null;
@@ -27,5 +27,3 @@ class DefineSignal<T> extends HTMLElement {
     this.signal?.cleanUp();
   }
 }
-
-customElements.define("define-signal", DefineSignal);

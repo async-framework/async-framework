@@ -12,7 +12,6 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "files.exclude": {
-    "packages/custom-elements": true,
     "**/.git": true,
     "**/.svn": true,
     "**/.hg": true,
