@@ -1,7 +1,9 @@
 import { getState, setState } from "./STATE.js";
 
-export default function deleteTodo({ event, dispatch }) {
-  const todoId = parseInt(event.target.dataset.id);
+export default function deleteTodo({ element,dispatch }) {
+  const el = element.closest('[data-id]');
+  const todoId = parseInt(el.dataset.id);
+
   console.log("deleteTodo: todoId", todoId);
   const todos = getState("todos");
 

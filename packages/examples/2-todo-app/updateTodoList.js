@@ -10,12 +10,12 @@ export default function updateTodoList({ event, element }) {
           <li class="py-4 text-center text-gray-500 italic">No todos found</li>
         `
       : todos.map((todo) => /*html*/ `
-          <li class="py-4 flex items-center justify-between ${
-        todo.completed ? "bg-gray-50" : ""
-      }">
+          <li
+            class="py-4 flex items-center justify-between ${todo.completed ? "bg-gray-50" : ""}"
+            data-id="${todo.id}"
+          >
             <div
               class="flex items-center flex-1"
-              data-id="${todo.id}"
               on:click="prevent-default.js, toggleTodo.js"
             >
               <input
@@ -23,7 +23,6 @@ export default function updateTodoList({ event, element }) {
                 type="checkbox"
                 ${todo.completed ? "checked" : ""}
                 on:change="prevent-default.js, toggleTodo.js"
-                data-id="${todo.id}"
               >
               <label class="ml-3 block text-gray-900 flex-grow ${todo.completed ? "line-through text-gray-500" : ""}">
                 ${todo.text}
@@ -32,7 +31,6 @@ export default function updateTodoList({ event, element }) {
             <button
               class="ml-2 text-red-600 hover:text-red-800 focus:outline-none"
               on:click="deleteTodo.js"
-              data-id="${todo.id}"
             >
               [X]
             </button>
