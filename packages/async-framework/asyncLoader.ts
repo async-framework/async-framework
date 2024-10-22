@@ -151,19 +151,8 @@ export class AsyncLoader {
     const attrValue = element.getAttribute(eventAttr);
     // console.log('parseElementForEvent: event attribute value', attrValue, eventAttr, eventName);
     if (attrValue) {
-      const splitIndex = this.handlerRegistry.splitIndex;
-      // console.log('parseElementForEvent: event name', eventName);
-      const split = attrValue.split(splitIndex);
-      // console.log('parseElementForEvent: event name', split);
-
-      // Handle multiple handlers separated by commas
-      const scriptPaths = split
-        .map((path) => path.trim())
-        .filter((path) => path);
-      // console.log('parseElementForEvent: script paths', scriptPaths);
-
       // Register the event listener
-      this.addEventData(containerElement, eventName, element, scriptPaths);
+      this.addEventData(containerElement, eventName, element, attrValue);
     }
 
     // processedElementEvent.add(eventName);
@@ -222,7 +211,7 @@ export class AsyncLoader {
   // By storing handlers in a nested map structure (container -> event -> element -> handlers),
   // it allows for quick retrieval and execution of relevant handlers when an event occurs,
   // supporting the event delegation pattern and improving performance for containers with many elements.
-  addEventData(containerElement, eventName, element, scriptPaths) {
+  addEventData(containerElement, eventName, element, attrValue) {
     const listeners = this.containers.get(containerElement);
     if (!listeners) {
       console.warn("addEventData: no listeners found for container", containerElement);
@@ -233,7 +222,7 @@ export class AsyncLoader {
       listeners.set(eventName, new Map());
     }
     if (!listeners.get(eventName).has(element)) {
-      listeners.get(eventName).set(element, scriptPaths); // Map script paths to the element for the given event
+      listeners.get(eventName).set(element, attrValue); // Map script paths to the element for the given event
     } else {
       /*
         if an element doesn't have any event listeners,
@@ -316,23 +305,25 @@ export class AsyncLoader {
     while (element && element !== containerElement) {
       // console.log('handleContainerEvent: handling event for element', element.tagName, event.type, eventListeners);
       if (eventListeners.has(element)) {
-        // console.log('handleContainerEvent: found event listeners for element', element.tagName, event.type, eventListeners);
-        const scriptPaths = eventListeners.get(element);
 
         // Define the context with getters for accessing current state and elements
         let value = undefined;
         const context = {
+          _value: value,
           get dispatch() {
             return self.dispatch.bind(self);
           },
           get value() {
-            return value;
+            return this._value;
           },
           get element() {
             return element;
           },
           get event() {
             return domEvent;
+          },
+          get eventName() {
+            return domEvent.type;
           },
           get container() {
             return containerElement;
@@ -348,41 +339,22 @@ export class AsyncLoader {
           // }
         };
 
-        for (const scriptPath of scriptPaths) {
-          try {
-            // Retrieve the handler from the registry
-            let handler = self.handlerRegistry.getHandler(scriptPath);
-            // If we need to grab an async handler, wait for it to resolve
-            if (isPromise(handler)) {
-              // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
-              handler = await handler;
-            }
-            if (typeof handler === "function") {
-              let returnedValue = handler(context);
-              // if the handler returns a promise, wait for it to resolve
-              if (isPromise(returnedValue)) {
-                // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
-                // Execute the handler asynchronously
-                returnedValue = await returnedValue;
-              }
-              // If the handler returns a value, store it
-              if (returnedValue !== undefined) {
-                value = returnedValue;
-              }
-              // If the handler sets break to true, stop processing further handlers for this event
-              if (context.break) break;
-            }
-          } catch (error) {
-            // Reset value if there's an error
-            value = undefined;
-            console.error(
-              `handleContainerEvent: Error executing handler at ${scriptPath}:`,
-              error
-            ); // Log any errors during handler execution
-          }
+        // console.log('handleContainerEvent: found event listeners for element', element.tagName, event.type, eventListeners);
+        const attrValue = eventListeners.get(element);
+        try {
+          value = await self.handlerRegistry.processHandlers(attrValue, context);
+        } catch (error) {
+          // Reset value if there's an error
+          value = undefined;
+          context._value = undefined;
+          console.error(
+            `handleContainerEvent: Error`,
+            error
+          ); // Log any errors during handler execution
         }
         // clear and references to avoid memory leak
         value = undefined;
+        context._value = undefined;
 
         // If the event doesn't bubble, stop after handling the first matching element
         if (!domEvent.bubbles) break;
@@ -409,6 +381,6 @@ function escapeSelector(selector) {
 //   return set;
 // }
 
-function isPromise(value) {
-  return value && typeof value === "object" && typeof value.then === "function";
-}
+// function isPromise(value) {
+//   return value && typeof value === "object" && typeof value.then === "function";
+// }
