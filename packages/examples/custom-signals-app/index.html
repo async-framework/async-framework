@@ -41,12 +41,14 @@
 
         <section id="todoList" class="bg-white rounded-lg shadow-md p-6">
             <h2 class="text-2xl font-semibold mb-4">Todo List</h2>
-            <define-signal data-id="todos" initial-value="[]"></define-signal>
+            <define-signal data-id="todos" initial-value="['first-value']"></define-signal>
             <div class="flex mb-4">
                 <input id="todoInput" placeholder="Enter a new todo" class="border rounded py-2 px-3 mr-2 flex-grow">
                 <button id="addTodoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Add Todo</button>
             </div>
-            <ul id="todoListItems" class="list-disc pl-5"></ul>
+            <ul id="todoListItems" class="list-disc pl-5">
+              <signal-text data-id="todos" data-dangerous-html="true"></signal-text>
+            </ul>
         </section>
     </div>
 
@@ -117,7 +119,7 @@ window.removeTodo = (index) => {
 };
 
 // Initial render
-renderTodos();
+// renderTodos();
 todosSignal.subscribe(renderTodos);
 
 </script>

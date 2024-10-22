@@ -1,21 +1,48 @@
 export function parseAttributeValue(value: string) {
-  // First, check if it's 'true' or 'false'
+  // Trim whitespace from the input
+  if (!value) return value;
+  if (typeof value === "string") {
+    value = value.trim();
+  }
+
+  // Check for simple values
   if (value === "true") return true;
   if (value === "false") return false;
-  if (value === "''") return '';
-  if (value === '""') return '';
+  if (value === "''" || value === '""') return "";
   if (value === "null") return null;
   if (value === "undefined") return undefined;
 
-  // Then, try to parse it as a number
+  // Try to parse as a number
   const num = Number(value);
   if (!isNaN(num)) return num;
 
-  // Finally, try to parse it as JSON
+  // Handle array-like strings with single quotes
+  if (value.startsWith("[") && value.endsWith("]")) {
+    try {
+      // Replace single quotes with double quotes
+      const jsonString = value.replace(/'/g, '"');
+      return JSON.parse(jsonString);
+    } catch (e) {
+      // If parsing fails, fall through to the next step
+    }
+  }
+
+  // Try to parse as JSON
   try {
     return JSON.parse(value);
   } catch (e) {
-    // If it's not valid JSON, return the original string
-    return value;
+    // If it's not valid JSON, check for unquoted strings
+    if (/^[a-zA-Z0-9_]+$/.test(value)) {
+      return value;
+    }
+
+    // For other cases, wrap the value in quotes and try parsing again
+    try {
+      return JSON.parse(`"${value}"`);
+    } catch (e) {
+      console.error("Error parsing attribute value", value);
+      // If all else fails, return the original string
+      return value;
+    }
   }
 }

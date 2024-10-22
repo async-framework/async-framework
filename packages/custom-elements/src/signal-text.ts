@@ -24,7 +24,7 @@ export class SignalText extends HTMLElement {
 
   connectedCallback() {
     this.mounted = true;
-    const id = parseAttributeValue(this.attributes["data-id"]?.value);
+    const id = this.attributes["data-id"]?.value;
     this.signal = signalStore.get(id) ?? null;
 
     const transformers =
@@ -68,7 +68,7 @@ export class SignalText extends HTMLElement {
         (valueSoFar: any, fn: (input: any) => any) => fn(valueSoFar),
         newValue,
       );
-    // 
+    //
 
     if (this.attributes["data-dangerous-html"]?.value) {
       this.innerHTML = String(transformedValue);

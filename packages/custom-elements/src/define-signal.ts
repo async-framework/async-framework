@@ -19,7 +19,7 @@ export class DefineSignal<T> extends HTMLElement {
     this.signal = new Signal(
       initialValue ? parseAttributeValue(initialValue) : undefined,
     );
-    const id = parseAttributeValue(this.attributes["data-id"].value);
+    const id = this.attributes["data-id"].value;
     signalStore.set(id, this.signal);
   }
 
@@ -32,7 +32,7 @@ export class DefineSignal<T> extends HTMLElement {
   }
 
   disconnectedCallback() {
-    const id = parseAttributeValue(this.attributes["data-id"].value);
+    const id = this.attributes["data-id"].value;
     signalStore.delete(id);
     this.signal?.cleanUp();
   }

@@ -31,4 +31,3 @@ export class Signal<T> {
     this._observers.clear();
   }
 }
-
