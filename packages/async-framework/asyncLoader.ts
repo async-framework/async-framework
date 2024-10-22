@@ -2,7 +2,46 @@
 
 export class AsyncLoader {
   private eventPrefix: string;
-  // TODO: use WeakMap for containers and event listeners
+  /**
+   * Data structure: Map<Element, Map<string, Map<Element, string>>>
+   * 
+   * This is a three-level nested Map structure:
+   * 
+   * Level 1: Container Element Map
+   * - Key: Element (the container element)
+   * - Value: Map<string, Map<Element, string>> (event type map for this container)
+   * 
+   *   Level 2: Event Type Map
+   *   - Key: string (the event type, e.g., "click", "custom:event")
+   *   - Value: Map<Element, string> (element-handler map for this event type)
+   * 
+   *     Level 3: Element-Handler Map
+   *     - Key: Element (the element with the event listener)
+   *     - Value: string (the attribute value containing handler information)
+   * 
+   * Example structure:
+   * Map(
+   *   [containerElement1, Map(
+   *     ["click", Map(
+   *       [buttonElement1, "handleClick"],
+   *       [buttonElement2, "handleOtherClick"]
+   *     )],
+   *     ["custom:event", Map(
+   *       [customElement1, "handleCustomEvent"]
+   *     )]
+   *   )],
+   *   [containerElement2, Map(
+   *     ["submit", Map(
+   *       [formElement1, "handleSubmit"]
+   *     )]
+   *   )]
+   * )
+   * 
+   * This structure allows for efficient lookup of event handlers:
+   * 1. Find the container element
+   * 2. Find the event type within that container
+   * 3. Find the specific element and its associated handler
+   */
   private containers: Map<Element, Map<string, Map<Element, string>>>;
   private handlerRegistry: { handler: (context: any) => Promise<any> | any} ;
   private events: string[];
