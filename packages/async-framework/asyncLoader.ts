@@ -349,7 +349,7 @@ export class AsyncLoader {
         // console.log('handleContainerEvent: found event listeners for element', element.tagName, event.type, eventListeners);
 
         try {
-          /* context = */ await self.handlerRegistry.processHandlers(context);
+          /* context = */ await self.handlerRegistry.handler(context);
         } catch (error) {
           // Reset value if there's an error
           value = undefined;

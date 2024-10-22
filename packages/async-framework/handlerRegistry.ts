@@ -85,13 +85,14 @@ export class HandlerRegistry {
    * @param {any} value - The value to pass to the handlers.
    * @returns {Promise<any>} - The value returned by the handlers.
    */
-  async processHandlers(context: any) {
+  async handler(context: any) {
     const attrValue = context.attrValue;
     // let value = context._value;
     const processedAttrValue = Array.isArray(attrValue) ? attrValue : this.parseAttribute(attrValue);
     for (const scriptPath of processedAttrValue) {
       try {
         // Retrieve the handler from the registry
+        //                                              context.eventName
         let handler = await this.getHandler(scriptPath, context);
         // If we need to grab an async handler, wait for it to resolve
         if (isPromise(handler)) {
