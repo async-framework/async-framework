@@ -1,18 +1,20 @@
 // deno-lint-ignore-file no-explicit-any
 // handlerRegistry.js
 
+/**
+ * Checks if a value is a promise.
+ * @param {any} value - The value to check.
+ * @returns {boolean} - True if the value is a promise, false otherwise.
+ */
 function isPromise(value) {
   return value && typeof value === "object" && typeof value.then === "function";
 }
 
-// function capitalize(string) {
-//   return string.charAt(0).toUpperCase() + string.slice(1);
-// }
-
-// function titleCase(string) {
-//   return string.split('-').map(capitalize).join(' ');
-// }
-
+/**
+ * Converts an event string to a title case event name.
+ * @param {string} eventString - The event string to convert.
+ * @returns {string} - The converted event name.
+ */
 function convertToEventName(eventString: string) {
   if (!eventString) return '';
   // First, replace any hyphens with spaces
@@ -28,6 +30,7 @@ function convertToEventName(eventString: string) {
 }
 
 
+
 export class HandlerRegistry {
   public splitIndex: string;
   private registry: Map<string, any>;
@@ -37,6 +40,10 @@ export class HandlerRegistry {
   private basePath: string;
   private origin: string;
 
+  /**
+   * Constructor for the HandlerRegistry class.
+   * @param {Object} config - Configuration object.
+   */
   constructor(config: any = {}) {
     this.registry = config.registry || new Map();
     this.attributeRegistry = config.attributeRegistry || new Map();
@@ -49,6 +56,12 @@ export class HandlerRegistry {
 
     console.log("HandlerRegistry.constructor: basePath", config.basePath);
   }
+
+  /**
+   * Parses the attribute value into an array of script paths.
+   * @param {string} attrValue - The attribute value to parse.
+   * @returns {string[]} - The array of script paths.
+   */
   parseAttribute(attrValue: string) {
     if (!attrValue) return [];
     if (this.attributeRegistry.has(attrValue)) {
@@ -65,6 +78,13 @@ export class HandlerRegistry {
     return scriptPaths;
   }
 
+  /**
+   * Processes the handlers for an event.
+   * @param {string[] | string} attrValue - The attribute value to process.
+   * @param {any} context - The context object.
+   * @param {any} value - The value to pass to the handlers.
+   * @returns {Promise<any>} - The value returned by the handlers.
+   */
   async processHandlers(attrValue: string[] | string, context: any, value: any) {
     const processedAttrValue = Array.isArray(attrValue) ? attrValue : this.parseAttribute(attrValue);
     for (const scriptPath of processedAttrValue) {
