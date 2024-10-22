@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 
-export class CustomEventLoader {
+export class AsyncLoader {
   private eventPrefix: string;
   private containers: Map<any, any>;
   private handlerRegistry: any;

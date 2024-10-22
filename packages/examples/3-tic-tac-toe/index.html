@@ -8,12 +8,12 @@
     <script type="importmap">
       {
         "imports": {
-          "async-framework": "./async-framework"
+          "async-framework": "/async-framework.js"
         }
       }
     </script>
-    <script type="module" src="livereload.js"></script>
-    <link rel="modulepreload" href="./async-framework" />
+    <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/async-framework.js" />
     <link rel="modulepreload" href="STATE.js" />
     <link rel="modulepreload" href="renderBoard.js" />
     <link rel="modulepreload" href="makeMove.js" />
@@ -21,7 +21,12 @@
     <link rel="modulepreload" href="resetGame.js" />
     <link rel="modulepreload" href="aiMove.js" />
   </head>
-  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+    <header class="w-full bg-blue-600 p-4 text-white mb-8">
+      <div class="container mx-auto">
+        <a href="/" class="text-xl font-bold hover:underline">← Back to Examples</a>
+      </div>
+    </header>
     <div
       class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
       data-container="root"
@@ -39,7 +44,7 @@
     </div>
 
     <script type="module">
-      import { CustomEventLoader, HandlerRegistry } from "async-framework";
+      import { AsyncLoader, HandlerRegistry } from "async-framework";
       import { initializeState } from './STATE.js';
       import renderBoard from './renderBoard.js';
 
@@ -47,12 +52,12 @@
         basePath: location.pathname,
       });
 
-      const customEventLoader = new CustomEventLoader({
+      const asyncLoader = new AsyncLoader({
         handlerRegistry,
       });
 
       const rootContainer = document.body.querySelector('[data-container="root"]');
-      customEventLoader.init(rootContainer);
+      asyncLoader.init(rootContainer);
 
       // Initialize the game state and render the board
       initializeState();

@@ -10,18 +10,23 @@
     <script type="importmap">
       {
         "imports": {
-          "async-framework": "./async-framework"
+          "async-framework": "/async-framework.js"
         }
       }
     </script>
-    <script type="module" src="livereload.js"></script>
-    <link rel="modulepreload" href="./async-framework" />
+    <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/async-framework.js" />
     <link rel="modulepreload" href="prevent-default.js" />
     <link rel="modulepreload" href="keydown.js" />
     <link rel="modulepreload" href="STATE.js" />
     <link rel="modulepreload" href="updateTodoList.js" />
   </head>
-  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+    <header class="w-full bg-blue-600 p-4 text-white mb-8">
+      <div class="container mx-auto">
+        <a href="/" class="text-xl font-bold hover:underline">← Back to Examples</a>
+      </div>
+    </header>
     <div
       class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
       data-container="root"
@@ -58,7 +63,7 @@
     </div>
 
     <script type="module">
-      import { CustomEventLoader, HandlerRegistry } from "async-framework";
+      import { AsyncLoader, HandlerRegistry } from "async-framework";
       import preventDefault from './prevent-default.js';
       import keydown from './keydown.js';
       import updateTodoList from './updateTodoList.js';
@@ -76,18 +81,18 @@
 
       const todoListEvents = ['change', 'click'];
 
-      const customEventLoader = new CustomEventLoader({
+      const asyncLoader = new AsyncLoader({
         events: ['submit', 'keydown', 'update-todo-list', ...todoListEvents],
         handlerRegistry,
       });
 
       const rootContainer = document.body.querySelector('[data-container="root"]');
-      customEventLoader.init(rootContainer);
+      asyncLoader.init(rootContainer);
 
       // Initialize todo list
       setState('todos', loadState('todos'));
 
-      customEventLoader.dispatch('update-todo-list', getState('todos'));
+      asyncLoader.dispatch('update-todo-list', getState('todos'));
 
       window.addEventListener('unload', (event) => {
         console.log('-----unloading todo app-----');

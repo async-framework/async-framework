@@ -30,7 +30,7 @@ app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
 app.get('/tailwind.css', cacheResponse, async (c) => {
   try {
-    const tailwindCss = await Deno.readTextFile(join(rootDir, './tailwind.css'));
+    const tailwindCss = await Deno.readTextFile(join(rootDir, '..', 'dev', 'tailwind.css'));
     return c.body(tailwindCss, 200, {
       "Content-Type": "text/css",
       "Cache-Control": "max-age=3600",
@@ -44,13 +44,14 @@ app.get('/tailwind.css', cacheResponse, async (c) => {
     return c.text("/* Error reading tailwind.css */", 500);
   }
 });
+
 // Get the directory of the current file
 const bundle = createBundler(rootDir);
 // bundle framework code
-app.get('/examples/*/async-framework', cacheResponse, async (c) => {
+app.get('/async-framework.js', cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      "./__async-framework__/async-framework.ts",
+      "../async-framework/index.ts",
       "AsyncFramework",
     );
     return c.body(bundleContent, 200, {
@@ -105,6 +106,7 @@ app.use(
 // WebSocket connections for live reload
 const clients = new Set<WebSocket>();
 
+// serve server side livereload script
 app.get("/livereload", (c) => {
   const { response, socket } = Deno.upgradeWebSocket(c.req.raw);
   clients.add(socket);
@@ -115,10 +117,28 @@ app.get("/livereload", (c) => {
 
   return response;
 });
+// serve client side livereload script
+app.get('/livereload.js', cacheResponse, async (c) => {
+  try {
+    const livereloadJs = await Deno.readTextFile(join(rootDir, '..', 'dev', 'livereload.js'));
+    return c.body(livereloadJs, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'name' in error) {
+      console.error('GET: /livereload.js', error.name);
+    } else {
+      console.error("Error reading livereload.js:");
+    }
+    return c.text("/* Error reading livereload.js */", 500);
+  }
+});
 
 // Replace the existing port assignment and console.log with this
 const port = await findAvailablePort(3000, 3100);
 console.log(`HTTP server running on http://localhost:${port}`);
+console.log('Root directory:', rootDir);
 
 // Use Deno.serve with the --watch flag
 if (import.meta.main) {
