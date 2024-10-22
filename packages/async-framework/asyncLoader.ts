@@ -1,7 +1,14 @@
 // deno-lint-ignore-file no-explicit-any
 
+export interface AsyncLoaderConfig {
+  handlerRegistry: { handler: (context: any) => Promise<any> | any };
+  eventPrefix?: string;
+  containers?: Map<Element, Map<string, Map<Element, string>>>;
+  events?: string[];
+  processedContainers?: WeakSet<Element>;
+}
+
 export class AsyncLoader {
-  private eventPrefix: string;
   /**
    * Data structure: Map<Element, Map<string, Map<Element, string>>>
    * 
@@ -45,12 +52,13 @@ export class AsyncLoader {
   private containers: Map<Element, Map<string, Map<Element, string>>>;
   private handlerRegistry: { handler: (context: any) => Promise<any> | any} ;
   private events: string[];
+  private eventPrefix: string;
   private processedContainers: WeakSet<Element>;
 
-  constructor(config: any) {
+  constructor(config: AsyncLoaderConfig) {
+    this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containers = config.containers || new Map();
-    this.handlerRegistry = config.handlerRegistry;
     this.events = config.events || this.discoverCustomEvents(document.body);
 
     // Set of processed containers
@@ -121,7 +129,13 @@ export class AsyncLoader {
   // like DOM observation and component lifecycle management.
   handleNewContainer(el) {
     // Avoid reprocessing the same container
-    if (this.processedContainers.has(el)) return;
+    if (this.processedContainers.has(el)) {
+      if (!el.isConnected) {
+        console.warn('handleNewContainer: container was processed but is not connected', el);
+        this.processedContainers.delete(el);
+      }
+      return;
+    }
 
     // Set up event listeners for the container
     this.setupContainerListeners(el);
@@ -153,9 +167,8 @@ export class AsyncLoader {
   setupContainerListeners(containerElement) {
     const listeners = new Map();
     this.containers.set(containerElement, listeners);
-    const supportedEvents = this.events; // Extend as needed
 
-    supportedEvents.forEach((eventName) => {
+    this.events.forEach((eventName) => {
       // console.log('setupContainerListeners: adding event listener for', eventName);
       containerElement.addEventListener(
         eventName,
@@ -171,7 +184,7 @@ export class AsyncLoader {
     });
     
     // eager parse all events for the container
-    // supportedEvents.map((evt) => {
+    // this.events.map((evt) => {
     //   this.parseContainerElement(containerElement, evt);
     // });
   }
@@ -205,6 +218,12 @@ export class AsyncLoader {
   // it allows for quick retrieval and execution of relevant handlers when an event occurs,
   // supporting the event delegation pattern and improving performance for containers with many elements.
   addEventData(containerElement, eventName, element, attrValue) {
+    if (!containerElement.isConnected) {
+      console.warn('addEventData: container is not connected', containerElement);
+      this.processedContainers.delete(containerElement);
+      this.containers.delete(containerElement);
+      return;
+    }
     const listeners = this.containers.get(containerElement);
     if (!listeners) {
       console.warn("addEventData: no listeners found for container", containerElement);
@@ -233,6 +252,15 @@ export class AsyncLoader {
     // console.log('addEventData: listeners', listeners);
   }
 
+  // Creates a custom event
+  createEvent(eventName, detail) {
+    return new CustomEvent(eventName, {
+      bubbles: true,
+      cancelable: true,
+      detail: detail,
+    });
+  }
+
   // Dispatches a custom event to all registered listeners across containers
   // Why: This method provides a centralized mechanism for broadcasting custom events throughout the application.
   // It creates a custom event with the given name and detail, then iterates through all registered containers
@@ -244,15 +272,14 @@ export class AsyncLoader {
   // between different parts of the application while maintaining type safety.
   dispatch(eventName, detail) {
     // create the custom event
-    const customEvent = new CustomEvent(eventName, {
-      bubbles: true,
-      cancelable: true,
-      detail: detail,
-    });
+    const customEvent = this.createEvent(eventName, detail);
     // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
     this.containers.forEach((listeners, containerElement) => {
       // console.log('dispatch: parsing container elements for event', eventName);
+      // lazy parse the container for the event type
       this.parseContainerElement(containerElement, eventName);
+
+      // if there are listeners for the event and rely on side effects
       if (listeners.has(eventName)) {
         // Parse the container for the event type before handling the event
         const eventListeners = listeners.get(eventName);
@@ -265,6 +292,7 @@ export class AsyncLoader {
               cleanup.push(element);
             }
           });
+          // remove elements that are not connected
           cleanup.forEach((element) => {
             eventListeners.delete(element);
           });
