@@ -1,14 +1,14 @@
 export function parseAttributeValue(value: string) {
   // Trim whitespace from the input
-  if (!value) return value;
   if (typeof value === "string") {
     value = value.trim();
+  } else {
+    return value;
   }
-
   // Check for simple values
   if (value === "true") return true;
   if (value === "false") return false;
-  if (value === "''" || value === '""') return "";
+  if (value === '' || value === "''" || value === '""') return "";
   if (value === "null") return null;
   if (value === "undefined") return undefined;
 
