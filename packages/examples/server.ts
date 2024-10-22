@@ -100,10 +100,10 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
 });
 
 // custom-element signals
-app.get("/custom-element-signals.js", async (c) => {
+app.get("/custom-element-signals.js", cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      "../custom-elements/src/index.ts",
+      "../custom-element-signals/src/index.ts",
       "CustomElementSignals",
     );
     return c.body(bundleContent, 200, {
@@ -219,14 +219,15 @@ if (Deno.args.includes("--livereload")) {
           if (client.readyState === WebSocket.OPEN) {
             if (filePath.endsWith(".ts")) {
               CACHE.forEach((_value, key) => {
-                console.log("cache", key);
-                const changedFile = packageDirectory.some((dir) =>
-                  key.includes(dir),
-                );
+                const normalizedKey = key.replace('/packages/', '').replace(/^\//, "").replace(/.js$/, "");
+                const changedFile = packageDirectory.some((dir) => {
+                  const result = dir.includes(normalizedKey);
+                  return result;
+                });
                 if (changedFile && CACHE.has(key)) {
                   console.log(
                     "livereload: clearing cache for",
-                    key.replace(rootRepoDir, ""),
+                    key,
                   );
                   CACHE.delete(key);
                 }
