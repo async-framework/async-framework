@@ -1,7 +1,7 @@
-import { getState, setState } from './STATE.js';
-import renderBoard from './renderBoard.js';
-import checkWinner from './checkWinner.js';
-import aiMove from './aiMove.js';
+import { getState, setState } from "./STATE.js";
+import renderBoard from "./renderBoard.js";
+import checkWinner from "./checkWinner.js";
+import aiMove from "./aiMove.js";
 
 export default function makeMove({ event }) {
   const { board, currentPlayer, gameOver } = getState();
@@ -25,7 +25,7 @@ export default function makeMove({ event }) {
     setState({ gameOver: true });
     renderBoard();
   } else {
-    setState({ currentPlayer: 'O' });
+    setState({ currentPlayer: "O" });
     renderBoard();
     setTimeout(aiMove, 500);
   }

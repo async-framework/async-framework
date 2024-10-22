@@ -7,7 +7,7 @@ import { dirname, fromFileUrl, join } from "@std/path";
 import { getDirectoryContents } from "./getDirectoryContents.ts";
 import { findAvailablePort } from "./findAvailablePort.ts";
 import { renderDirectoryListing } from "./renderDirectoryListing.ts";
-import { createBundler } from './bundler.ts';
+import { createBundler } from "./bundler.ts";
 import { createCache } from "./request-cache.ts";
 
 const rootDir = dirname(fromFileUrl(import.meta.url));
@@ -15,38 +15,58 @@ const CACHE = new Map();
 const cacheResponse = createCache(CACHE, 3600);
 const app = new Hono();
 
-
 app.use(logger());
 
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
   await getDirectoryContents("./packages/examples"),
   (dir) => {
-    const dirName = dir.replace(/-/g, ' ');
+    // Add this function to provide descriptions for each example
+    function getExampleDescription(dir: string): string {
+      const descriptions: Record<string, string> = {
+        "1-hello-world":
+          "A simple hello world example demonstrating the basics of Async Framework.",
+        "2-todo-app":
+          "A simple todo list application demonstrating state management and user interactions.",
+        "3-note-app":
+          "A note-taking app showcasing dynamic content creation and local storage.",
+        "4-tic-tac-toe":
+          "The classic Tic-Tac-Toe game implemented with Async Framework.",
+      };
+
+      return descriptions[dir] ||
+        "An example showcasing Async Framework capabilities.";
+    }
+
+    const dirName = dir.replace(/-/g, " ");
+    const description = getExampleDescription(dir);
     return /*html*/ `
-  <li>
-    <a class="hover:underline text-blue-600" href="/examples/${dir}/">
-      ${dirName}
+  <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-2">${dirName}</h2>
+    <p class="text-gray-600 mb-4">${description}</p>
+    <a href="/examples/${dir}/" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors duration-300">
+      View Example
     </a>
-  </li>
+  </div>
   `;
   },
 );
 
-
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
-app.get('/tailwind.css', cacheResponse, async (c) => {
+app.get("/tailwind.css", cacheResponse, async (c) => {
   try {
-    const tailwindCss = await Deno.readTextFile(join(rootDir, '..', 'dev', 'tailwind.css'));
+    const tailwindCss = await Deno.readTextFile(
+      join(rootDir, "..", "dev", "tailwind.css"),
+    );
     return c.body(tailwindCss, 200, {
       "Content-Type": "text/css",
       "Cache-Control": "max-age=3600",
     });
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'name' in error) {
-      console.error('GET: /tailwind.css', error.name);
+    if (error && typeof error === "object" && "name" in error) {
+      console.error("GET: /tailwind.css", error.name);
     } else {
       console.error("Error reading tailwind.css:");
     }
@@ -57,7 +77,7 @@ app.get('/tailwind.css', cacheResponse, async (c) => {
 // Get the directory of the current file
 const bundle = createBundler(rootDir);
 // bundle framework code
-app.get('/async-framework.js', cacheResponse, async (c) => {
+app.get("/async-framework.js", cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
       "../async-framework/index.ts",
@@ -110,8 +130,6 @@ app.use(
   }),
 );
 
-
-
 // WebSocket connections for live reload
 const clients = new Set<WebSocket>();
 
@@ -127,16 +145,18 @@ app.get("/livereload", (c) => {
   return response;
 });
 // serve client side livereload script
-app.get('/livereload.js', cacheResponse, async (c) => {
+app.get("/livereload.js", cacheResponse, async (c) => {
   try {
-    const livereloadJs = await Deno.readTextFile(join(rootDir, '..', 'dev', 'livereload.js'));
+    const livereloadJs = await Deno.readTextFile(
+      join(rootDir, "..", "dev", "livereload.js"),
+    );
     return c.body(livereloadJs, 200, {
       "Content-Type": "application/javascript",
       "Cache-Control": "max-age=3600",
     });
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'name' in error) {
-      console.error('GET: /livereload.js', error.name);
+    if (error && typeof error === "object" && "name" in error) {
+      console.error("GET: /livereload.js", error.name);
     } else {
       console.error("Error reading livereload.js:");
     }
@@ -147,7 +167,7 @@ app.get('/livereload.js', cacheResponse, async (c) => {
 // Replace the existing port assignment and console.log with this
 const port = await findAvailablePort(3000, 3100);
 console.log(`HTTP server running on http://localhost:${port}`);
-console.log('Root directory:', rootDir);
+console.log("Root directory:", rootDir);
 
 // Use Deno.serve with the --watch flag
 if (import.meta.main) {
@@ -160,7 +180,8 @@ if (Deno.args.includes("--livereload")) {
   for await (const event of Deno.watchFs("./packages/examples")) {
     if (event.kind === "modify") {
       const filePath = event.paths[0];
-      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html") || filePath.endsWith(".ts");
+      const fileType = filePath.endsWith(".js") || filePath.endsWith(".html") ||
+        filePath.endsWith(".ts");
 
       if (fileType) {
         console.log("livereload: File changed:", filePath);
@@ -169,7 +190,7 @@ if (Deno.args.includes("--livereload")) {
             if (filePath.endsWith(".ts")) {
               CACHE.forEach((_value, key) => {
                 if (/async-framework/.test(key)) {
-                  console.log('livereload: clearing cache for', key);
+                  console.log("livereload: clearing cache for", key);
                   CACHE.delete(key);
                 }
               });

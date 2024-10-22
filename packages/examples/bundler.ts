@@ -2,7 +2,7 @@ import * as rollup from "rollup";
 import {
   dirname,
   // fromFileUrl,
-  resolve
+  resolve,
 } from "@std/path";
 import typescript from "@rollup/plugin-typescript";
 // Import tslib
@@ -62,25 +62,25 @@ export function createBundler(root: string) {
             lib: ["es2020", "dom"],
           },
           // Specify tslib as an external dependency
-          tslib: 'tslib',
+          tslib: "tslib",
           include: [
             absolutePath,
-            resolve(directory, '**/*.ts'),
-            resolve(directory, '**/*.tsx'),
-            resolve(directory, '**/*.js'),
-            resolve(directory, '**/*.jsx'),
+            resolve(directory, "**/*.ts"),
+            resolve(directory, "**/*.tsx"),
+            resolve(directory, "**/*.js"),
+            resolve(directory, "**/*.jsx"),
           ],
           // Exclude declaration files
           exclude: [],
         }),
       ],
     });
-  
+
     const { output } = await bundle.generate({
       format: "esm",
       name,
     });
-  
+
     return output[0].code;
-  }
+  };
 }

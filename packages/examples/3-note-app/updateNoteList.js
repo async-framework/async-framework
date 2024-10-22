@@ -1,20 +1,23 @@
 export default function updateNoteList({ event, element }) {
   const notes = event.detail;
-  console.log('Update note list event:', JSON.stringify(notes, null, 2));
+  console.log("Update note list event:", JSON.stringify(notes, null, 2));
 
-  element.innerHTML = /*html*/`
+  element.innerHTML = /*html*/ `
     <ul class="divide-y divide-gray-200">
-      ${notes.length === 0 
-        ? /*html*/`
+      ${
+    notes.length === 0
+      ? /*html*/ `
           <li class="py-4 text-center text-gray-500 italic">No notes found</li>
         `
-        : notes.map(note => /*html*/`
+      : notes.map((note) => /*html*/ `
           <li class="py-4">
             <div class="flex justify-between items-center">
               <div>
                 <h3 class="text-lg font-semibold text-gray-800">${note.title}</h3>
                 <p class="text-gray-600">${note.content}</p>
-                <p class="text-sm text-gray-400">${new Date(note.createdAt).toLocaleString()}</p>
+                <p class="text-sm text-gray-400">${
+        new Date(note.createdAt).toLocaleString()
+      }</p>
               </div>
               <div>
                 <button
@@ -34,11 +37,11 @@ export default function updateNoteList({ event, element }) {
               </div>
             </div>
           </li>
-        `).join('')
-      }
+        `).join("")
+  }
     </ul>
   `;
 
   // Ensure the note list container is visible
-  element.style.display = 'block';
+  element.style.display = "block";
 }

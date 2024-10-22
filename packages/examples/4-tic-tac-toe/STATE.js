@@ -1,6 +1,6 @@
 const state = {
   board: Array(9).fill(null),
-  currentPlayer: 'X',
+  currentPlayer: "X",
   gameOver: false,
   winner: null,
 };
@@ -16,7 +16,7 @@ export function setState(newState) {
 export function initializeState() {
   setState({
     board: Array(9).fill(null),
-    currentPlayer: 'X',
+    currentPlayer: "X",
     gameOver: false,
     winner: null,
   });

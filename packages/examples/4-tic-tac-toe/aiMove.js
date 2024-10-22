@@ -1,6 +1,6 @@
-import { getState, setState } from './STATE.js';
-import renderBoard from './renderBoard.js';
-import checkWinner from './checkWinner.js';
+import { getState, setState } from "./STATE.js";
+import renderBoard from "./renderBoard.js";
+import checkWinner from "./checkWinner.js";
 
 export default function aiMove() {
   const { board, gameOver } = getState();
@@ -21,9 +21,9 @@ export default function aiMove() {
     const aiMoveIndex = availableMoves[randomIndex];
 
     const newBoard = [...board];
-    newBoard[aiMoveIndex] = 'O';
+    newBoard[aiMoveIndex] = "O";
 
-    setState({ board: newBoard, currentPlayer: 'X' });
+    setState({ board: newBoard, currentPlayer: "X" });
     renderBoard();
 
     const winner = checkWinner();
