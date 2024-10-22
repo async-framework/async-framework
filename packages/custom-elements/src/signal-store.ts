@@ -22,7 +22,9 @@ export class Signal<T> {
 
   set(newVal: T) {
     this.value = newVal;
-    this._observers.forEach((obs) => obs(newVal));
+    this._observers.forEach((obs) => {
+      obs(newVal);
+    });
   }
 
   cleanUp() {

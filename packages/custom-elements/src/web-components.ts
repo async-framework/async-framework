@@ -1,5 +1,5 @@
 import { DefineSignal } from "./define-signal";
-import { SignalContent } from "./signal-text";
+import { SignalText } from "./signal-text";
 
 customElements.define("define-signal", DefineSignal);
-customElements.define("signal-content", SignalContent);
+customElements.define("signal-text", SignalText);
