@@ -1,8 +1,11 @@
 import { getState, setState } from "./STATE.js";
 
-export default function drop({ event, dispatch }) {
-  event.preventDefault();
-  const taskId = parseInt(event.dataTransfer.getData("text"));
+export default function onDrop({ event, dispatch }) {
+  const idStr = event.dataTransfer.getData("text");
+  const taskId = parseInt(idStr);
+  if (!taskId) {
+    throw new Error('no id for task');
+  }
   const targetColumn = event.target.closest("[id]").id;
 
   const board = getState("board");

@@ -1,4 +1,4 @@
-export default function updateBoard({ event, element }) {
+export default function updateBoard({ event }) {
   const board = event.detail;
   console.log("Update board event:", board);
 
