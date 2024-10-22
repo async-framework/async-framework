@@ -15,7 +15,6 @@ export default function updateBoard({ event, element }) {
         <button
           class="ml-2 text-red-600 hover:text-red-800 focus:outline-none"
           on:click="deleteTask.js"
-          data-id="${task.id}"
         >
           [X]
         </button>

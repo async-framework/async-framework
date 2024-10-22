@@ -1,7 +1,8 @@
 import { getState, setState } from "./STATE.js";
 
-export default function deleteTask({ event, dispatch }) {
-  const taskId = parseInt(event.target.dataset.id);
+export default function deleteTask({ event, element, dispatch }) {
+  const el = element.closest('[data-id]');
+  const taskId = parseInt(el.dataset.id);
   const board = getState("board");
 
   const updatedBoard = Object.keys(board).reduce((acc, column) => {
