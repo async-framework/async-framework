@@ -136,7 +136,7 @@ export class HandlerRegistry {
    * @param {string} scriptPath - The relative path to the handler script.
    * @returns {Function} - The handler function.
    */
-  async getHandler(scriptPath, context): Promise<(context: any) => Promise<any> | (context: any) => any> {
+  async getHandler(scriptPath, context): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
     if (this.registry.has(scriptPath)) {
       // console.log('HandlerRegistry.getHandler: returning cached handler for', scriptPath);
       return this.registry.get(scriptPath);
