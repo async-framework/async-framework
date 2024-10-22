@@ -2,12 +2,11 @@
 
 export class AsyncLoader {
   private eventPrefix: string;
-  private containers: Map<any, any>;
-  private handlerRegistry: any;
+  // TODO: use WeakMap for containers and event listeners
+  private containers: Map<Element, Map<string, Map<Element, string>>>;
+  private handlerRegistry: { handler: (context: any) => Promise<any> | any} ;
   private events: string[];
-  private processedContainers: WeakSet<any>;
-  // private parsedElements: WeakMap<any, any>;
-  // private parsedElementsEvents: WeakMap<any, any>;
+  private processedContainers: WeakSet<Element>;
 
   constructor(config: any) {
     this.eventPrefix = config.eventPrefix || "on:";
@@ -17,10 +16,6 @@ export class AsyncLoader {
 
     // Set of processed containers
     this.processedContainers = config.processedContainers || new WeakSet();
-    // Map of elements to their processed events
-    // this.parsedElements = config.parsedElements || new WeakMap();
-    // Map of elements to their processed events
-    // this.parsedElementsEvents = config.parsedElementsEvents || new WeakMap();
   }
 
   // Initializes the event handling system by parsing the DOM
@@ -28,13 +23,21 @@ export class AsyncLoader {
   init(containerElement = document.body) {
     this.parseDOM(containerElement); // Start parsing from the body element
   }
+
+  // Discovers custom events on the container element
+  // Why: This method identifies and returns all custom events defined on the container element.
+  // It does this by querying all elements within the container, extracting their attributes,
+  // filtering those that start with the event prefix, and mapping the remaining attributes to event names.
+  // The method ensures that each event is represented only once in the resulting array,
+  // eliminating duplicates and providing a list of unique custom events.
   discoverCustomEvents(container) {
     const customEventAttributes = Array.from(container.querySelectorAll("*"))
       .flatMap((el: any) => Array.from(el.attributes))
       .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));
 
-    const events = [...new Set(customEventAttributes)]; // Remove duplicates
+    // Remove duplicates
+    const events = [...new Set(customEventAttributes)];
     console.log("discoverCustomEvents: discovered custom events:", events);
     return events;
   }
@@ -118,7 +121,6 @@ export class AsyncLoader {
       containerElement.addEventListener(
         eventName,
         async (event) => {
-          // console.log('setupContainerListeners: event triggered', event);
           // Lazy parse the element for the event type before handling the event
           this.parseContainerElement(containerElement, eventName);
           // Handle the event when it occurs
@@ -128,76 +130,28 @@ export class AsyncLoader {
         true // Use capturing phase to ensure the handler runs before other listeners
       );
     });
-    // console.log('setupContainerListeners: container listeners', this.containers);
     
     // eager parse all events for the container
-    // this.parseContainerElements(container, supportedEvents);
+    // supportedEvents.map((evt) => {
+    //   this.parseContainerElement(containerElement, evt);
+    // });
   }
 
-  // Parses an element to identify and register event handlers
-  // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
-  parseElementForEvent(containerElement, element, eventName, eventAttr) {
-    // const processedElementEvent = getCachedSet(
-    //   this.parsedElementsEvents,
-    //   element
-    // );
 
-    // If this event has already been processed for this element, return
-    // if (processedElementEvent.has(eventName)) {
-      // console.log('parseElementForEvent: event already processed', eventName, 'for element', element);
-    //   return;
-    // }
-
-    const attrValue = element.getAttribute(eventAttr);
-    // console.log('parseElementForEvent: event attribute value', attrValue, eventAttr, eventName);
-    if (attrValue) {
-      // Register the event listener
-      this.addEventData(containerElement, eventName, element, attrValue);
-    }
-
-    // processedElementEvent.add(eventName);
-  }
-  // Parses elements within a container to identify and register event handlers
-  // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
-  parseContainerElements(container, events) {
-    // Select elements with 'on:event' attributes
-    events.map((evt) => {
-      this.parseContainerElement(container, evt);
-    });
-  }
   // Parses elements within a container to identify and register event handlers
   // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
   parseContainerElement(containerElement, eventName) {
-    // console.log('parseContainerElement: parsing container elements', eventName);
-    // Get the Set of processed events for this container, or create a new one if it doesn't exist
-    // const processedEvents = getCachedSet(this.parsedElements, container);
-
-    // If this event has already been processed for this container, return
-    // if (processedEvents.has(eventName)) {
-      // console.log('parseContainerElement: event already processed', eventName, 'for container', container);
-    //   return;
-    // }
-    // console.log('parseContainerElement: processing event', eventName, 'for container', container);
-
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
     const elements = containerElement.querySelectorAll(
       `[${escapeSelector(eventAttr)}]`
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
-    elements.forEach((element) => {
+    elements.forEach((element: Element) => {
       const eventAttrValue = element.getAttribute(eventAttr);
       if (eventAttrValue) {
         // console.log('parseContainerElement: one attribute value', eventAttrValue);
-        this.parseElementForEvent(containerElement, element, eventName, eventAttr);
-      } else {
-        // Parse the element for the event type before handling the event
-        Array.from(element.attributes).forEach((attr: any) => {
-          if (attr.name.startsWith(this.eventPrefix)) {
-            // console.log('parseContainerElement: parsing element attribute', attr.name);
-            this.parseElementForEvent(containerElement, element, eventName, attr.name);
-          }
-        });
+        this.addEventData(containerElement, eventName, element, eventAttrValue);
       }
     });
 
@@ -217,12 +171,14 @@ export class AsyncLoader {
       console.warn("addEventData: no listeners found for container", containerElement);
       return;
     }
-    if (!listeners.has(eventName)) {
+    let eventListeners = listeners.get(eventName);
+    if (!eventListeners) {
       // console.log('addEventData: adding event listener for', eventName, 'to container', container);
-      listeners.set(eventName, new Map());
+      eventListeners = new Map();
+      listeners.set(eventName, eventListeners);
     }
-    if (!listeners.get(eventName).has(element)) {
-      listeners.get(eventName).set(element, attrValue); // Map script paths to the element for the given event
+    if (!eventListeners.has(element)) {
+      eventListeners.set(element, attrValue); // Map script paths to the element for the given event
     } else {
       /*
         if an element doesn't have any event listeners,
@@ -233,12 +189,15 @@ export class AsyncLoader {
     // console.log('addEventData: listeners', listeners);
   }
 
-  // Why: This method provides a centralized mechanism for dispatching custom events across the application.
+  // Dispatches a custom event to all registered listeners across containers
+  // Why: This method provides a centralized mechanism for broadcasting custom events throughout the application.
   // It creates a custom event with the given name and detail, then iterates through all registered containers
   // to find elements with matching event listeners. By parsing container elements on-demand and dispatching
   // the event to relevant elements, it ensures that newly added or dynamically created elements are included.
-  // This approach supports a flexible and scalable event system that can handle both static and dynamically
-  // generated content, allowing for efficient communication between different parts of the application.
+  // The method uses a null check before accessing properties of potentially undefined objects, addressing
+  // the "Object is possibly 'undefined'" linter error. This approach supports a flexible and scalable event
+  // system that can handle both static and dynamically generated content, allowing for efficient communication
+  // between different parts of the application while maintaining type safety.
   dispatch(eventName, detail) {
     // create the custom event
     const customEvent = new CustomEvent(eventName, {
@@ -252,26 +211,30 @@ export class AsyncLoader {
       this.parseContainerElement(containerElement, eventName);
       if (listeners.has(eventName)) {
         // Parse the container for the event type before handling the event
-        listeners.get(eventName).forEach((_handlers, element) => {
-          // console.log('dispatch: dispatching event', eventName, 'to element', element);
-          element.dispatchEvent(customEvent);
-        });
+        const eventListeners = listeners.get(eventName);
+        if (eventListeners) {
+          eventListeners.forEach((_attrValue, element) => {
+            // console.log('dispatch: dispatching event', eventName, 'to element', element);
+            element.dispatchEvent(customEvent);
+          });
+        }
       }
     });
   }
 
   // Handles an event occurring within a container
-  // Why: This method is responsible for executing all relevant handlers for a given event within a container.
+  // Why: This method is responsible for coordinating the execution of event handlers for a given event within a container.
   // It implements event delegation by traversing the DOM tree from the event target up to the container,
   // allowing for efficient event handling even with dynamically added elements.
   // The method:
-  // 1. Retrieves the appropriate handlers for the event type and elements
-  // 2. Executes handlers in order, passing a context object with relevant information
-  // 3. Supports both synchronous and asynchronous handlers
-  // 4. Allows handlers to break the execution chain if needed
-  // 5. Manages the execution context to prevent memory leaks
-  // This approach ensures proper updates to the application state and triggers necessary re-renders,
-  // while providing a flexible and performant event handling system.
+  // 1. Retrieves the appropriate handler data for the event type and elements
+  // 2. Creates a context object with relevant information about the event and container
+  // 3. Delegates the actual handler execution to the HandlerRegistry
+  // 4. Supports both bubbling and non-bubbling events
+  // 5. Manages the execution flow, allowing handlers to break the chain if needed
+  // This approach ensures proper coordination between the AsyncLoader and HandlerRegistry,
+  // providing a flexible and performant event handling system while keeping the core logic
+  // of handler execution separate and reusable.
   async handleContainerEvent(containerElement, domEvent) {
     // deno-lint-ignore no-this-alias
     const self = this;
@@ -282,8 +245,6 @@ export class AsyncLoader {
       //   "handleContainerEvent: no listeners found for container",
       //   container
       // );
-      // this.parseContainerElement(container, event.type);
-      // return this.handleContainerEvent(container, event);
       return;
     }
 
@@ -296,8 +257,6 @@ export class AsyncLoader {
       //   "in container",
       //   container
       // );
-      // this.parseContainerElement(container, event.type);
-      // return this.handleContainerEvent(container, event);
       return;
     }
 
@@ -346,8 +305,6 @@ export class AsyncLoader {
           // }
         };
 
-        // console.log('handleContainerEvent: found event listeners for element', element.tagName, event.type, eventListeners);
-
         try {
           /* context = */ await self.handlerRegistry.handler(context);
         } catch (error) {
@@ -375,17 +332,4 @@ function escapeSelector(selector) {
   return selector.replace(/[^\w\s-]/g, (match) => `\\${match}`);
 }
 
-// Memoization/Caching helper function
-// Why: Implements a "compute once, use many times" pattern to efficiently manage Sets for various keys
-// function getCachedSet(map, key) {
-//   let set = map.get(key);
-//   if (!set) {
-//     set = new Set();
-//     map.set(key, set);
-//   }
-//   return set;
-// }
 
-// function isPromise(value) {
-//   return value && typeof value === "object" && typeof value.then === "function";
-// }
