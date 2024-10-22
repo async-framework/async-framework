@@ -152,11 +152,7 @@ export class HandlerRegistry {
       const onHandler = eventName ? module[handlerName] : null;
       const handler = onHandler || module.default || null;
       if (typeof handler === "function") {
-        if (onHandler) {
-          this.registry.set(scriptPath + '|' + handlerName, handler);
-        } else {
-          this.registry.set(scriptPath, handler);
-        }
+        this.registry.set(scriptPath, handler);
         return handler;
       } else {
         console.error(
