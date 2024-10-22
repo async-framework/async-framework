@@ -22,7 +22,7 @@ export function parseAttributeValue(value: string) {
       // Replace single quotes with double quotes
       const jsonString = value.replace(/'/g, '"');
       return JSON.parse(jsonString);
-    } catch (e) {
+    } catch (_e) {
       // If parsing fails, fall through to the next step
     }
   }
@@ -30,7 +30,7 @@ export function parseAttributeValue(value: string) {
   // Try to parse as JSON
   try {
     return JSON.parse(value);
-  } catch (e) {
+  } catch (_e) {
     // If it's not valid JSON, check for unquoted strings
     if (/^[a-zA-Z0-9_]+$/.test(value)) {
       return value;
@@ -39,7 +39,7 @@ export function parseAttributeValue(value: string) {
     // For other cases, wrap the value in quotes and try parsing again
     try {
       return JSON.parse(`"${value}"`);
-    } catch (e) {
+    } catch (_e) {
       console.error("Error parsing attribute value", value);
       // If all else fails, return the original string
       return value;

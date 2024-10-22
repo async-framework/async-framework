@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 import { parseAttributeValue } from "./parse-attribute-value";
