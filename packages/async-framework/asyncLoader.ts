@@ -129,18 +129,27 @@ export class AsyncLoader {
   // like DOM observation and component lifecycle management.
   handleNewContainer(el) {
     // Avoid reprocessing the same container
+    if (!el.isConnected) {
+      console.warn('handleNewContainer: container was processed but is not connected', el);
+      this.processedContainers.delete(el);
+    }
     if (this.processedContainers.has(el)) {
-      if (!el.isConnected) {
-        console.warn('handleNewContainer: container was processed but is not connected', el);
-        this.processedContainers.delete(el);
-      }
       return;
     }
 
     // Set up event listeners for the container
-    this.setupContainerListeners(el);
+    const processed = this.setupContainerListeners(el);
     // this.observeContainer(container); // Watch for DOM changes within the container
-    this.processedContainers.add(el); // Mark the container as processed
+    if (processed) {
+      this.processedContainers.add(el); // Mark the container as processed
+    } else {
+      if (!el.isConnected) {
+        console.log('handleNewContainer: container was processed but is not connected', el);
+      } else {
+        console.warn('handleNewContainer: container was processed but is not connected', el);
+        this.processedContainers.delete(el);
+      }
+    }
 
     // TODO: add onMount lifecycle hook
     // if (container._controller && typeof container._controller.onMount === 'function') {
@@ -164,7 +173,14 @@ export class AsyncLoader {
   //    allowing for complex operations without blocking the main thread.
   // This approach creates a scalable, performant, and flexible event system that can
   // adapt to changing DOM structures and complex application needs.
-  setupContainerListeners(containerElement) {
+  setupContainerListeners(containerElement): boolean {
+    if (!containerElement.isConnected) {
+      return false;
+    }
+    // avoid re-setting up listeners for the same container
+    if (this.containers.has(containerElement)) {
+      return false;
+    }
     const listeners = new Map();
     this.containers.set(containerElement, listeners);
 
@@ -187,6 +203,7 @@ export class AsyncLoader {
     // this.events.map((evt) => {
     //   this.parseContainerElement(containerElement, evt);
     // });
+    return true;
   }
 
 
