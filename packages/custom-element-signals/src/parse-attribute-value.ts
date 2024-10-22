@@ -8,7 +8,7 @@ export function parseAttributeValue(value: string) {
   // Check for simple values
   if (value === "true") return true;
   if (value === "false") return false;
-  if (value === '' || value === "''" || value === '""') return "";
+  if (value === "" || value === "''" || value === '""') return "";
   if (value === "null") return null;
   if (value === "undefined") return undefined;
 
