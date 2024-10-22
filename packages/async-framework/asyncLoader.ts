@@ -308,13 +308,20 @@ export class AsyncLoader {
 
         // Define the context with getters for accessing current state and elements
         let value = undefined;
+        const attrValue = eventListeners.get(element); // || element.getAttribute(this.eventPrefix + domEvent.type);
         const context = {
-          _value: value,
-          get dispatch() {
-            return self.dispatch.bind(self);
+          set value(v) {
+            value = v;
           },
           get value() {
-            return this._value;
+            return value;
+          },
+          // get the attribute value for the event
+          get attrValue() {
+            return attrValue;
+          },
+          get dispatch() {
+            return self.dispatch.bind(self);
           },
           get element() {
             return element;
@@ -340,13 +347,12 @@ export class AsyncLoader {
         };
 
         // console.log('handleContainerEvent: found event listeners for element', element.tagName, event.type, eventListeners);
-        const attrValue = eventListeners.get(element);
+
         try {
-          value = await self.handlerRegistry.processHandlers(attrValue, context);
+          /* context = */ await self.handlerRegistry.processHandlers(context);
         } catch (error) {
           // Reset value if there's an error
           value = undefined;
-          context._value = undefined;
           console.error(
             `handleContainerEvent: Error`,
             error
@@ -354,7 +360,6 @@ export class AsyncLoader {
         }
         // clear and references to avoid memory leak
         value = undefined;
-        context._value = undefined;
 
         // If the event doesn't bubble, stop after handling the first matching element
         if (!domEvent.bubbles) break;

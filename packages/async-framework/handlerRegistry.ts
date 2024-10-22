@@ -85,7 +85,9 @@ export class HandlerRegistry {
    * @param {any} value - The value to pass to the handlers.
    * @returns {Promise<any>} - The value returned by the handlers.
    */
-  async processHandlers(attrValue: string[] | string, context: any, value: any) {
+  async processHandlers(context: any) {
+    const attrValue = context.attrValue;
+    // let value = context._value;
     const processedAttrValue = Array.isArray(attrValue) ? attrValue : this.parseAttribute(attrValue);
     for (const scriptPath of processedAttrValue) {
       try {
@@ -106,8 +108,7 @@ export class HandlerRegistry {
           }
           // If the handler returns a value, store it
           if (returnedValue !== undefined) {
-            value = returnedValue;
-            context._value = returnedValue;
+            context.value = returnedValue;
           }
           // If the handler sets break to true, stop processing further handlers for this event
           if (context.break) break;
@@ -121,7 +122,7 @@ export class HandlerRegistry {
       }
       // end loop
     }
-    return value;
+    return context;
   }
 
   /**
