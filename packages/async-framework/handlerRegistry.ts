@@ -32,12 +32,16 @@ export class HandlerRegistry {
   public splitIndex: string;
   private registry: Map<string, any>;
   private attributeRegistry: Map<string, any>;
+  private eventPrefix: string;
+  private defaultHandler: string;
   private basePath: string;
   private origin: string;
 
   constructor(config: any = {}) {
     this.registry = config.registry || new Map();
     this.attributeRegistry = config.attributeRegistry || new Map();
+    this.eventPrefix = (config.eventPrefix || "on").toLowerCase().replace(/:|-/g, "");
+    this.defaultHandler = config.defaultHandler || "handler";
     // The character used to split the script path into its components
     this.splitIndex = config.splitIndex || ",";
     this.basePath = config.basePath || "./";
@@ -119,7 +123,7 @@ export class HandlerRegistry {
         `${this.origin}${this.basePath}${scriptPath}`
       );
       const eventName = context.eventName;
-      const handlerName = eventName ? 'on' + convertToEventName(eventName) : 'handler';
+      const handlerName = eventName ? this.eventPrefix + convertToEventName(eventName) : this.defaultHandler;
       const onHandler = eventName ? module[handlerName] : null;
       const handler = onHandler || module.default || null;
       if (typeof handler === "function") {
