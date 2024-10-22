@@ -92,7 +92,7 @@ export class HandlerRegistry {
     for (const scriptPath of processedAttrValue) {
       try {
         // Retrieve the handler from the registry
-        //                                              context.eventName
+        //                                        context.eventName
         let handler = this.getHandler(scriptPath, context);
         // If we need to grab an async handler, wait for it to resolve
         if (isPromise(handler)) {
