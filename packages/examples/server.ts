@@ -98,6 +98,28 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
   }
 });
 
+// custom-element signals
+app.get("/custom-element-signals.js", cacheResponse, async (c) => {
+  try {
+    const bundleContent = await bundle(
+      "../custom-element/src/index.ts",
+      "AsyncFramework",
+    );
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error for @async/framework:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
+});
+
 // Update the /bundle route
 app.get("/bundle", cacheResponse, async (c) => {
   const entryPoint = c.req.query("entry");

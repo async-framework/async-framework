@@ -1,4 +1,5 @@
-import { Signal, signalStore } from "./signal-store";
+import { Signal } from "./signal-store";
+import { signalStore } from "./signal-store-instance";
 
 export class DefineSignal<T> extends HTMLElement {
   static observedAttributes = ["data-id"];

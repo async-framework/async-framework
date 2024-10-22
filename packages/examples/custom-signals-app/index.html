@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Signals Example App</title>
+    <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "custom-elements-signals": "/custom-element-signals.js"
+        }
+      }
+    </script>
+    <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/custom-element-signals.js" />
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-8 text-center">Custom Signals Example App</h1>
+        
+        <section id="counter" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Counter</h2>
+            <define-signal data-id="counter" initial-value="0"></define-signal>
+            <p class="mb-4">Count: <signal-text data-id="counter" class="font-bold"></signal-text></p>
+            <button id="incrementBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">Increment</button>
+            <button id="decrementBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Decrement</button>
+        </section>
+
+        <section id="nameInput" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Name Input</h2>
+            <define-signal data-id="firstName" initial-value="''"></define-signal>
+            <define-signal data-id="lastName" initial-value="''"></define-signal>
+            <div class="flex mb-4">
+                <input id="firstNameInput" placeholder="First Name" class="border rounded py-2 px-3 mr-2 flex-grow">
+                <input id="lastNameInput" placeholder="Last Name" class="border rounded py-2 px-3 flex-grow">
+            </div>
+            <p>Full Name: <signal-text data-id="firstName" class="font-bold"></signal-text> <signal-text data-id="lastName" class="font-bold"></signal-text></p>
+        </section>
+
+        <section id="todoList" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-semibold mb-4">Todo List</h2>
+            <define-signal data-id="todos" initial-value="[]"></define-signal>
+            <div class="flex mb-4">
+                <input id="todoInput" placeholder="Enter a new todo" class="border rounded py-2 px-3 mr-2 flex-grow">
+                <button id="addTodoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Add Todo</button>
+            </div>
+            <ul id="todoListItems" class="list-disc pl-5"></ul>
+        </section>
+    </div>
+
+    <script type="module">
+import { signalStore } from "custom-elements-signals";
+// Counter
+const counterSignal = signalStore.get('counter');
+const incrementBtn = document.getElementById('incrementBtn');
+const decrementBtn = document.getElementById('decrementBtn');
+
+incrementBtn.addEventListener('click', () => {
+    counterSignal.value++;
+});
+
+decrementBtn.addEventListener('click', () => {
+    counterSignal.value--;
+});
+
+// Name Input
+const firstNameSignal = signalStore.get('firstName');
+const lastNameSignal = signalStore.get('lastName');
+const firstNameInput = document.getElementById('firstNameInput');
+const lastNameInput = document.getElementById('lastNameInput');
+
+firstNameInput.addEventListener('input', (e) => {
+    firstNameSignal.value = e.target.value;
+});
+
+lastNameInput.addEventListener('input', (e) => {
+    lastNameSignal.value = e.target.value;
+});
+
+// Todo List
+const todosSignal = signalStore.get('todos');
+const todoInput = document.getElementById('todoInput');
+const addTodoBtn = document.getElementById('addTodoBtn');
+const todoListItems = document.getElementById('todoListItems');
+
+function renderTodos() {
+    todoListItems.innerHTML = todosSignal.value.map((todo, index) => `
+        <li class="mb-2">
+            <span class="mr-2">${todo}</span>
+            <button onclick="removeTodo(${index})" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">Remove</button>
+        </li>
+    `).join('');
+}
+
+addTodoBtn.addEventListener('click', () => {
+    const newTodo = todoInput.value.trim();
+    if (newTodo) {
+        todosSignal.value = [...todosSignal.value, newTodo];
+        todoInput.value = '';
+        renderTodos();
+    }
+});
+
+window.removeTodo = (index) => {
+    todosSignal.value = todosSignal.value.filter((_, i) => i !== index);
+    renderTodos();
+};
+
+// Initial render
+renderTodos();
+
+    </script>
+</body>
+</html>
