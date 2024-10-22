@@ -50,7 +50,7 @@
         </section>
     </div>
 
-    <script type="module">
+<script type="module">
 import { signalStore } from "custom-elements-signals";
 // Counter
 const counterSignal = signalStore.get('counter');
@@ -74,11 +74,11 @@ const firstNameInput = document.getElementById('firstNameInput');
 const lastNameInput = document.getElementById('lastNameInput');
 
 firstNameInput.addEventListener('input', (e) => {
-    firstNameSignal.value = e.target.value;
+    firstNameSignal.set(e.target.value);
 });
 
 lastNameInput.addEventListener('input', (e) => {
-    lastNameSignal.value = e.target.value;
+    lastNameSignal.set(e.target.value);
 });
 
 // Todo List
@@ -88,7 +88,7 @@ const addTodoBtn = document.getElementById('addTodoBtn');
 const todoListItems = document.getElementById('todoListItems');
 
 function renderTodos() {
-    todoListItems.innerHTML = todosSignal.value.map((todo, index) => `
+    todoListItems.innerHTML = todosSignal.value.map((todo, index) => /*html*/`
         <li class="mb-2">
             <span class="mr-2">${todo}</span>
             <button onclick="removeTodo(${index})" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">Remove</button>
@@ -99,20 +99,21 @@ function renderTodos() {
 addTodoBtn.addEventListener('click', () => {
     const newTodo = todoInput.value.trim();
     if (newTodo) {
-        todosSignal.value = [...todosSignal.value, newTodo];
+        todosSignal.set([...todosSignal.get(), newTodo]);
         todoInput.value = '';
         renderTodos();
-    }
-});
-
+      }
+    });
+    
+// onclick="removeTodo(index)"
 window.removeTodo = (index) => {
-    todosSignal.value = todosSignal.value.filter((_, i) => i !== index);
-    renderTodos();
+  todosSignal.set(todosSignal.get().filter((_, i) => i !== index));
+  renderTodos();
 };
 
 // Initial render
 renderTodos();
 
-    </script>
+</script>
 </body>
 </html>
