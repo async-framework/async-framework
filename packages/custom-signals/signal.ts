@@ -6,13 +6,13 @@ import { signalRegistry } from './instance.ts';
 
 export class Signal {
   id: string;
-  private _value: any;
+  _value: any;
   _observers = new Set();
   _dependencies = new Set();
 
   constructor(id: string, initialValue: any) {
     this.id = id;
-    this._value = initialValue;    
+    this._value = initialValue;
   }
 
   get value(): any {
@@ -26,22 +26,27 @@ export class Signal {
 
   set value(newVal: any) {
     if (this._value !== newVal) {
+      const oldValue = this._value;
       this._value = newVal;
-      this._notifyObservers();
+      this._notifyObservers(oldValue, newVal);
     }
   }
 
-  _notifyObservers() {
+  _notifyObservers(oldValue: any, newValue: any) {
     // Store the current signal to restore later
     const prevSignal = signalRegistry.getCurrentSignal();
     
     // Notify observers
     for (const observer of this._observers) {
       signalRegistry.setCurrentSignal(observer instanceof Signal ? observer : null);
-      if (typeof observer === 'function') {
-        observer(this._value);
-      } else if (observer instanceof Signal) {
-        observer._recompute();
+      try {
+        if (typeof observer === 'function') {
+          observer(newValue, oldValue);
+        } else if (observer instanceof Signal) {
+          observer._recompute();
+        }
+      } catch (error) {
+        console.error('Error in signal observer:', error);
       }
     }
     
@@ -78,16 +83,24 @@ export function computed(id: string, computeFn: () => any): Signal {
   
   const compute = () => {
     return signalRegistry.withSignal(signal, () => {
-      signal._dependencies.forEach((dep: Signal | any) => dep._observers.delete(signal));
+      signal._dependencies.forEach((dep: any) => dep._observers.delete(signal));
       signal._dependencies.clear();
-      return computeFn();
+      try {
+        const newValue = computeFn();
+        return newValue;
+      } catch (error) {
+        console.error('Error in computed signal:', error);
+        return undefined;
+      }
     });
   };
 
   signal._recompute = () => {
     const newValue = compute();
-    if (signal.value !== newValue) {
-      signal.value = newValue;
+    if (signal._value !== newValue) {
+      signal._value = newValue;
+      const oldValue = signal._value;
+      signal._notifyObservers(oldValue, newValue);
     }
   };
 

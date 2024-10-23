@@ -122,34 +122,33 @@
       );
       asyncLoader.init(rootContainer);
 
-
       // Initialize signals
       const count = signalRegistry.getOrCreate("count", 0);
       const firstName = signalRegistry.getOrCreate("firstName", "");
       const lastName = signalRegistry.getOrCreate("lastName", "");
       const fullName = signalRegistry.createComputed("fullName", () => {
-        console.log('fullName Computed', firstName.value, lastName.value);
         return `${firstName.value} ${lastName.value}`.trim();
       });
       const celsius = signalRegistry.getOrCreate("celsius", 0);
       const fahrenheit = signalRegistry.createComputed("fahrenheit", () => {
-        console.log('fahrenheit Computed', celsius.value);
-        return (celsius.value * 9) / 5 + 32;
+        return ((celsius.value * 9) / 5 + 32).toFixed(2);
       });
 
+      // Set up subscriptions to update the DOM
       fullName.subscribe((value) => {
-        console.log('fullName Subscribed', value);
-        document.getElementById("fullName").textContent = fullName.value;
+        document.getElementById("fullName").textContent = value;
       });
       count.subscribe((value) => {
-        console.log('count Subscribed', value);
-        document.getElementById("count").textContent = count.value;
+        document.getElementById("count").textContent = value;
       });
       fahrenheit.subscribe((value) => {
-        console.log('fahrenheit Subscribed', value);
-        document.getElementById("fahrenheit").textContent = fahrenheit.value;
+        document.getElementById("fahrenheit").textContent = value;
       });
 
+      // Initial updates
+      document.getElementById("fullName").textContent = fullName.value;
+      document.getElementById("count").textContent = count.value;
+      document.getElementById("fahrenheit").textContent = fahrenheit.value;
     </script>
   </body>
 </html>
