@@ -4,6 +4,7 @@
   "deno.enablePaths": [
     "./packages/examples",
     "./packages/async-loader",
+    "./packages/custom-signals",
     "./packages/dev"
   ],
   "editor.formatOnSave": true,

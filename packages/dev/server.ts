@@ -95,7 +95,29 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
       "Cache-Control": "max-age=3600",
     });
   } catch (error: unknown | Error) {
-    console.error("Bundling error for @async/framework:", error);
+    console.error("Bundling error for async-framework:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
+});
+
+// custom-signals
+app.get("/custom-signals.js", cacheResponse, async (c) => {
+  try {
+    const bundleContent = await bundle(
+      join(packagesDirectory, "custom-signals/src/index.ts"),
+      "CustomSignals",
+    );
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error for custom-signals:", error);
     return c.text(
       `Error creating bundle: ${
         error instanceof Error ? error.message : "Unknown error"
@@ -117,7 +139,7 @@ app.get("/custom-element-signals.js", cacheResponse, async (c) => {
       "Cache-Control": "max-age=3600",
     });
   } catch (error: unknown | Error) {
-    console.error("Bundling error for @async/framework:", error);
+    console.error("Bundling error for custom-element-signals:", error);
     return c.text(
       `Error creating bundle: ${
         error instanceof Error ? error.message : "Unknown error"
