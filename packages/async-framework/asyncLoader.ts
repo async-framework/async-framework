@@ -197,11 +197,11 @@ export class AsyncLoader {
       // console.log('setupContainerListeners: adding event listener for', eventName);
       containerElement.addEventListener(
         eventName,
-        async (event) => {
+        (event) => {
           // Lazy parse the element for the event type before handling the event
           this.parseContainerElement(containerElement, eventName);
           // Handle the event when it occurs
-          await this.handleContainerEvent(containerElement, event);
+          this.handleContainerEvent(containerElement, event);
           // console.log('setupContainerListeners: event handled', res);
         },
         true, // Use capturing phase to ensure the handler runs before other listeners
