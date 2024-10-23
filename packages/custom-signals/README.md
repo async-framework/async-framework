@@ -1,11 +1,14 @@
 # Custom Signals Package
 
-This package provides a reactive programming model using signals. Signals are values that can change over time and automatically update any computations that depend on them.
+This package provides a reactive programming model using signals. Signals are
+values that can change over time and automatically update any computations that
+depend on them.
 
 ## Key Components
 
 1. `Signal`: Represents a value that can change over time.
-2. `computed`: Creates a signal that depends on other signals and updates automatically.
+2. `computed`: Creates a signal that depends on other signals and updates
+   automatically.
 3. `SignalRegistry`: Manages all signals and their dependencies.
 
 ## How to Use
@@ -91,3 +94,4 @@ registry.clear();
 For more complex scenarios or performance optimization, you can use the SignalRegistry directly. This allows for more fine-grained control over signal creation and management.
 
 Remember that the signal system is designed to be efficient and automatically manage dependencies. In most cases, simply using createSignal, computed, and the signal methods (get, set, subscribe) will be sufficient for building reactive applications.
+```

@@ -2,8 +2,8 @@ export const state = {
   board: {
     todo: [],
     inprogress: [],
-    done: []
-  }
+    done: [],
+  },
 };
 
 export function setState(key, value) {

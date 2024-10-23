@@ -8,11 +8,11 @@ export default function addTask({ element, dispatch }) {
     const board = getState("board");
     const newTask = {
       id: Date.now(),
-      text: taskText
+      text: taskText,
     };
     const updatedBoard = {
       ...board,
-      todo: [...board.todo, newTask]
+      todo: [...board.todo, newTask],
     };
     setState("board", updatedBoard);
     input.value = "";

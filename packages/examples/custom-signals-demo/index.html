@@ -21,8 +21,7 @@
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
       <div class="container mx-auto">
         <a href="/" class="text-xl font-bold hover:underline"
-          >← Back to Examples</a
-        >
+        >← Back to Examples</a>
       </div>
     </header>
     <div class="flex flex-col items-center justify-center">
@@ -83,6 +82,7 @@
             <h2 class="text-xl font-semibold text-gray-700">
               Temperature Converter
             </h2>
+            <label for="celsius">Celsius</label>
             <input
               type="number"
               id="celsius"
@@ -100,39 +100,33 @@
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
-      import { signalRegistry } from "custom-signals";
+      import { signalRegistry as signals } from "custom-signals";
 
-      window.signalRegistry = signalRegistry;
-      
-      const handlerRegistry = new HandlerRegistry({
+      const handlers = new HandlerRegistry({
         basePath: location.pathname,
       });
 
       const asyncLoader = new AsyncLoader({
         events: ["click", "input", "change"],
-        handlerRegistry,
+        handlerRegistry: handlers,
         context: {
-          handlers: handlerRegistry,
-          signals: signalRegistry,
+          handlers,
+          signals,
         },
       });
 
       const rootContainer = document.body.querySelector(
-        '[data-container="root"]'
+        '[data-container="root"]',
       );
       asyncLoader.init(rootContainer);
 
       // Initialize signals
-      const count = signalRegistry.getOrCreate("count", 0);
-      const firstName = signalRegistry.getOrCreate("firstName", "");
-      const lastName = signalRegistry.getOrCreate("lastName", "");
-      const fullName = signalRegistry.createComputed("fullName", () => {
-        return `${firstName.value} ${lastName.value}`.trim();
-      });
-      const celsius = signalRegistry.getOrCreate("celsius", 0);
-      const fahrenheit = signalRegistry.createComputed("fahrenheit", () => {
-        return ((celsius.value * 9) / 5 + 32).toFixed(2);
-      });
+      const count = signals.getOrCreate("count", 0);
+      const firstName = signals.getOrCreate("firstName", "");
+      const lastName = signals.getOrCreate("lastName", "");
+      const fullName = signals.getOrCreate("fullName", "");
+      const celsius = signals.getOrCreate("celsius", 0);
+      const fahrenheit = signals.getOrCreate("fahrenheit", "0");
 
       // Set up subscriptions to update the DOM
       fullName.subscribe((value) => {

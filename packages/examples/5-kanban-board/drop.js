@@ -4,7 +4,7 @@ export default function onDrop({ event, dispatch }) {
   const idStr = event.dataTransfer.getData("text");
   const taskId = parseInt(idStr);
   if (!taskId) {
-    throw new Error('no id for task');
+    throw new Error("no id for task");
   }
   const targetColumn = event.target.closest("[id]").id;
 
@@ -15,10 +15,10 @@ export default function onDrop({ event, dispatch }) {
     if (column === targetColumn) {
       acc[column] = [...board[column]];
     } else {
-      const [task] = board[column].filter(t => t.id === taskId);
+      const [task] = board[column].filter((t) => t.id === taskId);
       if (task) {
         movedTask = task;
-        acc[column] = board[column].filter(t => t.id !== taskId);
+        acc[column] = board[column].filter((t) => t.id !== taskId);
       } else {
         acc[column] = board[column];
       }

@@ -2,10 +2,13 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
-import { join, relative, dirname, fromFileUrl } from "@std/path";
+import { dirname, fromFileUrl, join, relative } from "@std/path";
 
 import { findAvailablePort } from "./server-utils/findAvailablePort.ts";
-import { renderDirectoryListing, getDirectoryContents } from "./server-utils/renderDirectoryListing.ts";
+import {
+  getDirectoryContents,
+  renderDirectoryListing,
+} from "./server-utils/renderDirectoryListing.ts";
 import { createBundler } from "./server-utils/bundler.ts";
 import { createCache } from "./server-utils/request-cache.ts";
 
@@ -241,12 +244,18 @@ if (Deno.args.includes("--livereload")) {
         filePath.endsWith(".ts");
 
       if (fileType) {
-        console.log("livereload: File changed:", filePath.replace(rootRepoDir, ""));
+        console.log(
+          "livereload: File changed:",
+          filePath.replace(rootRepoDir, ""),
+        );
         clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             if (filePath.endsWith(".ts")) {
               CACHE.forEach((_value, key) => {
-                const normalizedKey = key.replace('/packages/', '').replace(/^\//, "").replace(/.js$/, "");
+                const normalizedKey = key.replace("/packages/", "").replace(
+                  /^\//,
+                  "",
+                ).replace(/.js$/, "");
                 const changedFile = packageDirectory.some((dir) => {
                   const result = dir.includes(normalizedKey);
                   return result;

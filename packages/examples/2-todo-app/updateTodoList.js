@@ -11,7 +11,9 @@ export default function updateTodoList({ event, element }) {
         `
       : todos.map((todo) => /*html*/ `
           <li
-            class="py-4 flex items-center justify-between ${todo.completed ? "bg-gray-50" : ""}"
+            class="py-4 flex items-center justify-between ${
+        todo.completed ? "bg-gray-50" : ""
+      }"
             data-id="${todo.id}"
           >
             <div
@@ -24,7 +26,9 @@ export default function updateTodoList({ event, element }) {
                 ${todo.completed ? "checked" : ""}
                 on:change="prevent-default.js, toggleTodo.js"
               >
-              <label class="ml-3 block text-gray-900 flex-grow ${todo.completed ? "line-through text-gray-500" : ""}">
+              <label class="ml-3 block text-gray-900 flex-grow ${
+        todo.completed ? "line-through text-gray-500" : ""
+      }">
                 ${todo.text}
               </label>
             </div>

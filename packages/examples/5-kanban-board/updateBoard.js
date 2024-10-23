@@ -2,9 +2,9 @@ export default function updateBoard({ event }) {
   const board = event.detail;
   console.log("Update board event:", board);
 
-  Object.keys(board).forEach(column => {
+  Object.keys(board).forEach((column) => {
     const columnElement = document.getElementById(column);
-    columnElement.innerHTML = board[column].map(task => /*html*/`
+    columnElement.innerHTML = board[column].map((task) => /*html*/ `
       <div
         class="bg-gray-100 p-2 mb-2 rounded shadow cursor-move"
         draggable="true"
@@ -19,6 +19,6 @@ export default function updateBoard({ event }) {
           [X]
         </button>
       </div>
-    `).join('');
+    `).join("");
   });
 }

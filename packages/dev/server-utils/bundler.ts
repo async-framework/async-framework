@@ -1,9 +1,5 @@
 import * as rollup from "rollup";
-import {
-  dirname,
-  fromFileUrl,
-  resolve,
-} from "@std/path";
+import { dirname, fromFileUrl, resolve } from "@std/path";
 import typescript from "@rollup/plugin-typescript";
 // Import tslib
 import tslib from "tslib";
@@ -25,14 +21,14 @@ export function createBundler(root: string) {
           }
         }
         // Resolve tslib
-        if (source === 'tslib') {
-          return 'tslib';
+        if (source === "tslib") {
+          return "tslib";
         }
         return null;
       },
       async load(id) {
         // Provide tslib content when requested
-        if (id === 'tslib') {
+        if (id === "tslib") {
           return tslib;
         }
         const filePath = id.startsWith("file://") ? fromFileUrl(id) : id;
@@ -42,34 +38,34 @@ export function createBundler(root: string) {
     // deno-lint-ignore ban-ts-comment
     // @ts-ignore
     const tsPlugin = typescript({
-        tsconfig: false,
-        compilerOptions: {
-          target: "es2020",
-          module: "esnext",
-          moduleResolution: "bundler",
-          strict: false,
-          // esModuleInterop: true,
-          allowImportingTsExtensions: true,
-          noEmit: true,
-          declaration: false,
-          sourceMap: false,
-          skipLibCheck: true,
-          allowJs: true,
-          forceConsistentCasingInFileNames: true,
-          lib: ["es2020", "dom"],
-        },
-        // Specify tslib as an external dependency
-        tslib: "tslib",
-        include: [
-          absolutePath,
-          resolve(directory, "**/*.ts"),
-          resolve(directory, "**/*.tsx"),
-          resolve(directory, "**/*.js"),
-          resolve(directory, "**/*.jsx"),
-        ],
-        // Exclude declaration files
-        exclude: [],
-      });
+      tsconfig: false,
+      compilerOptions: {
+        target: "es2020",
+        module: "esnext",
+        moduleResolution: "bundler",
+        strict: false,
+        // esModuleInterop: true,
+        allowImportingTsExtensions: true,
+        noEmit: true,
+        declaration: false,
+        sourceMap: false,
+        skipLibCheck: true,
+        allowJs: true,
+        forceConsistentCasingInFileNames: true,
+        lib: ["es2020", "dom"],
+      },
+      // Specify tslib as an external dependency
+      tslib: "tslib",
+      include: [
+        absolutePath,
+        resolve(directory, "**/*.ts"),
+        resolve(directory, "**/*.tsx"),
+        resolve(directory, "**/*.js"),
+        resolve(directory, "**/*.jsx"),
+      ],
+      // Exclude declaration files
+      exclude: [],
+    });
     const bundle = await rollup.rollup({
       input: absolutePath,
       plugins: [

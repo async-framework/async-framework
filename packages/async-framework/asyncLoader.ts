@@ -12,21 +12,21 @@ export interface AsyncLoaderConfig {
 export class AsyncLoader {
   /**
    * Data structure: Map<Element, Map<string, Map<Element, string>>>
-   * 
+   *
    * This is a three-level nested Map structure:
-   * 
+   *
    * Level 1: Container Element Map
    * - Key: Element (the container element)
    * - Value: Map<string, Map<Element, string>> (event type map for this container)
-   * 
+   *
    *   Level 2: Event Type Map
    *   - Key: string (the event type, e.g., "click", "custom:event")
    *   - Value: Map<Element, string> (element-handler map for this event type)
-   * 
+   *
    *     Level 3: Element-Handler Map
    *     - Key: Element (the element with the event listener)
    *     - Value: string (the attribute value containing handler information)
-   * 
+   *
    * Example structure:
    * Map(
    *   [containerElement1, Map(
@@ -44,14 +44,14 @@ export class AsyncLoader {
    *     )]
    *   )]
    * )
-   * 
+   *
    * This structure allows for efficient lookup of event handlers:
    * 1. Find the container element
    * 2. Find the event type within that container
    * 3. Find the specific element and its associated handler
    */
   private containers: Map<Element, Map<string, Map<Element, string>>>;
-  private handlerRegistry: { handler: (context: any) => Promise<any> | any} ;
+  private handlerRegistry: { handler: (context: any) => Promise<any> | any };
   private events: string[];
   private eventPrefix: string;
   private processedContainers: WeakSet<Element>;
@@ -102,14 +102,12 @@ export class AsyncLoader {
   parseDOM(containerElement: undefined | any[] | any) {
     if (!containerElement) {
       const containerEls = Array.from(
-        document.body.querySelectorAll("[data-container]")
+        document.body.querySelectorAll("[data-container]"),
       );
       containerEls.forEach((el) => this.handleNewContainer(el));
     }
     if (Array.isArray(containerElement)) {
-      containerElement.forEach((el) =>
-        this.handleNewContainer(el)
-      );
+      containerElement.forEach((el) => this.handleNewContainer(el));
     } else if (containerElement?.hasAttribute?.("data-container")) {
       this.handleNewContainer(containerElement);
     } else {
@@ -132,7 +130,10 @@ export class AsyncLoader {
   handleNewContainer(el) {
     // Avoid reprocessing the same container
     if (!el.isConnected) {
-      console.warn('handleNewContainer: container was processed but is not connected', el);
+      console.warn(
+        "handleNewContainer: container was processed but is not connected",
+        el,
+      );
       this.processedContainers.delete(el);
     }
     if (this.processedContainers.has(el)) {
@@ -146,9 +147,15 @@ export class AsyncLoader {
       this.processedContainers.add(el); // Mark the container as processed
     } else {
       if (!el.isConnected) {
-        console.log('handleNewContainer: container was processed but is not connected', el);
+        console.log(
+          "handleNewContainer: container was processed but is not connected",
+          el,
+        );
       } else {
-        console.warn('handleNewContainer: container was processed but is not connected', el);
+        console.warn(
+          "handleNewContainer: container was processed but is not connected",
+          el,
+        );
         this.processedContainers.delete(el);
       }
     }
@@ -197,10 +204,10 @@ export class AsyncLoader {
           await this.handleContainerEvent(containerElement, event);
           // console.log('setupContainerListeners: event handled', res);
         },
-        true // Use capturing phase to ensure the handler runs before other listeners
+        true, // Use capturing phase to ensure the handler runs before other listeners
       );
     });
-    
+
     // eager parse all events for the container
     // this.events.map((evt) => {
     //   this.parseContainerElement(containerElement, evt);
@@ -208,14 +215,13 @@ export class AsyncLoader {
     return true;
   }
 
-
   // Parses elements within a container to identify and register event handlers
   // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
   parseContainerElement(containerElement, eventName) {
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
     const elements = containerElement.querySelectorAll(
-      `[${escapeSelector(eventAttr)}]`
+      `[${escapeSelector(eventAttr)}]`,
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
     elements.forEach((element: Element) => {
@@ -238,14 +244,20 @@ export class AsyncLoader {
   // supporting the event delegation pattern and improving performance for containers with many elements.
   addEventData(containerElement, eventName, element, attrValue) {
     if (!containerElement.isConnected) {
-      console.warn('addEventData: container is not connected', containerElement);
+      console.warn(
+        "addEventData: container is not connected",
+        containerElement,
+      );
       this.processedContainers.delete(containerElement);
       this.containers.delete(containerElement);
       return;
     }
     const listeners = this.containers.get(containerElement);
     if (!listeners) {
-      console.warn("addEventData: no listeners found for container", containerElement);
+      console.warn(
+        "addEventData: no listeners found for container",
+        containerElement,
+      );
       return;
     }
     let eventListeners = listeners.get(eventName);
@@ -258,7 +270,7 @@ export class AsyncLoader {
       if (element.isConnected) {
         eventListeners.set(element, attrValue); // Map script paths to the element for the given event
       } else {
-        console.warn('addEventData: element is not connected', element);
+        console.warn("addEventData: element is not connected", element);
         eventListeners.delete(element);
       }
     } else {
@@ -362,7 +374,6 @@ export class AsyncLoader {
     while (element && element !== containerElement) {
       // console.log('handleContainerEvent: handling event for element', element.tagName, event.type, eventListeners);
       if (eventListeners.has(element)) {
-
         // Define the context with getters for accessing current state and elements
         let value = undefined;
         const attrValue = eventListeners.get(element); // || element.getAttribute(this.eventPrefix + domEvent.type);
@@ -404,7 +415,10 @@ export class AsyncLoader {
         };
 
         // copy the context properties from the async loader
-        Object.defineProperties(context, Object.getOwnPropertyDescriptors(this.context))
+        Object.defineProperties(
+          context,
+          Object.getOwnPropertyDescriptors(this.context),
+        );
 
         try {
           /* context = */ await self.handlerRegistry.handler(context);
@@ -413,7 +427,7 @@ export class AsyncLoader {
           value = undefined;
           console.error(
             `handleContainerEvent: Error`,
-            error
+            error,
           ); // Log any errors during handler execution
         }
         // clear and references to avoid memory leak
@@ -431,6 +445,3 @@ export class AsyncLoader {
 function escapeSelector(selector) {
   return selector.replace(/[^\w\s-]/g, (match) => `\\${match}`);
 }
-
-
-

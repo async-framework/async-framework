@@ -1,7 +1,9 @@
 import type { Context } from "hono";
 
 // Function to get directory contents
-export async function getDirectoryContents(directories: AsyncIterable<Deno.DirEntry>): Promise<string[]> {
+export async function getDirectoryContents(
+  directories: AsyncIterable<Deno.DirEntry>,
+): Promise<string[]> {
   const entries: string[] = [];
   for await (const entry of directories) {
     if (entry.isDirectory && !entry.name.startsWith("__")) {

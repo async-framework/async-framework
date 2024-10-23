@@ -16,20 +16,18 @@ function isPromise(value: any): value is Promise<any> {
  * @returns {string} - The converted event name.
  */
 function convertToEventName(eventString: string) {
-  if (!eventString) return '';
+  if (!eventString) return "";
   // First, replace any hyphens with spaces
-  let processed = eventString.replace(/-/g, ' ');
-  
+  let processed = eventString.replace(/-/g, " ");
+
   // Then apply title case
-  processed = processed.split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
-  
+  processed = processed.split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join("");
+
   // Remove any remaining spaces
-  return processed.replace(/\s/g, '');
+  return processed.replace(/\s/g, "");
 }
-
-
 
 export class HandlerRegistry {
   public splitIndex: string;
@@ -47,7 +45,10 @@ export class HandlerRegistry {
   constructor(config: any = {}) {
     this.registry = config.registry || new Map();
     this.attributeRegistry = config.attributeRegistry || new Map();
-    this.eventPrefix = (config.eventPrefix || "on").toLowerCase().replace(/:|-/g, "");
+    this.eventPrefix = (config.eventPrefix || "on").toLowerCase().replace(
+      /:|-/g,
+      "",
+    );
     this.defaultHandler = config.defaultHandler || "handler";
     // The character used to split the script path into its components
     this.splitIndex = config.splitIndex || ",";
@@ -88,7 +89,9 @@ export class HandlerRegistry {
   async handler(context: any) {
     // context.eventName, context.attrValue, context.value, context.break
     const attrValue = context.attrValue;
-    const processedAttrValue = Array.isArray(attrValue) ? attrValue : this.parseAttribute(attrValue);
+    const processedAttrValue = Array.isArray(attrValue)
+      ? attrValue
+      : this.parseAttribute(attrValue);
     for (const scriptPath of processedAttrValue) {
       try {
         // Retrieve the handler from the registry
@@ -120,7 +123,7 @@ export class HandlerRegistry {
       } catch (error) {
         console.error(
           `HandlerRegistry.processHandlers: Failed to load handler at ${scriptPath}:`,
-          error
+          error,
         );
         throw error;
       }
@@ -136,7 +139,10 @@ export class HandlerRegistry {
    * @param {string} scriptPath - The relative path to the handler script.
    * @returns {Function} - The handler function.
    */
-  async getHandler(scriptPath, context): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
+  async getHandler(
+    scriptPath,
+    context,
+  ): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
     if (this.registry.has(scriptPath)) {
       // console.log('HandlerRegistry.getHandler: returning cached handler for', scriptPath);
       return this.registry.get(scriptPath);
@@ -148,7 +154,9 @@ export class HandlerRegistry {
         `${this.origin}${this.basePath}${scriptPath}`
       );
       const eventName = context.eventName;
-      const handlerName = eventName ? this.eventPrefix + convertToEventName(eventName) : this.defaultHandler;
+      const handlerName = eventName
+        ? this.eventPrefix + convertToEventName(eventName)
+        : this.defaultHandler;
       const onHandler = eventName ? module[handlerName] : null;
       const handler = onHandler || module.default || null;
       if (typeof handler === "function") {
@@ -156,14 +164,14 @@ export class HandlerRegistry {
         return handler;
       } else {
         console.error(
-          `HandlerRegistry.getHandler: Handler at ${scriptPath} is not a function.`
+          `HandlerRegistry.getHandler: Handler at ${scriptPath} is not a function.`,
         );
         throw new Error(`Handler at ${scriptPath} is not a function.`);
       }
     } catch (error) {
       console.error(
         `HandlerRegistry.getHandler: Failed to load handler at ${scriptPath}:`,
-        error
+        error,
       );
       throw error;
     }

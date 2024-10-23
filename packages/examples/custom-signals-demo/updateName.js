@@ -1,12 +1,14 @@
 export default function updateName({ signals, element }) {
-  const firstName = signals.get('firstName');
-  const lastName = signals.get('lastName');
+  const firstName = signals.get("firstName");
+  const lastName = signals.get("lastName");
+  const fullName = signals.get("fullName");
+  console.log("updateName", element.id);
 
-  if (element.id === 'firstName') {
+  if (element.id === "firstName") {
     firstName.value = element.value;
-    console.log('firstName', firstName.value);
-  } else if (element.id === 'lastName') {
+    fullName.value = `${firstName.value} ${lastName.value}`.trim();
+  } else if (element.id === "lastName") {
     lastName.value = element.value;
-    console.log('lastName', lastName.value);
+    fullName.value = `${firstName.value} ${lastName.value}`.trim();
   }
 }

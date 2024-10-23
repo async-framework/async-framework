@@ -1,7 +1,7 @@
 import { getState, setState } from "./STATE.js";
 
 export default function toggleTodo({ element, dispatch }) {
-  const el = element.closest('[data-id]');
+  const el = element.closest("[data-id]");
   const todoId = parseInt(el.dataset.id);
 
   console.log("toggleTodo event:", todoId);

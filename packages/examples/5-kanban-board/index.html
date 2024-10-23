@@ -24,13 +24,19 @@
   <body class="bg-gray-100 min-h-screen">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
       <div class="container mx-auto">
-        <a href="/" class="text-xl font-bold hover:underline">← Back to Examples</a>
+        <a href="/" class="text-xl font-bold hover:underline"
+        >← Back to Examples</a>
       </div>
     </header>
     <div class="container mx-auto px-4" data-container="root">
-      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Kanban Board</h1>
+      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+        Kanban Board
+      </h1>
       <div class="mb-4">
-        <form class="flex space-x-2" on:submit="prevent-stop-default.js, addTask.js">
+        <form
+          class="flex space-x-2"
+          on:submit="prevent-stop-default.js, addTask.js"
+        >
           <input
             type="text"
             id="new-task"
@@ -46,22 +52,40 @@
           </button>
         </form>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" on:update-board="updateBoard.js">
+      <div
+        class="grid grid-cols-1 md:grid-cols-3 gap-4"
+        on:update-board="updateBoard.js"
+      >
         <div class="bg-white p-4 rounded shadow">
           <h2 class="text-xl font-semibold mb-2">To Do</h2>
-          <div class="min-h-[200px]" id="todo" on:dragover="prevent-default.js" on:drop="drop.js">
+          <div
+            class="min-h-[200px]"
+            id="todo"
+            on:dragover="prevent-default.js"
+            on:drop="drop.js"
+          >
             <!-- todo -->
           </div>
         </div>
         <div class="bg-white p-4 rounded shadow">
           <h2 class="text-xl font-semibold mb-2">In Progress</h2>
-          <div class="min-h-[200px]" id="inprogress" on:dragover="prevent-default.js" on:drop="drop.js">
+          <div
+            class="min-h-[200px]"
+            id="inprogress"
+            on:dragover="prevent-default.js"
+            on:drop="drop.js"
+          >
             <!--  -->
           </div>
         </div>
         <div class="bg-white p-4 rounded shadow">
           <h2 class="text-xl font-semibold mb-2">Done</h2>
-          <div class="min-h-[200px]" id="done" on:dragover="prevent-default.js" on:drop="drop.js">
+          <div
+            class="min-h-[200px]"
+            id="done"
+            on:dragover="prevent-default.js"
+            on:drop="drop.js"
+          >
             <!-- done -->
           </div>
         </div>
@@ -70,29 +94,29 @@
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
-      import preventDefault from './prevent-default.js';
-      import preventStopDefault from './prevent-stop-default.js';
-      import updateBoard from './updateBoard.js';
-      import onDragstart from './drag.js';
-      import drop from './drop.js';
-      import { getState, setState, saveState, loadState } from './STATE.js';
+      import preventDefault from "./prevent-default.js";
+      import preventStopDefault from "./prevent-stop-default.js";
+      import updateBoard from "./updateBoard.js";
+      import onDragstart from "./drag.js";
+      import drop from "./drop.js";
+      import { getState, loadState, saveState, setState } from "./STATE.js";
 
       const handlerRegistry = new HandlerRegistry({
         registry: new Map([
-          ['prevent-default.js', preventDefault],
-          ['prevent-stop-default.js', preventStopDefault],
-          ['update-board', updateBoard],
-          ['drag.js', onDragstart],
-          ['drop.js', drop],
+          ["prevent-default.js", preventDefault],
+          ["prevent-stop-default.js", preventStopDefault],
+          ["update-board", updateBoard],
+          ["drag.js", onDragstart],
+          ["drop.js", drop],
         ]),
         basePath: location.pathname,
       });
 
-      const boardItemEvents = ['dragstart', 'click'];
-      const boardBoardEvents = ['dragover', 'drop'];
+      const boardItemEvents = ["dragstart", "click"];
+      const boardBoardEvents = ["dragover", "drop"];
 
       const asyncLoader = new AsyncLoader({
-        events: ['submit', 'update-board', ...boardBoardEvents, ...boardItemEvents],
+        events: ["submit", "update-board", ...boardBoardEvents, ...boardItemEvents],
         handlerRegistry,
       });
 
@@ -100,13 +124,16 @@
       asyncLoader.init(rootContainer);
 
       // Initialize board
-      setState('board', loadState('board') || { todo: [], inprogress: [], done: [] });
+      setState(
+        "board",
+        loadState("board") || { todo: [], inprogress: [], done: [] },
+      );
 
-      asyncLoader.dispatch('update-board', getState('board'));
+      asyncLoader.dispatch("update-board", getState("board"));
 
-      window.addEventListener('unload', (event) => {
-        console.log('-----unloading kanban board app-----');
-        saveState('board');
+      window.addEventListener("unload", (event) => {
+        console.log("-----unloading kanban board app-----");
+        saveState("board");
       });
     </script>
   </body>
