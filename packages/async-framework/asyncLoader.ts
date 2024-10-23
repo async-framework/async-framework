@@ -414,8 +414,9 @@ export class AsyncLoader {
           // }
         };
 
-        // copy the context properties from the async loader
-        Object.defineProperties(
+        if (typeof this.context === "object") {
+          // copy the context properties from the async loader
+          Object.defineProperties(
           context,
           Object.getOwnPropertyDescriptors(this.context),
         );
