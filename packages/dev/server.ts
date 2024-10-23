@@ -109,7 +109,7 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
 app.get("/custom-signals.js", cacheResponse, async (c) => {
   try {
     const bundleContent = await bundle(
-      join(packagesDirectory, "custom-signals/src/index.ts"),
+      join(packagesDirectory, "custom-signals/index.ts"),
       "CustomSignals",
     );
     return c.body(bundleContent, 200, {

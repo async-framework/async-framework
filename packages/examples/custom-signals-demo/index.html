@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Signals Demo</title>
+    <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "async-framework": "/async-framework.js",
+          "custom-signals": "/custom-signals.js"
+        }
+      }
+    </script>
+    <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/async-framework.js" />
+    <link rel="modulepreload" href="/custom-signals.js" />
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <header class="w-full bg-blue-600 p-4 text-white mb-8">
+      <div class="container mx-auto">
+        <a href="/" class="text-xl font-bold hover:underline"
+          >← Back to Examples</a
+        >
+      </div>
+    </header>
+    <div class="flex flex-col items-center justify-center">
+      <div
+        class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
+        data-container="root"
+      >
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+          Custom Signals Demo
+        </h1>
+
+        <div class="space-y-6">
+          <div class="space-y-2">
+            <h2 class="text-xl font-semibold text-gray-700">Counter Example</h2>
+            <p class="text-gray-600">
+              Count: <span id="count" class="font-bold"></span>
+            </p>
+            <div class="flex space-x-2">
+              <button
+                id="increment"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                on:click="incrementCounter.js"
+              >
+                Increment
+              </button>
+              <button
+                id="decrement"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                on:click="decrementCounter.js"
+              >
+                Decrement
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h2 class="text-xl font-semibold text-gray-700">Name Example</h2>
+            <input
+              type="text"
+              id="firstName"
+              placeholder="First Name"
+              class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              on:change="updateName.js"
+            />
+            <input
+              type="text"
+              id="lastName"
+              placeholder="Last Name"
+              class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              on:change="updateName.js"
+            />
+            <p class="text-gray-600">
+              Full Name: <span id="fullName" class="font-bold"></span>
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <h2 class="text-xl font-semibold text-gray-700">
+              Temperature Converter
+            </h2>
+            <input
+              type="number"
+              id="celsius"
+              placeholder="Celsius"
+              class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              on:input="updateTemperature.js"
+            />
+            <p class="text-gray-600">
+              Fahrenheit: <span id="fahrenheit" class="font-bold"></span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { AsyncLoader, HandlerRegistry } from "async-framework";
+      import { signalRegistry } from "custom-signals";
+
+      window.signalRegistry = signalRegistry;
+      
+      const handlerRegistry = new HandlerRegistry({
+        basePath: location.pathname,
+      });
+
+      const asyncLoader = new AsyncLoader({
+        events: ["click", "input", "change"],
+        handlerRegistry,
+        context: {
+          handlers: handlerRegistry,
+          signals: signalRegistry,
+        },
+      });
+
+      const rootContainer = document.body.querySelector(
+        '[data-container="root"]'
+      );
+      asyncLoader.init(rootContainer);
+
+
+      // Initialize signals
+      const count = signalRegistry.getOrCreate("count", 0);
+      const firstName = signalRegistry.getOrCreate("firstName", "");
+      const lastName = signalRegistry.getOrCreate("lastName", "");
+      const fullName = signalRegistry.createComputed("fullName", () => {
+        console.log('fullName Computed', firstName.value, lastName.value);
+        return `${firstName.value} ${lastName.value}`.trim();
+      });
+      const celsius = signalRegistry.getOrCreate("celsius", 0);
+      const fahrenheit = signalRegistry.createComputed("fahrenheit", () => {
+        console.log('fahrenheit Computed', celsius.value);
+        return (celsius.value * 9) / 5 + 32;
+      });
+
+      fullName.subscribe((value) => {
+        console.log('fullName Subscribed', value);
+        document.getElementById("fullName").textContent = fullName.value;
+      });
+      count.subscribe((value) => {
+        console.log('count Subscribed', value);
+        document.getElementById("count").textContent = count.value;
+      });
+      fahrenheit.subscribe((value) => {
+        console.log('fahrenheit Subscribed', value);
+        document.getElementById("fahrenheit").textContent = fahrenheit.value;
+      });
+
+    </script>
+  </body>
+</html>
