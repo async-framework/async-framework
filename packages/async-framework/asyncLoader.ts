@@ -6,6 +6,7 @@ export interface AsyncLoaderConfig {
   containers?: Map<Element, Map<string, Map<Element, string>>>;
   events?: string[];
   processedContainers?: WeakSet<Element>;
+  context?: any;
 }
 
 export class AsyncLoader {
@@ -54,8 +55,9 @@ export class AsyncLoader {
   private events: string[];
   private eventPrefix: string;
   private processedContainers: WeakSet<Element>;
-
+  private context: any;
   constructor(config: AsyncLoaderConfig) {
+    this.context = config.context;
     this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containers = config.containers || new Map();
@@ -400,6 +402,9 @@ export class AsyncLoader {
           //   return container._controller.signals;
           // }
         };
+
+        // copy the context properties from the async loader
+        Object.defineProperties(context, Object.getOwnPropertyDescriptors(this.context))
 
         try {
           /* context = */ await self.handlerRegistry.handler(context);
