@@ -1,0 +1,80 @@
+// Repository-specific rules for Cursor AI
+
+// General guidelines
+Always prefer JavaScript over TypeScript unless explicitly required
+Preserve existing comments in all files
+Follow the project structure as defined in the repository
+
+// Deno configuration
+This is a Deno project
+Refer to deno.jsonc for Deno-specific configurations
+Update .vscode/settings.json when adding new packages or directories that should be managed by Deno
+
+// Project structure
+Maintain the following package structure:
+  - packages/
+    - examples/
+    - async-loader/
+    - custom-signals/
+    - dev/
+    - custom-element-signals/
+Add new packages under the 'packages/' directory
+Add new example toy apps in 'examples/' directory
+Add anything for the local dev-server in 'dev/' directory such as the server.ts which is the deno server hosting the example apps
+
+// VS Code settings
+When adding new packages, update the "deno.enablePaths" in .vscode/settings.json
+Example:
+  "deno.enablePaths": [
+    "./packages/examples",
+    "./packages/async-loader",
+    "./packages/custom-signals",
+    "./packages/dev",
+    // Add new package paths here
+  ]
+
+// File-specific guidelines
+For HTML files:
+  - Use proper HTML5 structure
+  - Include necessary script tags for custom elements and signals
+For JavaScript files:
+  - Use ES6+ syntax
+  - Prefer const over let when variables are not reassigned
+For TypeScript files:
+  - Use TypeScript features judiciously
+  - Provide clear type annotations for function parameters and return types
+
+// Custom elements and signals
+When working with custom elements:
+  - Use kebab-case for custom element names
+  - Extend HTMLElement for custom elements
+  - Use connectedCallback for initialization logic
+
+// Best practices
+Follow single responsibility principle for functions and classes
+Use meaningful variable and function names
+Keep functions small and focused
+Use async/await for asynchronous operations
+Implement error handling where appropriate
+
+// Testing
+Write unit tests for new functionality
+Ensure all tests pass before committing changes
+
+// Documentation
+Add comments for complex logic or non-obvious code
+Update README files when adding new features or changing existing ones
+Make sure every method in 'async-framework/' folder has a "Why:" comment above to explain why it's there
+
+// Version control
+Make small, focused commits with clear commit messages
+Create feature branches for new developments
+
+// Performance
+Optimize for performance, especially in signal handling and custom element operations
+Avoid unnecessary re-renders or computations
+
+// README formatting
+When creating or updating README files, do not use backticks (`) around code examples unless it's already there
+
+// Remember to update this file as the project evolves and new standards are established
