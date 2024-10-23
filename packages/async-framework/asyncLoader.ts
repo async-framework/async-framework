@@ -400,24 +400,22 @@ export class AsyncLoader {
           get eventName() {
             return domEvent.type;
           },
+          get handlers() {
+            return self.handlerRegistry;
+          },
           get container() {
             return containerElement;
           },
           // If the handler sets break to true, stop processing further handlers for this event
           break: false,
-          // TODO: controller/signal
-          // get controller() {
-          //   return container._controller;
-          // },
-          // get signals() {
-          //   return container._controller.signals;
-          // }
         };
-
         // copy the context properties from the async loader
         Object.defineProperties(
           context,
           Object.getOwnPropertyDescriptors(this.context)
+          // get signals() {
+          //   return container._controller.signals;
+          // }
         );
 
         try {
