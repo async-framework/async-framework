@@ -1,108 +1,93 @@
-# Custom Signals
+# Custom Signals Package
 
-This package provides a reactive programming model using signals. Signals are values that can change over time and automatically update dependent computations.
+This package provides a reactive programming model using signals. Signals are values that can change over time and automatically update any computations that depend on them.
 
-## Features
+## Key Components
 
-- Simple signals with get/set operations
-- Computed signals with automatic dependency tracking
-- Global registry of signals with string IDs
-- Automatic cleanup and garbage collection
+1. `Signal`: Represents a value that can change over time.
+2. `computed`: Creates a signal that depends on other signals and updates automatically.
+3. `SignalRegistry`: Manages all signals and their dependencies.
 
-## Usage
+## How to Use
 
-### Creating a simple signal
+### Creating a Signal
 
-import { createSignal } from './signal.js';
+To create a simple signal:
 
-const count = createSignal('count', 0);
+```
+import { createSignal } from './signal';
 
-console.log(count.get()); // 0
+const countSignal = createSignal('count', 0);
 
-count.set(5);
-console.log(count.get()); // 5
+### Reading and Writing to a Signal
 
-// Subscribe to changes
-const unsubscribe = count.subscribe((newValue) => {
-  console.log('Count changed:', newValue);
+// Read the current value
+console.log(countSignal.get()); // 0
+
+// Update the value
+countSignal.set(1);
+console.log(countSignal.get()); // 1
+
+### Creating a Computed Signal
+
+Computed signals automatically update when their dependencies change:
+
+import { computed } from './signal';
+
+const doubleCount = computed('doubleCount', () => countSignal.get() * 2);
+
+console.log(doubleCount.get()); // 2
+
+countSignal.set(2);
+console.log(doubleCount.get()); // 4
+
+### Subscribing to Changes
+
+You can subscribe to changes in a signal:
+
+const unsubscribe = countSignal.subscribe((newValue) => {
+  console.log(Count changed to ${newValue});
 });
 
-count.set(10); // Logs: "Count changed: 10"
-
-// Unsubscribe when no longer needed
+// Later, to stop listening:
 unsubscribe();
 
-### Creating a computed signal
+### Using SignalRegistry
 
-import { createSignal, computed } from './signal.js';
+The SignalRegistry is used internally to manage signals. You typically don't need to interact with it directly, but it provides methods for advanced use cases:
 
-const width = createSignal('width', 5);
-const height = createSignal('height', 10);
+import { SignalRegistry } from './signalRegistry';
 
-const area = computed('area', () => width.get() * height.get());
+const registry = new SignalRegistry();
 
-console.log(area.get()); // 50
+// Get or create a signal
+const mySignal = registry.getOrCreate('mySignal', 'initial value');
 
-width.set(7);
-console.log(area.get()); // 70
-
-// Subscribe to computed signal
-area.subscribe((newArea) => {
-  console.log('Area changed:', newArea);
+// Create a computed signal
+const myComputed = registry.createComputed('myComputed', () => {
+  return mySignal.get().toUpperCase();
 });
 
-height.set(15); // Logs: "Area changed: 105"
+// Check if a signal exists
+if (registry.has('mySignal')) {
+  console.log('Signal exists');
+}
 
-### Using signals with HTML elements
+// Remove a signal
+registry.remove('mySignal');
 
-import { createSignal } from './signal.js';
-
-const name = createSignal('name', 'World');
-
-const nameInput = document.getElementById('nameInput');
-const greeting = document.getElementById('greeting');
-
-// Update signal when input changes
-nameInput.addEventListener('input', (e) => {
-  name.set(e.target.value);
-});
-
-// Update DOM when signal changes
-name.subscribe((newName) => {
-  greeting.textContent = `Hello, ${newName}!`;
-});
-
-// Initial render
-greeting.textContent = `Hello, ${name.get()}!`;
-
-### Retrieving existing signals
-
-import { createSignal } from './signal.js';
-
-// Create a signal
-const count = createSignal('count', 0);
-
-// Later, in another part of your code, you can retrieve the same signal
-const sameCount = createSignal('count', 100);
-
-console.log(sameCount === count); // true
-console.log(sameCount.get()); // 0 (not 100)
+// Clear all signals
+registry.clear();
 
 ## Best Practices
 
-1. Use meaningful IDs for your signals to make them easy to identify and retrieve.
-2. Clean up signals when they are no longer needed by calling `signal.cleanUp()`.
-3. Use computed signals for values that depend on other signals to ensure automatic updates.
-4. Avoid circular dependencies in computed signals.
-5. Use the `subscribe` method to react to signal changes instead of polling the value.
+1. Use meaningful IDs for your signals to make debugging easier.
+2. Clean up signals that are no longer needed to prevent memory leaks.
+3. Avoid circular dependencies in computed signals.
+4. Use computed signals for values that depend on other signals, rather than manually updating them.
 
-## API Reference
+## Advanced Usage
 
-- `createSignal(id: string, initialValue: any): Signal`
-- `computed(id: string, computeFn: () => any): Signal`
-- `Signal.get(): any`
-- `Signal.set(newValue: any): void`
-- `Signal.subscribe(observer: Function): () => void`
-- `Signal.cleanUp(): void`
+For more complex scenarios or performance optimization, you can use the SignalRegistry directly. This allows for more fine-grained control over signal creation and management.
 
-For more detailed information about the API, please refer to the source code and inline comments in `signal.ts`.
+Remember that the signal system is designed to be efficient and automatically manage dependencies. In most cases, simply using createSignal, computed, and the signal methods (get, set, subscribe) will be sufficient for building reactive applications.

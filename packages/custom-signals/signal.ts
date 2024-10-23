@@ -1,57 +1,52 @@
 // deno-lint-ignore-file no-explicit-any
 
-// Global registry to store signals by their IDs
-export const signalRegistry = new Map();
+import { signalRegistry } from './instance.ts';
 
-// Current signal being evaluated
-let currentSignal = null;
+
 
 export class Signal {
   id: string;
-  value: any;
+  private _value: any;
   _observers = new Set();
   _dependencies = new Set();
 
   constructor(id: string, initialValue: any) {
     this.id = id;
-    this.value = initialValue;
-    
-    // Register the signal in the global registry
-    signalRegistry.set(id, this);
+    this._value = initialValue;    
   }
 
-  get() {
-    // Track dependencies
+  get value(): any {
+    const currentSignal = signalRegistry.getCurrentSignal();
     if (currentSignal) {
       this._dependencies.add(currentSignal);
       currentSignal._observers.add(this);
     }
-    return this.value;
+    return this._value;
   }
 
-  set(newVal: any) {
-    if (this.value !== newVal) {
-      this.value = newVal;
+  set value(newVal: any) {
+    if (this._value !== newVal) {
+      this._value = newVal;
       this._notifyObservers();
     }
   }
 
   _notifyObservers() {
     // Store the current signal to restore later
-    const prevSignal = currentSignal;
+    const prevSignal = signalRegistry.getCurrentSignal();
     
     // Notify observers
     for (const observer of this._observers) {
-      currentSignal = observer;
+      signalRegistry.setCurrentSignal(observer instanceof Signal ? observer : null);
       if (typeof observer === 'function') {
-        observer(this.value);
+        observer(this._value);
       } else if (observer instanceof Signal) {
         observer._recompute();
       }
     }
     
     // Restore the previous current signal
-    currentSignal = prevSignal;
+    signalRegistry.setCurrentSignal(prevSignal);
   }
 
   _recompute() {
@@ -68,15 +63,12 @@ export class Signal {
   cleanUp() {
     this._observers.clear();
     this._dependencies.clear();
-    signalRegistry.delete(this.id);
+    signalRegistry.remove(this.id);
   }
 
   // Static method to get or create a signal by ID
   static getOrCreate(id: string, initialValue: any): Signal {
-    if (signalRegistry.has(id)) {
-      return signalRegistry.get(id);
-    }
-    return new Signal(id, initialValue);
+    return signalRegistry.getOrCreate(id, initialValue);
   }
 }
 
@@ -85,28 +77,17 @@ export function computed(id: string, computeFn: () => any): Signal {
   const signal = Signal.getOrCreate(id, undefined);
   
   const compute = () => {
-    // Clear previous dependencies
-    signal._dependencies.forEach(dep => dep._observers.delete(signal));
-    signal._dependencies.clear();
-
-    // Set the current signal for dependency tracking
-    const prevSignal = currentSignal;
-    currentSignal = signal;
-
-    // Compute the new value
-    const newValue = computeFn();
-
-    // Restore the previous current signal
-    currentSignal = prevSignal;
-
-    return newValue;
+    return signalRegistry.withSignal(signal, () => {
+      signal._dependencies.forEach((dep: Signal | any) => dep._observers.delete(signal));
+      signal._dependencies.clear();
+      return computeFn();
+    });
   };
 
   signal._recompute = () => {
     const newValue = compute();
     if (signal.value !== newValue) {
       signal.value = newValue;
-      signal._notifyObservers();
     }
   };
 
