@@ -57,7 +57,7 @@ export class AsyncLoader {
   private processedContainers: WeakSet<Element>;
   private context: any;
   constructor(config: AsyncLoaderConfig) {
-    this.context = config.context;
+    this.context = config.context || {};
     this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containers = config.containers || new Map();
@@ -414,11 +414,10 @@ export class AsyncLoader {
           // }
         };
 
-        if (this.context && typeof this.context === "object") {
-          // copy the context properties from the async loader
-          Object.defineProperties(
+        // copy the context properties from the async loader
+        Object.defineProperties(
           context,
-          Object.getOwnPropertyDescriptors(this.context),
+          Object.getOwnPropertyDescriptors(this.context)
         );
 
         try {
