@@ -106,12 +106,15 @@
         basePath: location.pathname,
       });
 
+      const events = ["click", "input"];
+
       const asyncLoader = new AsyncLoader({
-        events: ["click", "input", "change"],
+        events,
         handlerRegistry: handlers,
         context: {
-          handlers,
-          signals,
+          get signals() {
+            return signals;
+          },
         },
       });
 
