@@ -165,8 +165,8 @@
                 <span class="text-gray-600 ml-2">(${item.role})</span>
               </div>
               <button 
-                data-index="${index}"
-                onclick="removeUser(this.dataset.index)"
+                data-id="${item.id}"
+                onclick="removeUser(this.dataset.id)"
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm"
               >
                 Remove
@@ -317,9 +317,9 @@
         usersSignal.set([...users, newUser]);
       });
 
-      window.removeUser = (index) => {
+      window.removeUser = (id) => {
         const users = usersSignal.get();
-        const newUsers = users.filter((user, i) => `${i}` !== `${index}`);
+        const newUsers = users.filter(user => user.id !== Number(id));
         usersSignal.set(newUsers);
       };
 

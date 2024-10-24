@@ -260,14 +260,26 @@ export class SignalList<T> extends HTMLElement {
       );
     }
 
-    // Replace item placeholders
+    // Replace item placeholders with proper property access
     processedTemplate = processedTemplate
-      .replace(new RegExp(`\\\${${this.letItem}}`, 'g'), 
+      // Handle direct item references
+      .replace(new RegExp(`\\\${${this.letItem}}(?![\.\\[])}`, 'g'), 
         this.escapeHtml(String(item)))
+      // Handle property access (e.g., ${item.id}, ${item.name})
       .replace(new RegExp(`\\\${${this.letItem}\\.([^}]+)}`, 'g'), (_, prop) => {
-        const value = typeof item === 'object' && item !== null ? 
-          (item as Record<string, unknown>)[prop] : undefined;
-        return this.escapeHtml(String(value));
+        if (typeof item === 'object' && item !== null) {
+          const value = this.getNestedValue(item as Record<string, unknown>, prop);
+          return this.escapeHtml(String(value));
+        }
+        return '';
+      })
+      // Handle array access (e.g., ${item[0]})
+      .replace(new RegExp(`\\\${${this.letItem}\\[([^\\]]+)\\]}`, 'g'), (_, index) => {
+        if (Array.isArray(item)) {
+          const value = item[Number(index)];
+          return this.escapeHtml(String(value));
+        }
+        return '';
       });
 
     temp.innerHTML = processedTemplate;
@@ -277,7 +289,6 @@ export class SignalList<T> extends HTMLElement {
       // Store original index attributes if needed for updates
       if (this.templateInfo.hasIndexInAttributes) {
         element.dataset.originalIndexAttrs = JSON.stringify(
-          // es2019
           Object.fromEntries(
             this.templateInfo.indexAttributes.map(attr => [
               attr,
@@ -291,6 +302,16 @@ export class SignalList<T> extends HTMLElement {
       const key = this.isPrimitive(item) ? `${item}_${this.currentIndex}` : item;
       this.itemElements.set(key, element);
     }
+  }
+
+  // Add this helper method to safely get nested object values
+  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((current: unknown, part: string) => {
+      if (current && typeof current === 'object') {
+        return (current as Record<string, unknown>)[part];
+      }
+      return undefined;
+    }, obj);
   }
 
   // Get the current items
