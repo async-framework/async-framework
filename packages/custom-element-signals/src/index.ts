@@ -1,4 +1,4 @@
-export * from "./define-signal";
+export * from "./let-signal";
 export * from "./signal-text";
 export * from "./signal-store";
 

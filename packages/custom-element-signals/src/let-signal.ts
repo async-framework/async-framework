@@ -2,7 +2,21 @@ import { parseAttributeValue } from "./parse-attribute-value";
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 
-export class DefineSignal<T> extends HTMLElement {
+// its better not to use this but ask the developer to do it
+// const STYLE_ID = 'let-signal-style';
+// if (!document.getElementById(STYLE_ID)) {
+//   const style = document.createElement('style');
+//   style.id = STYLE_ID;
+//   style.textContent = `
+//     let-signal:not(:defined),
+//     let-signal {
+//       display: none !important;
+//     }
+//   `;
+//   document.head.appendChild(style);
+// }
+
+export class LetSignal<T> extends HTMLElement {
   static observedAttributes = ["data-id"];
 
   signal: null | Signal<T> = null;
@@ -13,11 +27,12 @@ export class DefineSignal<T> extends HTMLElement {
   };
 
   connectedCallback() {
-    // This component never renders anything.
-    this.innerHTML = "";
-    const initialValue = this.attributes?.["initial-value"]?.value;
+    // Use the initial-value attribute if it exists, otherwise use the innerHTML
+    const initialValue =
+      this.attributes?.["initial-value"]?.value || this.innerHTML || "";
+
     this.signal = new Signal(
-      initialValue ? parseAttributeValue(initialValue) : undefined,
+      initialValue ? parseAttributeValue(initialValue) : undefined
     );
     const id = this.attributes["data-id"].value;
     signalStore.set(id, this.signal);

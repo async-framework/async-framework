@@ -5,14 +5,12 @@ import { parseAttributeValue } from "./parse-attribute-value";
 export class SignalText extends HTMLElement {
   static observedAttributes = [
     "data-id",
-    "data-transformers",
     "data-dangerous-html",
   ];
 
   attributes!: NamedNodeMap & {
     "data-id": { value: string };
-    "data-transformers": { value: string };
-    "data-dangerous-html"?: { value: boolean };
+    "data-dangerous-html"?: { value: boolean | string };
   };
 
   signal: null | Signal<any> = null;
@@ -27,32 +25,15 @@ export class SignalText extends HTMLElement {
     this.mounted = true;
     const id = this.attributes["data-id"]?.value;
     this.signal = signalStore.get(id) ?? null;
+    this.ready = true;
 
-    const transformers =
-      parseAttributeValue(this.attributes["data-transformers"]?.value) ?? [];
-
-    if (Array.isArray(transformers)) {
-      // We're hoping this completes before any event fires.
-      Promise
-        .all(transformers.map((id) => import(id)))
-        .then((fns) => {
-          if (this.mounted) {
-            this.transformers = fns.filter(Boolean);
-            this.ready = true;
-            this.updateChildren(this.signal?.get());
-          }
-        });
-    } else {
-      this.ready = true;
-    }
-
-    this.transformers = transformers;
     if (this.signal == null) {
       return;
     }
-    this.cleanUp = this.signal.subscribe((newValue) => {
-      return this.updateChildren(newValue);
-    }) ?? null;
+    this.cleanUp =
+      this.signal.subscribe((newValue) => {
+        return this.updateChildren(newValue);
+      }) ?? null;
   }
 
   disconnectedCallback() {
@@ -64,17 +45,23 @@ export class SignalText extends HTMLElement {
     if (!this.ready) {
       return;
     }
-    const transformedValue = this.transformers
-      .reduce(
-        (valueSoFar: any, fn: (input: any) => any) => fn(valueSoFar),
-        newValue,
-      );
-    //
+    const transformedValue = this.transformers.reduce(
+      (valueSoFar: any, fn: (input: any) => any) => fn(valueSoFar),
+      newValue
+    );
+    const dangerousHtml = this.attributes["data-dangerous-html"]?.value;
 
-    if (this.attributes["data-dangerous-html"]?.value) {
-      this.innerHTML = String(transformedValue);
-    } else {
-      this.innerText = String(transformedValue);
+    if (dangerousHtml === "false" || dangerousHtml === false) {
+      return;
+    }
+    switch (transformedValue) {
+      case NaN:
+      case undefined:
+      case null:
+        this.innerHTML = "";
+        break;
+      default:
+        this.innerHTML = `${transformedValue}`;
     }
   };
 }

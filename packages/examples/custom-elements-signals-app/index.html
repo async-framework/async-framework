@@ -15,6 +15,12 @@
     <script type="module" src="/livereload.js"></script>
     <link rel="modulepreload" href="/custom-element-signals.js" />
     <script type="module" src="/custom-element-signals.js"></script>
+    <style>
+      let-signal:not(:defined),
+      let-signal {
+        display: none !important;
+      }
+    </style>
   </head>
   <body class="bg-gray-100">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
@@ -31,7 +37,7 @@
 
       <section id="counter" class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-2xl font-semibold mb-4">Counter</h2>
-        <define-signal data-id="counter" initial-value="0"></define-signal>
+        <let-signal data-id="counter">0</let-signal>
         <p class="mb-4">
           Count: <signal-text
             data-id="counter"
@@ -55,8 +61,8 @@
 
       <section id="nameInput" class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-2xl font-semibold mb-4">Name Input</h2>
-        <define-signal data-id="firstName" initial-value="''"></define-signal>
-        <define-signal data-id="lastName" initial-value="''"></define-signal>
+        <let-signal data-id="firstName"></let-signal>
+        <let-signal data-id="lastName"></let-signal>
         <div class="flex mb-4">
           <input
             id="firstNameInput"
@@ -80,10 +86,11 @@
 
       <section id="todoList" class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-semibold mb-4">Todo List</h2>
-        <define-signal
+        <let-signal
           data-id="todos"
-          initial-value="['first-value']"
-        ></define-signal>
+        >
+          ["first-value"]
+        </let-signal>
         <div class="flex mb-4">
           <input
             id="todoInput"
