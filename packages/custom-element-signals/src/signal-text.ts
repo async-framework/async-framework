@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
+
 export class SignalText extends HTMLElement {
   static observedAttributes = [
     "name",
@@ -8,12 +9,11 @@ export class SignalText extends HTMLElement {
   ];
 
   attributes!: NamedNodeMap & {
-    "name": { value: string };
-    "data-dangerous-html"?: { value: boolean | string };
+    name: { value: string };
+    "data-dangerous-html"?: { value: false | "false" };
   };
 
   signal: null | Signal<any> = null;
-  transformers: Array<(input: any) => any> = [];
   _signalRegistry: Map<string, Signal<any>>;
 
   ready = false;
@@ -47,30 +47,26 @@ export class SignalText extends HTMLElement {
   disconnectedCallback() {
     this.cleanUp?.();
     this.mounted = false;
+    (this as any)._signalRegistry = null
   }
 
   updateChildren = (newValue: any): void => {
     if (!this.ready) {
       return;
     }
-    const transformedValue = this.transformers.reduce(
-      (valueSoFar: any, fn: (input: any) => any) => fn(valueSoFar),
-      newValue
-    );
     const dangerousHtml = this.attributes["data-dangerous-html"]?.value;
 
     if (dangerousHtml === "false" || dangerousHtml === false) {
       return;
     }
-    console.log("transformedValue", transformedValue);
-    switch (transformedValue) {
+    switch (newValue) {
       case NaN:
       case undefined:
       case null:
         this.innerHTML = "";
         break;
       default:
-        this.innerHTML = `${transformedValue}`;
+        this.innerHTML = `${newValue}`;
     }
   };
 }
