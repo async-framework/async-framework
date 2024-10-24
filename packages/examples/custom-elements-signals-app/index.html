@@ -91,9 +91,15 @@
           />
           <button
             id="addTodoBtn"
-            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-2"
           >
             Add Todo
+          </button>
+          <button
+            id="addRandomTodoBtn"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Add Random Todo
           </button>
         </div>
 
@@ -334,6 +340,61 @@
           [items[i], items[j]] = [items[j], items[i]];
         }
         mixedItemsSignal.set(items);
+      });
+
+      const generateRandomTodo = () => {
+        const actions = [
+          "Review",
+          "Complete",
+          "Update",
+          "Write",
+          "Plan",
+          "Research",
+          "Organize",
+          "Schedule",
+          "Prepare",
+          "Create"
+        ];
+
+        const subjects = [
+          "project documentation",
+          "weekly report",
+          "team meeting notes",
+          "presentation slides",
+          "budget proposal",
+          "client feedback",
+          "code review",
+          "user research",
+          "marketing strategy",
+          "design mockups"
+        ];
+
+        const timeframes = [
+          "for tomorrow",
+          "by end of week",
+          "before deadline",
+          "for next sprint",
+          "this afternoon",
+          "",
+          "by Monday",
+          "for the meeting",
+          "ASAP",
+          "within 2 days"
+        ];
+
+        const action = actions[Math.floor(Math.random() * actions.length)];
+        const subject = subjects[Math.floor(Math.random() * subjects.length)];
+        const timeframe = timeframes[Math.floor(Math.random() * timeframes.length)];
+
+        return `${action} ${subject} ${timeframe}`.trim();
+      };
+
+      const addRandomTodoBtn = document.getElementById("addRandomTodoBtn");
+      addRandomTodoBtn.addEventListener("click", () => {
+        const newTodo = generateRandomTodo();
+        const oldList = todosSignal.get();
+        const newList = [...oldList, newTodo];
+        todosSignal.set(newList);
       });
     </script>
   </body>
