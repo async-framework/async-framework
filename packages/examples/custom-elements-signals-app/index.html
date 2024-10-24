@@ -204,7 +204,7 @@
             <div class="mb-2 p-2 bg-green-50 rounded">
               <span class="font-mono">[${index}]</span>
               <span class="ml-2">${item}</span>
-              <span class="text-gray-500 ml-2">(${typeof item})</span>
+              <span class="text-gray-500 ml-2">(${typeof ${item}})</span>
             </div>
           </template>
         </signal-list>
@@ -221,16 +221,12 @@
 
       incrementBtn.addEventListener("click", () => {
         const oldValue = counterSignal.get();
-        console.log("incrementBtn oldValue", oldValue);
         counterSignal.set(oldValue + 1);
-        console.log("incrementBtn newValue", counterSignal.get());
       });
 
       decrementBtn.addEventListener("click", () => {
         const oldValue = counterSignal.get();
-        console.log("decrementBtn oldValue", oldValue);
         counterSignal.set(oldValue - 1);
-        console.log("decrementBtn newValue", counterSignal.get());
       });
 
       // Name Input
@@ -273,12 +269,9 @@
 
       // onclick="removeTodo(index)"
       window.removeTodo = (index) => {
-        console.log("removeTodo", index);
         const oldList = todosSignal.get();
-        console.log("removeTodo oldList", oldList);
         const newList = oldList.filter((_, i) => `${i}` !== `${index}`);
         todosSignal.set(newList);
-        console.log("removeTodo newList", newList);
       };
 
       // Async Stream Example
