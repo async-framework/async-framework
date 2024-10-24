@@ -363,7 +363,7 @@ export class SignalList<T> extends HTMLElement {
     this.cleanUp?.();
     this.items = [];
     this.itemElements.clear();
-    (this as any)._signalRegistry = null;
+    // (this as any)._signalRegistry = null;
   }
 
   private escapeHtml(unsafe: string): string {

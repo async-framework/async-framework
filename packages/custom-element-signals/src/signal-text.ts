@@ -46,7 +46,7 @@ export class SignalText extends HTMLElement {
   disconnectedCallback() {
     this.cleanUp?.();
     this.mounted = false;
-    (this as any)._signalRegistry = null;
+    // (this as any)._signalRegistry = null;
   }
 
   updateChildren = (newValue: any): void => {
