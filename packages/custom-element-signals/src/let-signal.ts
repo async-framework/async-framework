@@ -33,7 +33,7 @@ export class LetSignal<T> extends HTMLElement {
     name: { value: string };
     value: { value: string };
     save: { value: string };
-  }
+  };
   constructor() {
     super();
     // if the signal registry is not in the window, then we need to create a new one
@@ -50,7 +50,8 @@ export class LetSignal<T> extends HTMLElement {
   createSignal(value?: any) {
     // Use the value attribute if it exists, otherwise use the innerHTML
     if (value === undefined) {
-      const strValue = this.attributes?.["value"]?.value || this.innerHTML || "";
+      const strValue = this.attributes?.["value"]?.value || this.innerHTML ||
+        "";
       value = parseAttributeValue(strValue);
     }
     const signal = new Signal(value);
@@ -66,8 +67,8 @@ export class LetSignal<T> extends HTMLElement {
     const save = this.attributes["save"]?.value;
     let value = undefined;
     if (save) {
-      const key = 'signal-' + name;
-      const method = 'getItem' in window[save] ? 'getItem' : 'get';
+      const key = "signal-" + name;
+      const method = "getItem" in window[save] ? "getItem" : "get";
       const savedValue = window[save][method](key);
       if (savedValue) {
         try {
@@ -85,8 +86,8 @@ export class LetSignal<T> extends HTMLElement {
       this.signal.subscribe((value) => {
         if (window[save]) {
           try {
-            const method = 'setItem' in window[save] ? 'setItem' : 'set';
-            const key = 'signal-' + name;
+            const method = "setItem" in window[save] ? "setItem" : "set";
+            const key = "signal-" + name;
             window[save][method](key, JSON.stringify(value));
           } catch (e) {
             console.error(`Error saving value for ${save}: ${value}`);
@@ -113,7 +114,7 @@ export class LetSignal<T> extends HTMLElement {
   disconnectedCallback() {
     const name = this.attributes["name"].value;
     this._signalRegistry.delete(name);
-    (this as any)._signalRegistry = null
+    (this as any)._signalRegistry = null;
     this.signal?.cleanUp();
   }
 }

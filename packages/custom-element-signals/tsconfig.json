@@ -2,7 +2,7 @@
   "extends": "./root.tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2019", "DOM"],
-    "rootDir": "src" /* Root directory of input files */,
+    "rootDir": "src", /* Root directory of input files */
     "outDir": "lib" /* Output directory for compiled files */
   },
   "include": ["src"], /* Specify files to include */

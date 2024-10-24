@@ -38,16 +38,15 @@ export class SignalText extends HTMLElement {
     if (this.signal == null) {
       return;
     }
-    this.cleanUp =
-      this.signal.subscribe((newValue) => {
-        return this.updateChildren(newValue);
-      }) ?? null;
+    this.cleanUp = this.signal.subscribe((newValue) => {
+      return this.updateChildren(newValue);
+    }) ?? null;
   }
 
   disconnectedCallback() {
     this.cleanUp?.();
     this.mounted = false;
-    (this as any)._signalRegistry = null
+    (this as any)._signalRegistry = null;
   }
 
   updateChildren = (newValue: any): void => {
