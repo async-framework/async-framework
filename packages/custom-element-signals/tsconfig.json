@@ -1,7 +1,7 @@
 {
   "extends": "./root.tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2018", "DOM"],
+    "lib": ["ES2019", "DOM"],
     "rootDir": "src" /* Root directory of input files */,
     "outDir": "lib" /* Output directory for compiled files */
   },

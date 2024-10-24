@@ -14,6 +14,16 @@ export class SignalList<T> extends HTMLElement {
   private items: unknown[] = [];
   private itemElements = new Map<unknown, HTMLElement>();
 
+  private templateInfo: {
+    hasIndexInAttributes: boolean;
+    hasIndexInContent: boolean;
+    indexAttributes: string[];
+  } = {
+    hasIndexInAttributes: false,
+    hasIndexInContent: false,
+    indexAttributes: []
+  };
+
   constructor() {
     super();
     this._signalRegistry = window.signalRegistry || signalStore;
@@ -188,6 +198,7 @@ export class SignalList<T> extends HTMLElement {
   }
 
   private async collectIteratorItems(value: unknown, items: unknown[]): Promise<void> {
+    // es2018
     if ('asyncIterator' in Symbol && (Symbol as any).asyncIterator in Object(value)) {
       for await (const item of value as AsyncIterable<unknown>) {
         items.push(item);
@@ -207,28 +218,76 @@ export class SignalList<T> extends HTMLElement {
   }
 
   private updateItemIndex(element: HTMLElement, index: number): void {
-    const indexPattern = new RegExp(`\\\${${this.letIndex}}`, 'g');
-    element.innerHTML = element.innerHTML.replace(indexPattern, String(index));
+    // Update index attributes
+    this.updateItemIndexAttributes(element, index);
+  }
+
+  private updateItemIndexAttributes(element: HTMLElement, index: number): void {
+    if (!this.templateInfo.hasIndexInAttributes) return;
+
+    // Restore original attribute patterns and update index
+    const originalAttrs = element.dataset.originalIndexAttrs;
+    if (originalAttrs) {
+      const attrs = JSON.parse(originalAttrs);
+      for (const [attr, pattern] of Object.entries(attrs)) {
+        if (typeof pattern === 'string') {
+          const value = pattern.replace(
+            new RegExp(`\\\${${this.letIndex}}`, 'g'),
+            String(index)
+          );
+          element.setAttribute(attr, value);
+        }
+      }
+    }
   }
 
   private appendItem(item: unknown): void {
     if (!this._template) return;
 
+    // Parse template if not already parsed
+    if (!this.templateInfo.hasIndexInAttributes && !this.templateInfo.hasIndexInContent) {
+      this.parseTemplate(this._template);
+    }
+
     const temp = document.createElement('template');
-    temp.innerHTML = this._template
-      .replace(new RegExp(`\\\${${this.letItem}}`, 'g'), this.escapeHtml(String(item)))
-      .replace(new RegExp(`\\\${${this.letIndex}}`, 'g'), String(this.currentIndex))
+    let processedTemplate = this._template;
+
+    // Handle index in content
+    if (this.templateInfo.hasIndexInContent) {
+      processedTemplate = processedTemplate.replace(
+        new RegExp(`\\\${${this.letIndex}}`, 'g'),
+        String(this.currentIndex)
+      );
+    }
+
+    // Replace item placeholders
+    processedTemplate = processedTemplate
+      .replace(new RegExp(`\\\${${this.letItem}}`, 'g'), 
+        this.escapeHtml(String(item)))
       .replace(new RegExp(`\\\${${this.letItem}\\.([^}]+)}`, 'g'), (_, prop) => {
         const value = typeof item === 'object' && item !== null ? 
           (item as Record<string, unknown>)[prop] : undefined;
         return this.escapeHtml(String(value));
       });
 
-    const element = temp.content.firstElementChild || temp.content;
-    this.appendChild(element);
-    
+    temp.innerHTML = processedTemplate;
+    const element = temp.content.firstElementChild;
+
     if (element instanceof HTMLElement) {
-      // Store with position information for primitives
+      // Store original index attributes if needed for updates
+      if (this.templateInfo.hasIndexInAttributes) {
+        element.dataset.originalIndexAttrs = JSON.stringify(
+          // es2019
+          Object.fromEntries(
+            this.templateInfo.indexAttributes.map(attr => [
+              attr,
+              element.getAttribute(attr)
+            ])
+          )
+        );
+      }
+      
+      this.appendChild(element);
       const key = this.isPrimitive(item) ? `${item}_${this.currentIndex}` : item;
       this.itemElements.set(key, element);
     }
@@ -264,5 +323,25 @@ export class SignalList<T> extends HTMLElement {
   private areArraysEqual(arr1: unknown[], arr2: unknown[]): boolean {
     if (arr1.length !== arr2.length) return false;
     return arr1.every((item, index) => item === arr2[index]);
+  }
+
+  private parseTemplate(template: string): void {
+    // Create a temporary element to parse the template
+    const temp = document.createElement('template');
+    temp.innerHTML = template;
+    const element = temp.content.firstElementChild;
+
+    if (!element) return;
+
+    // Check for index in attributes
+    const attributes = Array.from(element.attributes || []);
+    this.templateInfo.indexAttributes = attributes
+      .filter(attr => attr.value.includes(`\${${this.letIndex}}`))
+      .map(attr => attr.name);
+    
+    this.templateInfo.hasIndexInAttributes = this.templateInfo.indexAttributes.length > 0;
+    
+    // Check for index in content
+    this.templateInfo.hasIndexInContent = template.includes(`\${${this.letIndex}}`);
   }
 }
