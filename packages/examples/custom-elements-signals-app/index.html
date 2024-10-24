@@ -79,9 +79,10 @@
 
       <section id="todoList" class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-semibold mb-4">Todo List</h2>
-        <let-signal name="todos">
-          ["first-value"]
+        <let-signal name="todos" save="localStorage">
+          ["Learn Signal List", "Build Something Cool"]
         </let-signal>
+        <!-- Input section -->
         <div class="flex mb-4">
           <input
             id="todoInput"
@@ -95,9 +96,19 @@
             Add Todo
           </button>
         </div>
-        <ul id="todoListItems" class="list-disc pl-5">
-          <signal-text name="todos"></signal-text>
-        </ul>
+
+        <!-- Or using signal-list with template element -->
+        <signal-list name="todos">
+          <template>
+            <li class="mb-2">
+              <span class="mr-2">${item}</span>
+              <button onclick="removeTodo(${index})" 
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
+                Remove
+              </button>
+            </li>
+          </template>
+        </signal-list>
       </section>
     </div>
 
@@ -141,16 +152,6 @@
       const todosSignal = signalRegistry.get("todos");
       const todoInput = document.getElementById("todoInput");
       const addTodoBtn = document.getElementById("addTodoBtn");
-      const todoListItems = document.getElementById("todoListItems");
-
-      function renderTodos() {
-        todoListItems.innerHTML = todosSignal.get().map((todo, index) => /*html*/ `
-<li class="mb-2">
-    <span class="mr-2">${todo}</span>
-    <button onclick="removeTodo(${index})" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">Remove</button>
-</li>
-  `).join("");
-      }
 
       function addTodo() {
         const newTodo = todoInput.value.trim();
@@ -172,9 +173,6 @@
         todosSignal.set(todosSignal.get().filter((_, i) => i !== index));
       };
 
-      // Initial render
-      // renderTodos();
-      todosSignal.subscribe(renderTodos);
     </script>
   </body>
 </html>

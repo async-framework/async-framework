@@ -1,7 +1,7 @@
 // Repository-specific rules for Cursor AI
 
 // General guidelines
-Always prefer JavaScript over TypeScript unless explicitly required
+Always prefer TypeScript unless explicitly required like any of the examples apps thats also using .js
 Preserve existing comments in all files
 Follow the project structure as defined in the repository
 

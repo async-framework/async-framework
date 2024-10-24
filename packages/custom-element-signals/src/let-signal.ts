@@ -19,11 +19,12 @@ import { signalStore } from "./signal-store-instance";
 declare global {
   interface Window {
     signalRegistry?: Map<string, any>;
+    [key: string]: any;
   }
 }
 
 export class LetSignal<T> extends HTMLElement {
-  static observedAttributes = ["name", "value"];
+  static observedAttributes = ["name", "value", "save"];
 
   signal: null | Signal<T> = null;
   _signalRegistry: Map<string, Signal<any>>;
@@ -31,7 +32,8 @@ export class LetSignal<T> extends HTMLElement {
   attributes!: NamedNodeMap & {
     name: { value: string };
     value: { value: string };
-  };
+    save: { value: string };
+  }
   constructor() {
     super();
     // if the signal registry is not in the window, then we need to create a new one
@@ -56,13 +58,42 @@ export class LetSignal<T> extends HTMLElement {
   }
 
   connectedCallback() {
-    this.signal = this.createSignal();
-
     const name = this.attributes["name"]?.value;
     if (!name) {
       throw new Error("let-signal must have a name attribute");
     }
+
+    const save = this.attributes["save"]?.value;
+    let value = undefined;
+    if (save) {
+      const key = 'signal-' + name;
+      const method = 'getItem' in window[save] ? 'getItem' : 'get';
+      const savedValue = window[save][method](key);
+      if (savedValue) {
+        try {
+          value = JSON.parse(savedValue);
+        } catch (e) {
+          console.error(`Error parsing saved value for ${save}: ${savedValue}`);
+        }
+      }
+    }
+
+    this.signal = this.createSignal(value);
+
     this._signalRegistry.set(name, this.signal);
+    if (save) {
+      this.signal.subscribe((value) => {
+        if (window[save]) {
+          try {
+            const method = 'setItem' in window[save] ? 'setItem' : 'set';
+            const key = 'signal-' + name;
+            window[save][method](key, JSON.stringify(value));
+          } catch (e) {
+            console.error(`Error saving value for ${save}: ${value}`);
+          }
+        }
+      });
+    }
   }
 
   // This should never happen, but keeping it for completeness
