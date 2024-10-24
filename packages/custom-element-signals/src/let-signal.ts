@@ -2,7 +2,7 @@ import { parseAttributeValue } from "./parse-attribute-value";
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 
-// its better not to use this but ask the developer to do it
+// its better not to use this but ask the developer to do it otherwise there is a flicker
 // const STYLE_ID = 'let-signal-style';
 // if (!document.getElementById(STYLE_ID)) {
 //   const style = document.createElement('style');
@@ -16,39 +16,62 @@ import { signalStore } from "./signal-store-instance";
 //   document.head.appendChild(style);
 // }
 
+declare global {
+  interface Window {
+    signalRegistry?: Map<string, any>;
+  }
+}
+
 export class LetSignal<T> extends HTMLElement {
-  static observedAttributes = ["data-id"];
+  static observedAttributes = ["id", "value"];
 
   signal: null | Signal<T> = null;
+  value: any;
+  signalRegistry: Map<string, Signal<any>>;
 
   attributes!: NamedNodeMap & {
-    "data-id": { value: string };
-    "initial-value": { value: string };
+    id: { value: string };
+    value: { value: string };
   };
 
-  connectedCallback() {
-    // Use the initial-value attribute if it exists, otherwise use the innerHTML
-    const initialValue =
-      this.attributes?.["initial-value"]?.value || this.innerHTML || "";
+  constructor() {
+    super();
+    // if the signal registry is not in the window, then we need to create a new one
+    // we want to use some form of context here. maybe this.closest('let-signal-registry')?
+    this.signalRegistry = window.signalRegistry || signalStore;
+  }
 
-    this.signal = new Signal(
-      initialValue ? parseAttributeValue(initialValue) : undefined
-    );
-    const id = this.attributes["data-id"].value;
-    signalStore.set(id, this.signal);
+  createSignal(value?: any) {
+    // Use the value attribute if it exists, otherwise use the innerHTML
+    if (value === undefined) {
+      const strValue = this.attributes?.["value"]?.value || this.innerHTML || "";
+      value = parseAttributeValue(strValue);
+    }
+    const signal = new Signal(value);
+    this.value = value;
+    return signal;
+  }
+
+  connectedCallback() {
+    this.signal = this.createSignal();
+
+    const id = this.attributes["id"].value;
+    this.signalRegistry.set(id, this.signal);
   }
 
   // This should never happen, but keeping it for completeness
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    if (name === "data-id") {
-      signalStore.delete(oldValue);
-      this.signal != null && signalStore.set(newValue, this.signal);
+    if (name === "id" && oldValue !== newValue) {
+      this.signalRegistry.delete(oldValue);
+      this.signal = this.createSignal(this.value);
+      this.signalRegistry.set(newValue, this.signal);
     }
   }
 
   disconnectedCallback() {
-    const id = this.attributes["data-id"].value;
-    signalStore.delete(id);
+    const id = this.attributes["id"].value;
+    this.signalRegistry.delete(id);
+    this.value = undefined;
     this.signal?.cleanUp();
   }
 }
