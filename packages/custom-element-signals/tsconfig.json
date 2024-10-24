@@ -1,7 +1,8 @@
 {
   "extends": "./root.tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src", /* Root directory of input files */
+    "lib": ["ES2018", "DOM"],
+    "rootDir": "src" /* Root directory of input files */,
     "outDir": "lib" /* Output directory for compiled files */
   },
   "include": ["src"], /* Specify files to include */
