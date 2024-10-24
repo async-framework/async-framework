@@ -14,7 +14,7 @@
     </script>
     <script type="module" src="/livereload.js"></script>
     <link rel="modulepreload" href="/custom-element-signals.js" />
-    <script type="module" src="/custom-element-signals.js"></script>
+    <!-- hide the let-signal element until it is defined -->
     <style>
       let-signal:not(:defined),
       let-signal {
@@ -37,13 +37,9 @@
 
       <section id="counter" class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-2xl font-semibold mb-4">Counter</h2>
-        <let-signal data-id="counter">0</let-signal>
+        <let-signal name="counter">0</let-signal>
         <p class="mb-4">
-          Count: <signal-text
-            data-id="counter"
-            data-dangerous-html="true"
-            class="font-bold"
-          ></signal-text>
+          Count: <signal-text name="counter" class="font-bold"></signal-text>
         </p>
         <button
           id="incrementBtn"
@@ -61,8 +57,8 @@
 
       <section id="nameInput" class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-2xl font-semibold mb-4">Name Input</h2>
-        <let-signal data-id="firstName"></let-signal>
-        <let-signal data-id="lastName"></let-signal>
+        <let-signal name="firstName"></let-signal>
+        <let-signal name="lastName"></let-signal>
         <div class="flex mb-4">
           <input
             id="firstNameInput"
@@ -76,19 +72,14 @@
           />
         </div>
         <p>
-          Full Name: <signal-text
-            data-id="firstName"
-            class="font-bold"
-          ></signal-text>
-          <signal-text data-id="lastName" class="font-bold"></signal-text>
+          Full Name: <signal-text name="firstName" class="font-bold"></signal-text>
+          <signal-text name="lastName" class="font-bold"></signal-text>
         </p>
       </section>
 
       <section id="todoList" class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-semibold mb-4">Todo List</h2>
-        <let-signal
-          data-id="todos"
-        >
+        <let-signal name="todos">
           ["first-value"]
         </let-signal>
         <div class="flex mb-4">
@@ -105,31 +96,36 @@
           </button>
         </div>
         <ul id="todoListItems" class="list-disc pl-5">
-          <signal-text data-id="todos" data-dangerous-html="true"></signal-text>
+          <signal-text name="todos"></signal-text>
         </ul>
       </section>
     </div>
 
     <script type="module">
-      import { signalStore } from "custom-element-signals";
+      import { signalStore as signalRegistry } from "custom-element-signals";
+      window.signalRegistry = signalRegistry;
       // Counter
-      const counterSignal = signalStore.get("counter");
+      const counterSignal = signalRegistry.get("counter");
       const incrementBtn = document.getElementById("incrementBtn");
       const decrementBtn = document.getElementById("decrementBtn");
 
       incrementBtn.addEventListener("click", () => {
-        counterSignal.set(counterSignal.get() + 1);
-        console.log("incrementBtn", counterSignal.get());
+        const oldValue = counterSignal.get();
+        console.log("incrementBtn oldValue", oldValue);
+        counterSignal.set(oldValue + 1);
+        console.log("incrementBtn newValue", counterSignal.get());
       });
 
       decrementBtn.addEventListener("click", () => {
-        counterSignal.set(counterSignal.get() - 1);
-        console.log("decrementBtn", counterSignal.get());
+        const oldValue = counterSignal.get();
+        console.log("decrementBtn oldValue", oldValue);
+        counterSignal.set(oldValue - 1);
+        console.log("decrementBtn newValue", counterSignal.get());
       });
 
       // Name Input
-      const firstNameSignal = signalStore.get("firstName");
-      const lastNameSignal = signalStore.get("lastName");
+      const firstNameSignal = signalRegistry.get("firstName");
+      const lastNameSignal = signalRegistry.get("lastName");
       const firstNameInput = document.getElementById("firstNameInput");
       const lastNameInput = document.getElementById("lastNameInput");
 
@@ -142,7 +138,7 @@
       });
 
       // Todo List
-      const todosSignal = signalStore.get("todos");
+      const todosSignal = signalRegistry.get("todos");
       const todoInput = document.getElementById("todoInput");
       const addTodoBtn = document.getElementById("addTodoBtn");
       const todoListItems = document.getElementById("todoListItems");

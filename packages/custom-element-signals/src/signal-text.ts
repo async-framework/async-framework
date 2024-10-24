@@ -1,30 +1,38 @@
 // deno-lint-ignore-file no-explicit-any
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
-import { parseAttributeValue } from "./parse-attribute-value";
 export class SignalText extends HTMLElement {
   static observedAttributes = [
-    "data-id",
+    "name",
     "data-dangerous-html",
   ];
 
   attributes!: NamedNodeMap & {
-    "data-id": { value: string };
+    "name": { value: string };
     "data-dangerous-html"?: { value: boolean | string };
   };
 
   signal: null | Signal<any> = null;
   transformers: Array<(input: any) => any> = [];
+  _signalRegistry: Map<string, Signal<any>>;
 
   ready = false;
   mounted = false;
 
   cleanUp: null | (() => void) = null;
 
+  constructor() {
+    super();
+    this._signalRegistry = window.signalRegistry || signalStore;
+  }
+
   connectedCallback() {
     this.mounted = true;
-    const id = this.attributes["data-id"]?.value;
-    this.signal = signalStore.get(id) ?? null;
+    const name = this.attributes["name"]?.value;
+    if (!name) {
+      throw new Error("signal-text must have a name attribute");
+    }
+    this.signal = this._signalRegistry.get(name) ?? null;
     this.ready = true;
 
     if (this.signal == null) {
@@ -54,6 +62,7 @@ export class SignalText extends HTMLElement {
     if (dangerousHtml === "false" || dangerousHtml === false) {
       return;
     }
+    console.log("transformedValue", transformedValue);
     switch (transformedValue) {
       case NaN:
       case undefined:

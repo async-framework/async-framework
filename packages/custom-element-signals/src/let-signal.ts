@@ -23,22 +23,26 @@ declare global {
 }
 
 export class LetSignal<T> extends HTMLElement {
-  static observedAttributes = ["id", "value"];
+  static observedAttributes = ["name", "value"];
 
   signal: null | Signal<T> = null;
-  value: any;
-  signalRegistry: Map<string, Signal<any>>;
+  _signalRegistry: Map<string, Signal<any>>;
 
   attributes!: NamedNodeMap & {
-    id: { value: string };
+    name: { value: string };
     value: { value: string };
   };
-
   constructor() {
     super();
     // if the signal registry is not in the window, then we need to create a new one
     // we want to use some form of context here. maybe this.closest('let-signal-registry')?
-    this.signalRegistry = window.signalRegistry || signalStore;
+    this._signalRegistry = window.signalRegistry || signalStore;
+  }
+  get value(): T | undefined {
+    return this.signal?.get();
+  }
+  set value(value: T) {
+    this.signal?.set(value);
   }
 
   createSignal(value?: any) {
@@ -48,30 +52,37 @@ export class LetSignal<T> extends HTMLElement {
       value = parseAttributeValue(strValue);
     }
     const signal = new Signal(value);
-    this.value = value;
     return signal;
   }
 
   connectedCallback() {
     this.signal = this.createSignal();
 
-    const id = this.attributes["id"].value;
-    this.signalRegistry.set(id, this.signal);
+    const name = this.attributes["name"]?.value;
+    if (!name) {
+      throw new Error("let-signal must have a name attribute");
+    }
+    this._signalRegistry.set(name, this.signal);
   }
 
   // This should never happen, but keeping it for completeness
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    if (name === "id" && oldValue !== newValue) {
-      this.signalRegistry.delete(oldValue);
+    if (oldValue === newValue) {
+      return;
+    }
+    if (name === "name") {
+      this._signalRegistry.delete(oldValue);
       this.signal = this.createSignal(this.value);
-      this.signalRegistry.set(newValue, this.signal);
+      this._signalRegistry.set(newValue, this.signal);
+    } else if (name === "value") {
+      this.value = parseAttributeValue(newValue);
     }
   }
 
   disconnectedCallback() {
-    const id = this.attributes["id"].value;
-    this.signalRegistry.delete(id);
-    this.value = undefined;
+    const name = this.attributes["name"].value;
+    this._signalRegistry.delete(name);
+    (this as any)._signalRegistry = null
     this.signal?.cleanUp();
   }
 }
