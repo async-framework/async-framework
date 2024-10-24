@@ -2,17 +2,23 @@ import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 
 export class SignalList<T> extends HTMLElement {
-  static observedAttributes = ["name", "template"];
+  static observedAttributes = ["name", "template", "let-item", "let-index"];
 
   private _signalRegistry: Map<string, Signal<any>>;
   private _template: string | null = null;
   private signal: Signal<any> | null = null;
   private cleanUp: (() => void) | null = null;
+  private letItem: string = 'item';
+  private letIndex: string = 'index';
+  private currentIndex = 0;
+  private items: unknown[] = [];
+  private itemElements = new Map<unknown, HTMLElement>();
 
   constructor() {
     super();
     this._signalRegistry = window.signalRegistry || signalStore;
   }
+
   get value(): T | undefined {
     return this.signal?.get();
   }
@@ -26,13 +32,15 @@ export class SignalList<T> extends HTMLElement {
       throw new Error("signal-list must have a name attribute");
     }
 
-    // Get template from attribute or child template element
+    this.letItem = this.getAttribute("let-item") || 'item';
+    this.letIndex = this.getAttribute("let-index") || 'index';
+
+    // Get template
     let templateContent = this.getAttribute("template");
     const templateElement = this.querySelector("template");
     
     if (templateElement) {
       templateContent = templateElement.innerHTML;
-      // Remove the template element since we don't want it rendered
       templateElement.remove();
     }
 
@@ -49,44 +57,195 @@ export class SignalList<T> extends HTMLElement {
     }
 
     // Subscribe to changes
-    this.cleanUp = this.signal.subscribe((newValue) => this.render(newValue));
+    this.cleanUp = this.signal.subscribe((newValue, oldValue) => {
+      this.handleValue(newValue, oldValue);
+    });
     
     // Initial render
-    this.render(this.signal.get());
+    this.handleValue(this.signal.get(), []);
+  }
+
+  private async handleValue(newValue: unknown, oldValue: unknown): Promise<void> {
+    if (!this._template) return;
+
+    try {
+      const newItems: unknown[] = [];
+      
+      if (newValue != null) {
+        if (this.isArrayLike(newValue)) {
+          const array = Array.isArray(newValue) ? newValue : Array.from(newValue as ArrayLike<unknown>);
+          newItems.push(...array);
+
+          // Early return if arrays are identical
+          if (this.areArraysEqual(this.items, newItems)) {
+            return;
+          }
+
+          // Handle mixed arrays by treating each item according to its type
+          this.handleMixedArray(newItems);
+        } else {
+          // Iterator path remains unchanged
+          await this.collectIteratorItems(newValue, newItems);
+          this.innerHTML = '';
+          this.itemElements.clear();
+          this.items = newItems;
+          
+          newItems.forEach((item, index) => {
+            this.currentIndex = index;
+            this.appendItem(item);
+          });
+        }
+      } else {
+        this.innerHTML = '';
+        this.itemElements.clear();
+        this.items = [];
+      }
+    } catch (error) {
+      console.error("Error processing signal-list value:", error);
+    }
+  }
+
+  private handleMixedArray(newItems: unknown[]): void {
+    // Create position maps that handle both primitive and object values
+    const oldItemPositions = this.items.map((item, index) => ({ 
+      item, 
+      index,
+      isPrimitive: this.isPrimitive(item)
+    }));
+    
+    const newItemPositions = newItems.map((item, index) => ({ 
+      item, 
+      index,
+      isPrimitive: this.isPrimitive(item)
+    }));
+
+    const elementUpdates = new Map<number, HTMLElement | null>();
+    const usedOldElements = new Set<HTMLElement>();
+
+    // Match elements based on type and value
+    newItemPositions.forEach(({ item: newItem, index: newIndex, isPrimitive }) => {
+      if (isPrimitive) {
+        // Handle primitive values by finding matching unused elements
+        const matchingOldPos = oldItemPositions.find(({ item: oldItem, index: oldIndex, isPrimitive: oldIsPrimitive }) => 
+          oldIsPrimitive && 
+          oldItem === newItem && 
+          !usedOldElements.has(this.itemElements.get(oldItem + '_' + oldIndex)!)
+        );
+
+        if (matchingOldPos) {
+          const oldElement = this.itemElements.get(matchingOldPos.item + '_' + matchingOldPos.index)!;
+          usedOldElements.add(oldElement);
+          elementUpdates.set(newIndex, oldElement);
+          this.updateItemIndex(oldElement, newIndex);
+        } else {
+          elementUpdates.set(newIndex, null); // Mark for creation
+        }
+      } else {
+        // Handle objects by reference equality
+        const existingElement = this.itemElements.get(newItem);
+        if (existingElement && !usedOldElements.has(existingElement)) {
+          usedOldElements.add(existingElement);
+          elementUpdates.set(newIndex, existingElement);
+          this.updateItemIndex(existingElement, newIndex);
+        } else {
+          elementUpdates.set(newIndex, null); // Mark for creation
+        }
+      }
+    });
+
+    // Remove unused elements
+    for (const [key, element] of this.itemElements) {
+      if (!usedOldElements.has(element)) {
+        element.remove();
+        this.itemElements.delete(key);
+      }
+    }
+
+    // Clear for reordering
+    this.innerHTML = '';
+    this.items = newItems;
+
+    // Add elements in the new order
+    newItems.forEach((item, index) => {
+      const existingElement = elementUpdates.get(index);
+      if (existingElement) {
+        this.appendChild(existingElement);
+      } else {
+        this.currentIndex = index;
+        this.appendItem(item);
+      }
+    });
+  }
+
+  private isPrimitive(value: unknown): boolean {
+    return (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      value === null ||
+      value === undefined
+    );
+  }
+
+  private async collectIteratorItems(value: unknown, items: unknown[]): Promise<void> {
+    if ('asyncIterator' in Symbol && (Symbol as any).asyncIterator in Object(value)) {
+      for await (const item of value as AsyncIterable<unknown>) {
+        items.push(item);
+      }
+    } else if (Symbol.iterator in Object(value)) {
+      for (const item of value as Iterable<unknown>) {
+        items.push(item);
+      }
+    } else if (typeof (value as Iterator<unknown>).next === 'function') {
+      const iterator = value as Iterator<unknown>;
+      let result = iterator.next();
+      while (!result.done) {
+        items.push(result.value);
+        result = iterator.next();
+      }
+    }
+  }
+
+  private updateItemIndex(element: HTMLElement, index: number): void {
+    const indexPattern = new RegExp(`\\\${${this.letIndex}}`, 'g');
+    element.innerHTML = element.innerHTML.replace(indexPattern, String(index));
+  }
+
+  private appendItem(item: unknown): void {
+    if (!this._template) return;
+
+    const temp = document.createElement('template');
+    temp.innerHTML = this._template
+      .replace(new RegExp(`\\\${${this.letItem}}`, 'g'), this.escapeHtml(String(item)))
+      .replace(new RegExp(`\\\${${this.letIndex}}`, 'g'), String(this.currentIndex))
+      .replace(new RegExp(`\\\${${this.letItem}\\.([^}]+)}`, 'g'), (_, prop) => {
+        const value = typeof item === 'object' && item !== null ? 
+          (item as Record<string, unknown>)[prop] : undefined;
+        return this.escapeHtml(String(value));
+      });
+
+    const element = temp.content.firstElementChild || temp.content;
+    this.appendChild(element);
+    
+    if (element instanceof HTMLElement) {
+      // Store with position information for primitives
+      const key = this.isPrimitive(item) ? `${item}_${this.currentIndex}` : item;
+      this.itemElements.set(key, element);
+    }
+  }
+
+  // Get the current items
+  getItems(): unknown[] {
+    return [...this.items];
   }
 
   disconnectedCallback() {
     this.cleanUp?.();
-    (this as any)._signalRegistry = null
+    this.items = [];
+    this.itemElements.clear();
+    (this as any)._signalRegistry = null;
   }
 
-  private render(items: unknown[]): void {
-    if (!Array.isArray(items)) {
-      console.warn("signal-list value must be an array");
-      return;
-    }
-
-    if (!this._template) {
-      return;
-    }
-
-    const html = items.map((item, index) => {
-      // Replace template variables with proper escaping for security
-      return this._template!
-        .replace(/\${item}/g, this.escapeHtml(String(item)))
-        .replace(/\${index}/g, String(index))
-        // Allow accessing object properties with proper escaping
-        .replace(/\${item\.([^}]+)}/g, (_, prop) => {
-          const value = typeof item === 'object' && item !== null ? 
-            (item as Record<string, unknown>)[prop] : undefined;
-          return this.escapeHtml(String(value));
-        });
-    }).join("");
-
-    this.innerHTML = html;
-  }
-
-  // Security: Escape HTML to prevent XSS
   private escapeHtml(unsafe: string): string {
     return unsafe
       .replace(/&/g, "&amp;")
@@ -94,5 +253,16 @@ export class SignalList<T> extends HTMLElement {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  private isArrayLike(value: unknown): boolean {
+    return Array.isArray(value) || 
+           (typeof value === 'object' && value !== null && 'length' in value);
+  }
+
+  // Add this helper method to compare arrays
+  private areArraysEqual(arr1: unknown[], arr2: unknown[]): boolean {
+    if (arr1.length !== arr2.length) return false;
+    return arr1.every((item, index) => item === arr2[index]);
   }
 }

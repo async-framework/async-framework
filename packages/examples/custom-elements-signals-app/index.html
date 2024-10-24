@@ -97,12 +97,11 @@
           </button>
         </div>
 
-        <!-- Or using signal-list with template element -->
         <signal-list name="todos">
           <template>
             <li class="mb-2">
               <span class="mr-2">${item}</span>
-              <button onclick="removeTodo(${index})" 
+              <button data-index="${index}" onclick="removeTodo(this.dataset.index)" 
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
                 Remove
               </button>
@@ -156,7 +155,11 @@
       function addTodo() {
         const newTodo = todoInput.value.trim();
         if (newTodo) {
-          todosSignal.set([...todosSignal.get(), newTodo]);
+          const oldList = todosSignal.get();
+          console.log("addTodo oldList", oldList);
+          const newList = [...oldList, newTodo];
+          todosSignal.set(newList);
+          console.log("addTodo newList", newList);
           todoInput.value = "";
         }
       }
@@ -170,7 +173,12 @@
 
       // onclick="removeTodo(index)"
       window.removeTodo = (index) => {
-        todosSignal.set(todosSignal.get().filter((_, i) => i !== index));
+        console.log("removeTodo", index);
+        const oldList = todosSignal.get();
+        console.log("removeTodo oldList", oldList);
+        const newList = oldList.filter((_, i) => `${i}` !== `${index}`);
+        todosSignal.set(newList);
+        console.log("removeTodo newList", newList);
       };
 
     </script>

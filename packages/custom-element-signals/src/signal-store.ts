@@ -1,4 +1,4 @@
-type Observer<T> = (newVal: T) => void;
+type Observer<T> = (newVal: T, oldVal: T) => void;
 
 export class Signal<T> {
   value: T;
@@ -21,9 +21,10 @@ export class Signal<T> {
   }
 
   set(newVal: T) {
+    const oldVal = this.value;
     this.value = newVal;
     this._observers.forEach((obs) => {
-      obs(newVal);
+      obs(newVal, oldVal);
     });
   }
 
