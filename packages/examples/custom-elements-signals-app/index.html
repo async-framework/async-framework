@@ -145,10 +145,12 @@
 
       <section id="objectList" class="bg-white rounded-lg shadow-md p-6 mt-8">
         <h2 class="text-2xl font-semibold mb-4">Object List</h2>
-        <let-signal name="users">[
-          {"id": 1, "name": "Alice", "role": "Admin"},
-          {"id": 2, "name": "Bob", "role": "User"}
-        ]</let-signal>
+        <let-signal name="users">
+          [
+            {"id": 1, "name": "Alice", "role": "Admin"},
+            {"id": 2, "name": "Bob", "role": "User"}
+          ]
+        </let-signal>
         <button
           id="addUserBtn"
           class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-4"
@@ -176,13 +178,15 @@
 
       <section id="mixedList" class="bg-white rounded-lg shadow-md p-6 mt-8 mb-8">
         <h2 class="text-2xl font-semibold mb-4">Mixed Types List</h2>
-        <let-signal name="mixedItems">[
-          "Hello",
-          {"type": "object", "value": "World"},
-          42,
-          ["nested", "array"],
-          true
-        ]</let-signal>
+        <let-signal name="mixedItems">
+          [
+            "Hello",
+            {"type": "object", "value": "World"},
+            42,
+            ["nested", "array"],
+            true
+          ]
+        </let-signal>
         <button
           id="shuffleMixedBtn"
           class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-4"
@@ -313,9 +317,10 @@
         usersSignal.set([...users, newUser]);
       });
 
-      window.removeUser = (userId) => {
+      window.removeUser = (index) => {
         const users = usersSignal.get();
-        usersSignal.set(users.filter(user => user.id !== userId));
+        const newUsers = users.filter((user, i) => `${i}` !== `${index}`);
+        usersSignal.set(newUsers);
       };
 
       // Mixed List Example
