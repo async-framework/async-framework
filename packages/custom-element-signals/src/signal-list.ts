@@ -104,6 +104,18 @@ export class SignalList<T> extends HTMLElement {
             return;
           }
 
+          // Fast path for appending items
+          if (this.isArrayAppend(this.items, newItems)) {
+            // Only handle the new items
+            const startIndex = this.items.length;
+            newItems.slice(startIndex).forEach((item, i) => {
+              this.currentIndex = startIndex + i;
+              this.appendItem(item);
+            });
+            this.items = newItems;
+            return;
+          }
+
           // Handle mixed arrays by treating each item according to its type
           this.handleMixedArray(newItems);
         } else {
@@ -128,6 +140,19 @@ export class SignalList<T> extends HTMLElement {
     }
   }
 
+  // Add helper to check if new array is just appending items
+  private isArrayAppend(oldArray: unknown[], newArray: unknown[]): boolean {
+    if (newArray.length < oldArray.length) return false;
+    
+    // Check if all existing items are unchanged and in the same order
+    return oldArray.every((item, index) => {
+      const oldKey = this.isPrimitive(item) ? `${item}_${index}` : item;
+      const newItem = newArray[index];
+      const newKey = this.isPrimitive(newItem) ? `${newItem}_${index}` : newItem;
+      return oldKey === newKey;
+    });
+  }
+
   private handleMixedArray(newItems: unknown[]): void {
     // Create position maps that handle both primitive and object values
     const oldItemPositions = this.items.map((item, index) => ({
@@ -144,6 +169,7 @@ export class SignalList<T> extends HTMLElement {
 
     const elementUpdates = new Map<number, HTMLElement | null>();
     const usedOldElements = new Set<HTMLElement>();
+    const indexChanges = new Set<number>();
 
     // Match elements based on type and value
     newItemPositions.forEach(
@@ -166,6 +192,10 @@ export class SignalList<T> extends HTMLElement {
             )!;
             usedOldElements.add(oldElement);
             elementUpdates.set(newIndex, oldElement);
+            // Only mark for update if index changed
+            if (matchingOldPos.index !== newIndex) {
+              indexChanges.add(newIndex);
+            }
           } else {
             elementUpdates.set(newIndex, null); // Mark for creation
           }
@@ -175,6 +205,11 @@ export class SignalList<T> extends HTMLElement {
           if (existingElement && !usedOldElements.has(existingElement)) {
             usedOldElements.add(existingElement);
             elementUpdates.set(newIndex, existingElement);
+            // Find old index and check if it changed
+            const oldPos = oldItemPositions.find(pos => pos.item === newItem);
+            if (oldPos && oldPos.index !== newIndex) {
+              indexChanges.add(newIndex);
+            }
           } else {
             elementUpdates.set(newIndex, null); // Mark for creation
           }
@@ -194,12 +229,14 @@ export class SignalList<T> extends HTMLElement {
     this.innerHTML = "";
     this.items = newItems;
 
-    // Add elements in the new order and ensure correct indices
+    // Add elements in the new order and only update indices that changed
     newItems.forEach((item, index) => {
       const existingElement = elementUpdates.get(index);
       if (existingElement) {
-        // Always update the index when reordering
-        this.updateItemIndex(existingElement, index);
+        // Only update index if it changed
+        if (indexChanges.has(index)) {
+          this.updateItemIndex(existingElement, index);
+        }
         this.appendChild(existingElement);
 
         // Update the key in itemElements map for primitives
