@@ -90,6 +90,23 @@ export class SignalList<T> extends HTMLElement {
     if (!this._template) return;
 
     try {
+      // Handle async iterators immediately
+      if ("asyncIterator" in Symbol && 
+          (Symbol as any).asyncIterator in Object(newValue)) {
+        // Clear existing items for async iterator
+        this.innerHTML = "";
+        this.itemElements.clear();
+        this.items = [];
+        
+        // Process async iterator values as they arrive
+        for await (const item of newValue as AsyncIterable<unknown>) {
+          this.items.push(item);
+          this.currentIndex = this.items.length - 1;
+          this.appendItem(item);
+        }
+        return;
+      }
+
       const newItems: unknown[] = [];
 
       if (newValue != null) {
@@ -119,7 +136,7 @@ export class SignalList<T> extends HTMLElement {
           // Handle mixed arrays by treating each item according to its type
           this.handleMixedArray(newItems);
         } else {
-          // Iterator path remains unchanged
+          // Handle synchronous iterators
           await this.collectIteratorItems(newValue, newItems);
           this.innerHTML = "";
           this.itemElements.clear();
@@ -268,19 +285,9 @@ export class SignalList<T> extends HTMLElement {
     );
   }
 
-  private async collectIteratorItems(
-    value: unknown,
-    items: unknown[],
-  ): Promise<void> {
-    // es2018
-    if (
-      "asyncIterator" in Symbol &&
-      (Symbol as any).asyncIterator in Object(value)
-    ) {
-      for await (const item of value as AsyncIterable<unknown>) {
-        items.push(item);
-      }
-    } else if (Symbol.iterator in Object(value)) {
+  // Update collectIteratorItems to handle only synchronous iterators
+  private async collectIteratorItems(value: unknown, items: unknown[]): Promise<void> {
+    if (Symbol.iterator in Object(value)) {
       for (const item of value as Iterable<unknown>) {
         items.push(item);
       }
