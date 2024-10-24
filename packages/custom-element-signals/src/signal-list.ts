@@ -262,10 +262,7 @@ export class SignalList<T> extends HTMLElement {
 
     // Replace item placeholders with proper property access
     processedTemplate = processedTemplate
-      // Handle direct item references
-      .replace(new RegExp(`\\\${${this.letItem}}(?![\.\\[])}`, 'g'), 
-        this.escapeHtml(String(item)))
-      // Handle property access (e.g., ${item.id}, ${item.name})
+      // Handle property access first (e.g., ${item.id}, ${item.name})
       .replace(new RegExp(`\\\${${this.letItem}\\.([^}]+)}`, 'g'), (_, prop) => {
         if (typeof item === 'object' && item !== null) {
           const value = this.getNestedValue(item as Record<string, unknown>, prop);
@@ -280,7 +277,10 @@ export class SignalList<T> extends HTMLElement {
           return this.escapeHtml(String(value));
         }
         return '';
-      });
+      })
+      // Handle direct item references last (e.g., ${item})
+      .replace(new RegExp(`\\\${${this.letItem}}`, 'g'), 
+        this.escapeHtml(String(item)));
 
     temp.innerHTML = processedTemplate;
     const element = temp.content.firstElementChild;
