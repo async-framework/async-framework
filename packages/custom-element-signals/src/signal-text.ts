@@ -41,6 +41,7 @@ export class SignalText extends HTMLElement {
     this.cleanUp = this.signal.subscribe((newValue) => {
       return this.updateChildren(newValue);
     }) ?? null;
+    this.updateChildren(this.signal.get());
   }
 
   disconnectedCallback() {

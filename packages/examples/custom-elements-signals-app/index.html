@@ -107,6 +107,7 @@
           <template>
             <li class="mb-2">
               <span class="mr-2">${item}</span>
+              <signal-text name="counter" class="font-bold"></signal-text>
               <button data-index="${index}" onclick="removeTodo(this.dataset.index)" 
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
                 Remove
