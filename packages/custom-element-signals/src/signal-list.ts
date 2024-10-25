@@ -348,44 +348,16 @@ export class SignalList<T> extends HTMLElement {
       );
     }
 
-    // Replace item placeholders with proper property access
-    processedTemplate = processedTemplate
-      // Handle property access first (e.g., ${item.id}, ${item.name})
-      .replace(
-        new RegExp(`\\\${${this.letItem}\\.([^}]+)}`, "g"),
-        (_, prop) => {
-          if (typeof item === "object" && item !== null) {
-            const value = this.getNestedValue(
-              item as Record<string, unknown>,
-              prop,
-            );
-            return this.escapeHtml(String(value));
-          }
-          return "";
-        },
-      )
-      // Handle array access (e.g., ${item[0]})
-      .replace(
-        new RegExp(`\\\${${this.letItem}\\[([^\\]]+)\\]}`, "g"),
-        (_, index) => {
-          if (Array.isArray(item)) {
-            const value = item[Number(index)];
-            return this.escapeHtml(String(value));
-          }
-          return "";
-        },
-      )
-      // Handle direct item references last (e.g., ${item})
-      .replace(
-        new RegExp(`\\\${${this.letItem}}`, "g"),
-        this.escapeHtml(String(item)),
-      );
+    // Use interpolate method for template processing
+    processedTemplate = this.interpolate(processedTemplate, {
+      [this.letItem]: item,
+      [this.letIndex]: this.currentIndex
+    });
 
     temp.innerHTML = processedTemplate;
     const element = temp.content.firstElementChild;
 
     if (element instanceof HTMLElement) {
-      // No need to store patterns in dataset anymore
       this.updateItemIndex(element, this.currentIndex);
       this.appendChild(element);
       const key = this.isPrimitive(item)
@@ -417,8 +389,14 @@ export class SignalList<T> extends HTMLElement {
     // (this as any)._signalRegistry = null;
   }
 
-  private escapeHtml(unsafe: string): string {
-    return unsafe
+  private escapeHtml(value: unknown): string {
+    // Handle null or undefined
+    if (value == null) return '';
+    
+    // Convert to string if not already
+    const str = String(value);
+    
+    return str
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -499,5 +477,27 @@ export class SignalList<T> extends HTMLElement {
       current = current.parentElement;
     }
     return `${path.join(">")}@${attrName}`;
+  }
+
+  private interpolate(template: string, context: Record<string, unknown>): string {
+    return template.replace(/\${([^}]+)}/g, (match, expr) => {
+      try {
+        // Handle JSON.stringify specifically
+        if (expr.includes('JSON.stringify')) {
+          const objPath = expr.match(/JSON\.stringify\((.*?)\)/)?.[1];
+          if (!objPath) return '';
+          
+          const value = new Function(...Object.keys(context), `return ${objPath}`)(...Object.values(context));
+          return this.escapeHtml(JSON.stringify(value));
+        }
+        
+        // Regular expression evaluation
+        const value = new Function(...Object.keys(context), `return ${expr}`)(...Object.values(context));
+        return this.escapeHtml(value);
+      } catch (error) {
+        console.error('Error interpolating template:', error);
+        return '';
+      }
+    });
   }
 }
