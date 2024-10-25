@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resource Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "async-framework": "/async-framework.js",
+          "custom-element-signals": "/custom-element-signals.js",
+          "custom-signals": "/custom-signals.js"
+        }
+      }
+    </script>
+    <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/async-framework.js" />
+    <link rel="modulepreload" href="/custom-signals.js" />
+    <link rel="modulepreload" href="/custom-element-signals.js" />
+    <!-- handlers -->
+    <link rel="modulepreload" href="prevent-stop-default.js" />
+    <link rel="modulepreload" href="prevent-default.js" />
+    <!-- hide the let-signal element until it is defined -->
+    <style>
+      let-signal:not(:defined),
+      let-signal {
+        display: none !important;
+      }
+    </style>
+
+  </head>
+  <body class="bg-gray-100">
+    <header class="w-full bg-blue-600 p-4 text-white mb-8">
+      <div class="container mx-auto">
+        <a href="/" class="text-xl font-bold hover:underline">
+          ← Back to Examples
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" data-container="root">
+      <!-- Alert Container -->
+      <let-signal name="alerts">[]</let-signal>
+      <div class="fixed top-4 right-4 z-50 space-y-2" id="alertContainer">
+      </div>
+
+      <!-- Create Resource Form -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Create New Resource</h2>
+        <form
+          id="createResourceForm"
+          class="space-y-4"
+          on:submit="prevent-stop-default.js, createResource.js"
+        >
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              <label for="title" class="block text-sm font-medium text-gray-700"
+                >Title</label
+              >
+              <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"
+              />
+            </div>
+            <div>
+              <label
+                for="details"
+                class="block text-sm font-medium text-gray-700"
+                >Details</label
+              >
+              <input
+                id="details"
+                name="details"
+                type="text"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"
+              />
+            </div>
+            <div>
+              <label for="data" class="block text-sm font-medium text-gray-700">
+                Data (JSON)
+              </label
+              >
+              <textarea
+                id="data"
+                name="data"
+                rows="3"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 font-mono text-sm"
+                placeholder='{"key": "value"}'
+              ></textarea>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button
+              type="submit"
+              class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Create Resource
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Resources List -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold mb-4">Resources</h2>
+        <let-signal name="resources">[]</let-signal>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Code
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Title
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Details
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Data
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <signal-list name="resources">
+                <template>
+                  <tr>
+                    <td
+                      class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                    >
+                      ${item.code}
+                    </td>
+                    <td
+                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                    >
+                      ${item.title}
+                    </td>
+                    <td
+                      class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate"
+                    >
+                      ${item.details}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      <pre class="max-w-xs truncate">
+                        ${item.data}
+                      </pre
+                      >
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                      >
+                        Active
+                      </span>
+                    </td>
+                    <td
+                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                    >
+                      <button
+                        data-code="${item.code}"
+                        on:click="toggleStatus.js"
+                        class="text-indigo-600 hover:text-indigo-900 mr-2"
+                      >
+                        Toggle Status
+                      </button>
+                      <button
+                        data-code="${item.code}"
+                        on:click="deleteResource.js"
+                        class="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </signal-list>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { AsyncLoader, HandlerRegistry } from "async-framework";
+      import { signalRegistry as signals } from "custom-signals";
+      import * as customElementSignals from "custom-element-signals";
+      import preventStopDefault from "./prevent-stop-default.js";
+      import preventDefault from "./prevent-default.js";
+
+      
+      // Initialize signals with mock data
+      const mockResources = [
+        {
+          code: "123e4567-e89b-12d3-a456-426614174000",
+          title: "Sample Resource A",
+          details:
+            "This is a detailed description of resource A with its specifications and use cases.",
+          data: { type: "example", priority: "high", tags: ["demo", "test"] },
+          deactivated: false,
+          valid: true,
+        },
+        {
+          code: "123e4567-e89b-12d3-a456-426614174001",
+          title: "Sample Resource B",
+          details:
+            "Resource B details including important information about its purpose and configuration.",
+          data: { type: "sample", priority: "medium", category: "test-data" },
+          deactivated: true,
+          valid: false,
+        },
+      ];
+
+      const handlers = new HandlerRegistry({
+        basePath: location.pathname,
+        registry: new Map([
+          ['prevent-default.js', preventDefault],
+          ['prevent-stop-default.js', preventStopDefault],
+        ]),
+      });
+
+      const asyncLoader = new AsyncLoader({
+        events: ["submit", "click"],
+        handlerRegistry: handlers,
+        context: {
+          signals,
+        },
+      });
+
+      const rootContainer = document.querySelector('[data-container="root"]');
+      asyncLoader.init(rootContainer);
+
+      // Initialize alerts signal
+      const resourceSignal = signals.updateOrCreate("resources", mockResources);
+      const alertsSignal = signals.updateOrCreate("alerts", []);
+
+      // Notify observers after the signals are created
+      setTimeout(() => {
+        resourceSignal.notifyObservers();
+        alertsSignal.notifyObservers();
+      });
+
+    </script>
+  </body>
+</html>

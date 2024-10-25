@@ -16,6 +16,19 @@ export class SignalRegistry {
     this.registry.set(id, signal);
     return signal;
   }
+  updateOrCreate<T>(id: string, initialValue: T): Signal<T> {
+    if (this.registry.has(id)) {
+      const signal = this.registry.get(id) as Signal<T>;
+      signal.value = initialValue;
+      return signal;
+    }
+    const signal = createSignal(initialValue);
+    this.registry.set(id, signal);
+    return signal;
+  }
+  set<T>(id: string, value: T): Signal<T> {
+    return this.getOrCreate(id, value);
+  }
 
   // Why: To get a signal by its ID
   get<T>(id: string): Signal<T> | undefined {
@@ -29,6 +42,9 @@ export class SignalRegistry {
 
   // Why: To remove a signal from the registry
   remove(id: string): void {
+    this.registry.delete(id);
+  }
+  delete(id: string): void {
     this.registry.delete(id);
   }
 

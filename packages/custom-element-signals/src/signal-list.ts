@@ -32,6 +32,13 @@ export class SignalList<T> extends HTMLElement {
 
   constructor() {
     super();
+    // if ((globalThis as any).signalRegistry) {
+    //   console.log("signal-list: using global signalRegistry");
+    //   this._signalRegistry = (globalThis as any).signalRegistry;
+    // } else {
+    //   console.log("signal-list: using signalStore");
+    //   this._signalRegistry = signalStore;
+    // }
     this._signalRegistry = window.signalRegistry || signalStore;
   }
 

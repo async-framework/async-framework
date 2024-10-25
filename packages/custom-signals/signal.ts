@@ -19,6 +19,16 @@ export class Signal<T = any> {
       this._notifyObservers(oldValue, newVal);
     }
   }
+  get(): T {
+    return this._value;
+  }
+  set(newVal: T) {
+    this.value = newVal;
+  }
+
+  notifyObservers() {
+    this._notifyObservers(this._value, this._value);
+  }
 
   private _notifyObservers(oldValue: T, newValue: T) {
     for (const observer of this._observers) {
