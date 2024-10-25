@@ -1,6 +1,7 @@
-export * from "./let-signal";
+export * from "./signal-list";
 export * from "./signal-text";
-export * from "./signal-store";
+export * from "./let-signal";
+export * from "./signal-html";
 
 export { signalStore } from "./signal-store-instance";
 

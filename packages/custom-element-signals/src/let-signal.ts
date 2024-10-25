@@ -1,4 +1,4 @@
-import { parseAttributeValue } from "./parse-attribute-value";
+import { parseAttributeValue } from "./utils/parse-attribute-value";
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 

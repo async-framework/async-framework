@@ -1,5 +1,6 @@
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
+import { interpolateTemplate } from "./utils/template-utils";
 
 export class SignalList<T> extends HTMLElement {
   static observedAttributes = ["name", "template", "let-item", "let-index"];
@@ -65,6 +66,8 @@ export class SignalList<T> extends HTMLElement {
     if (templateElement) {
       templateContent = templateElement.innerHTML;
       templateElement.remove();
+    } else {
+      templateContent = this.innerHTML;
     }
 
     if (!templateContent) {
@@ -349,7 +352,7 @@ export class SignalList<T> extends HTMLElement {
     }
 
     // Use interpolate method for template processing
-    processedTemplate = this.interpolate(processedTemplate, {
+    processedTemplate = interpolateTemplate(processedTemplate, {
       [this.letItem]: item,
       [this.letIndex]: this.currentIndex
     });
@@ -387,21 +390,6 @@ export class SignalList<T> extends HTMLElement {
     this.items = [];
     this.itemElements.clear();
     // (this as any)._signalRegistry = null;
-  }
-
-  private escapeHtml(value: unknown): string {
-    // Handle null or undefined
-    if (value == null) return '';
-    
-    // Convert to string if not already
-    const str = String(value);
-    
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
   }
 
   private isArrayLike(value: unknown): boolean {
@@ -477,27 +465,5 @@ export class SignalList<T> extends HTMLElement {
       current = current.parentElement;
     }
     return `${path.join(">")}@${attrName}`;
-  }
-
-  private interpolate(template: string, context: Record<string, unknown>): string {
-    return template.replace(/\${([^}]+)}/g, (match, expr) => {
-      try {
-        // Handle JSON.stringify specifically
-        if (expr.includes('JSON.stringify')) {
-          const objPath = expr.match(/JSON\.stringify\((.*?)\)/)?.[1];
-          if (!objPath) return '';
-          
-          const value = new Function(...Object.keys(context), `return ${objPath}`)(...Object.values(context));
-          return this.escapeHtml(JSON.stringify(value));
-        }
-        
-        // Regular expression evaluation
-        const value = new Function(...Object.keys(context), `return ${expr}`)(...Object.values(context));
-        return this.escapeHtml(value);
-      } catch (error) {
-        console.error('Error interpolating template:', error);
-        return '';
-      }
-    });
   }
 }
