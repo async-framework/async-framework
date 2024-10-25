@@ -29,6 +29,35 @@
       }
     </style>
 
+    <!-- Add this style block in the head section -->
+    <style>
+      let-signal:not(:defined),
+      let-signal {
+        display: none !important;
+      }
+
+      /* Status badge styles */
+      .status-badge {
+        position: relative;
+      }
+
+      .status-badge[data-status="true"] .status-active {
+        display: none;
+      }
+
+      .status-badge[data-status="true"] .status-inactive {
+        display: inline;
+      }
+
+      .status-badge .status-active {
+        display: inline;
+      }
+
+      .status-badge .status-inactive {
+        display: none;
+      }
+    </style>
+
   </head>
   <body class="bg-gray-100">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
@@ -110,99 +139,100 @@
         <h2 class="text-lg font-semibold mb-4">Resources</h2>
         <let-signal name="resources">[]</let-signal>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Code
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Title
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Details
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Data
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <signal-list name="resources">
-                <template>
-                  <tr>
-                    <td
-                      class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          <!-- Header -->
+          <div class="bg-gray-50 grid grid-cols-6 gap-4 p-4 font-medium text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
+            <div>Code</div>
+            <div>Title</div>
+            <div>Details</div>
+            <div>Data</div>
+            <div>Status</div>
+            <div>Actions</div>
+          </div>
+          
+          <!-- List Container -->
+          <div class="divide-y divide-gray-200">
+            <signal-list name="resources">
+              <template>
+                <div class="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50">
+                  <div class="text-sm font-medium text-gray-900 truncate">
+                    ${item.code}
+                  </div>
+                  <div class="text-sm text-gray-500 truncate">
+                    ${item.title}
+                  </div>
+                  <div class="text-sm text-gray-500 truncate">
+                    ${item.details}
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    <button
+                      class="text-indigo-600 hover:text-indigo-900 text-sm"
+                      data-json='${JSON.stringify(item.data)}'
+                      on:click="toggleModal.js"
                     >
-                      ${item.code}
-                    </td>
-                    <td
-                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                    >
-                      ${item.title}
-                    </td>
-                    <td
-                      class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate"
-                    >
-                      ${item.details}
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                      <pre class="max-w-xs truncate">
-                        ${item.data}
-                      </pre
-                      >
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span
-                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-                      >
+                      View JSON
+                    </button>
+                  </div>
+                  <div>
+                    <span class="status-badge px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
+                          data-status="${item.deactivated}">
+                      <span class="status-active bg-green-100 text-green-800 px-2 rounded-full">
                         Active
                       </span>
-                    </td>
-                    <td
-                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                      <span class="status-inactive bg-red-100 text-red-800 px-2 rounded-full">
+                        Inactive
+                      </span>
+                    </span>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button
+                      data-code="${item.code}"
+                      on:click="toggleStatus.js"
+                      class="text-indigo-600 hover:text-indigo-900 text-sm"
                     >
-                      <button
-                        data-code="${item.code}"
-                        on:click="toggleStatus.js"
-                        class="text-indigo-600 hover:text-indigo-900 mr-2"
-                      >
-                        Toggle Status
-                      </button>
-                      <button
-                        data-code="${item.code}"
-                        on:click="deleteResource.js"
-                        class="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                </template>
-              </signal-list>
-            </tbody>
-          </table>
+                      Toggle Status
+                    </button>
+                    <button
+                      data-code="${item.code}"
+                      on:click="deleteResource.js"
+                      class="text-red-600 hover:text-red-900 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </signal-list>
+          </div>
         </div>
       </div>
     </main>
+
+    <!-- Add this right after the main closing tag, before the script -->
+    <let-signal name="modalState">{"isOpen": false, "content": null}</let-signal>
+    <div id="jsonModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" style="display: none;">
+      <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+              <div class="mt-3 text-center sm:mt-0 sm:text-left">
+                <h3 class="text-base font-semibold leading-6 text-gray-900">JSON Data</h3>
+                <div class="mt-2">
+                  <pre class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-4 rounded-lg overflow-auto max-h-[400px]"><signal-html name="modalState">${value.content}</signal-html></pre>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              <button 
+                type="button" 
+                on:click="toggleModal.js"
+                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
@@ -210,6 +240,7 @@
       import * as customElementSignals from "custom-element-signals";
       import preventStopDefault from "./prevent-stop-default.js";
       import preventDefault from "./prevent-default.js";
+      import toggleModal from "./toggleModal.js";
 
       
       // Initialize signals with mock data
@@ -239,6 +270,7 @@
         registry: new Map([
           ['prevent-default.js', preventDefault],
           ['prevent-stop-default.js', preventStopDefault],
+          ['toggleModal.js', toggleModal],
         ]),
       });
 
@@ -263,6 +295,12 @@
         alertsSignal.notifyObservers();
       });
 
+      // Add this observer to handle modal visibility
+      const modalSignal = signals.getOrCreate('modalState', { isOpen: false, content: null });
+      modalSignal.subscribe((state) => {
+        const modal = document.getElementById('jsonModal');
+        modal.style.display = state.isOpen ? 'block' : 'none';
+      });
     </script>
   </body>
 </html>
