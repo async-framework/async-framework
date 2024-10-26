@@ -1,7 +1,6 @@
 // Queue for managing alerts
 const alertQueue = [];
-let isProcessing = false;
-let processAgain = false;
+const activeStacks = new Map(); // Track active stacks and their sizes
 
 // Create alert container if needed and return it
 function getAlertContainer() {
@@ -23,21 +22,22 @@ function createStackContainer(message, type) {
   return stackContainer;
 }
 
-export async function processAlertQueue() {
+export function processAlertQueue() {
   if (alertQueue.length === 0) return;
-  if (isProcessing) {
-    console.log("processAlertQueue: waiting for current alert to finish");
-    processAgain = true;
-    return;
-  }
-
-  isProcessing = true;
   const container = getAlertContainer();
 
-  while (alertQueue.length > 0) {
-    const { message, type } = alertQueue.shift();
+  const processNextAlert = async () => {
+    if (alertQueue.length === 0) return;
+
+    const { message, type } = alertQueue[0]; // Peek at next alert
     const stackKey = `${type}-${message}`;
     
+    // Update active stacks count before processing
+    activeStacks.set(stackKey, (activeStacks.get(stackKey) || 0) + 1);
+    
+    // Now remove from queue
+    alertQueue.shift();
+
     let stackContainer = container.querySelector(`[data-stack-key="${stackKey}"]`);
     if (!stackContainer) {
       stackContainer = createStackContainer(message, type);
@@ -98,6 +98,14 @@ export async function processAlertQueue() {
         await animateOut(alert);
         if (alert.isConnected) {
           stackContainer.removeChild(alert);
+          // Update active stacks count
+          const currentCount = activeStacks.get(stackKey) - 1;
+          if (currentCount <= 0) {
+            activeStacks.delete(stackKey);
+          } else {
+            activeStacks.set(stackKey, currentCount);
+          }
+          
           if (stackContainer.childElementCount === 0) {
             container.removeChild(stackContainer);
           }
@@ -107,13 +115,15 @@ export async function processAlertQueue() {
         }
       }
     }, 5000);
-  }
 
-  isProcessing = false;
-  if (processAgain) {
-    processAgain = false;
-    setTimeout(() => processAlertQueue(), 250);
-  }
+    // Continue processing queue
+    if (alertQueue.length > 0) {
+      requestAnimationFrame(() => processNextAlert());
+    }
+  };
+
+  // Start processing alerts
+  requestAnimationFrame(() => processNextAlert());
 }
 
 // Helper function for animating alerts out
@@ -126,11 +136,22 @@ async function animateOut(alert) {
 // TODO: refactor to signals and async-framework
 export function showAlert(message, type = "success") {
   const newAlert = { message, type, id: Date.now() };
+  const stackKey = `${type}-${message}`;
+  
+  // Increment stack count when adding
+  activeStacks.set(stackKey, (activeStacks.get(stackKey) || 0) + 1);
   alertQueue.push(newAlert);
+  
+  const container = document.getElementById("alertContainer");
+  const stackContainer = container?.querySelector(`[data-stack-key="${stackKey}"]`);
+  const visibleStackSize = stackContainer ? stackContainer.children.length : 0;
+  const totalStackSize = activeStacks.get(stackKey) || 0;
+  
   console.log(
     "showAlert: queued alert",
     `${type} - ${message}`,
-    `(${alertQueue.length} in queue)`
+    `${visibleStackSize} visible, ${totalStackSize} total in stack)`
   );
+
   processAlertQueue();
 }
