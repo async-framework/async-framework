@@ -18,7 +18,7 @@ function getAlertContainer() {
 function createStackContainer(message, type) {
   const stackKey = `${type}-${message}`;
   const stackContainer = document.createElement("div");
-  stackContainer.className = "relative";
+  stackContainer.className = "relative mb-2";
   stackContainer.dataset.stackKey = stackKey;
   return stackContainer;
 }
@@ -46,50 +46,45 @@ export async function processAlertQueue() {
 
     const alert = document.createElement("div");
     alert.className = `
-      mb-4 px-4 py-3 rounded-lg shadow-lg 
+      px-6 py-4 rounded-lg shadow-lg 
       transform transition-all duration-200 
-      border-l-4 flex justify-between items-start gap-3
+      border-l-4 flex justify-between items-center
+      min-w-[320px] max-w-[400px]
       ${type === "success" ? "bg-white border-green-500" : "bg-white border-red-500"}
       translate-x-full opacity-0
     `;
 
-    // Add stacking effect if there are existing alerts
-    const existingAlerts = stackContainer.children;
-    if (existingAlerts.length > 0) {
-      alert.style.position = "absolute";
-      alert.style.top = "-3px";
-      alert.style.right = "-3px";
-      alert.style.width = "100%";
-    }
-
     const messageDiv = document.createElement("div");
-    messageDiv.className = `${type === "success" ? "text-green-700" : "text-red-700"}`;
+    messageDiv.className = `
+      ${type === "success" ? "text-green-700" : "text-red-700"} 
+      flex-grow pr-4 text-sm font-medium
+    `;
     messageDiv.textContent = message;
 
     const closeButton = document.createElement("button");
     closeButton.innerHTML = "×";
     closeButton.className = `
-      text-gray-500 hover:text-gray-700 
+      text-gray-400 hover:text-gray-600 
       font-bold text-xl leading-none 
       focus:outline-none
     `;
-    
-    closeButton.onclick = async () => {
-      await animateOut(alert);
-      if (alert.isConnected) {
-        stackContainer.removeChild(alert);
-        if (stackContainer.childElementCount === 0) {
-          container.removeChild(stackContainer);
-        }
-        if (container.childElementCount === 0) {
-          container.remove();
-        }
-      }
-    };
 
     alert.appendChild(messageDiv);
     alert.appendChild(closeButton);
+    
+    // Add to container first to get natural size
     stackContainer.appendChild(alert);
+    const alertHeight = alert.offsetHeight;
+    
+    // Now set container height and make alerts absolute
+    stackContainer.style.height = `${alertHeight}px`;
+    stackContainer.style.width = "400px"; // Fixed width for stack container
+    alert.style.position = 'absolute';
+    alert.style.width = '100%';
+    
+    const existingAlerts = Array.from(stackContainer.children);
+    alert.style.top = "0";
+    alert.style.right = `${(existingAlerts.indexOf(alert)) * 2}px`;
 
     // Animate in
     await new Promise(resolve => setTimeout(resolve, 100));
