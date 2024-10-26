@@ -46,13 +46,13 @@ export default function toggleModal({ event, signals }) {
   // Toggle modal and set content
   if (!signal.isOpen) {
     const content = formatJSON(jsonData);
-    console.log("opening modal");
+    console.log("toggleModal: opening modal");
     modalSignal.value = {
       isOpen: true,
       content,
     };
   } else {
-    console.log("closing modal");
+    console.log("toggleModal: closing modal");
     modalSignal.value = {
       isOpen: false,
       content: "",
