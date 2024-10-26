@@ -38,13 +38,6 @@ export function interpolateTemplate(
       // Handle JSON.stringify specifically
       const contextKeys = Object.keys(context);
       const contextValues = Object.values(context);
-      if (expr.includes('JSON.stringify')) {
-        const objPath = expr.match(/JSON\.stringify\((.*?)\)/)?.[1];
-        if (!objPath) return '';
-        
-        const value = new Function(...contextKeys, `return ${objPath}`)(...contextValues);
-        return escapeValue(JSON.stringify(value), escapeHtml);
-      }
       
       // Regular expression evaluation
       const value = new Function(...contextKeys, `return ${expr}`)(...contextValues);

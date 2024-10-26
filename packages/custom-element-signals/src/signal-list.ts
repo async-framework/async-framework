@@ -1,7 +1,6 @@
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
 import { interpolateTemplate, getAttributeKey, generateTemplateId } from "./utils/template-utils";
-import { getOrCreateTemplate } from "./utils/template-registry";
 import { getTemplateContent } from "./utils/template-helpers";
 
 export class SignalList<T> extends HTMLElement {
@@ -16,7 +15,7 @@ export class SignalList<T> extends HTMLElement {
   private currentIndex = 0;
   private items: unknown[] = [];
   private itemElements = new Map<unknown, HTMLElement>();
-
+  private _id: string = "";
   private templateInfo: {
     hasIndexInAttributes: boolean;
     hasIndexInContent: boolean;
@@ -53,8 +52,9 @@ export class SignalList<T> extends HTMLElement {
   }
 
   connectedCallback() {
+    this._id = this._id || `-${Math.random().toString(36).substring(2, 15)}`;
     const name = this.getAttribute("name");
-    const templateId = this.getAttribute("template-id") || generateTemplateId(this);
+    const templateId = this.getAttribute("template-id") || `signal-list-${generateTemplateId(this)}-${this._id}`;
 
     if (!name) {
       throw new Error("signal-list must have a name attribute");

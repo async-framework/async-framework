@@ -72,10 +72,8 @@
           />
         </div>
         <p>
-          Full Name: <signal-text
-            name="firstName"
-            class="font-bold"
-          ></signal-text>
+          Full Name:
+          <signal-text name="firstName" class="font-bold"></signal-text>
           <signal-text name="lastName" class="font-bold"></signal-text>
         </p>
       </section>
@@ -226,8 +224,8 @@
           <template>
             <div class="mb-2 p-2 bg-green-50 rounded">
               <span class="font-mono">[${index}]</span>
-              <span class="ml-2">${item}</span>
-              <span class="text-gray-500 ml-2">(${typeof ${item}})</span>
+              <span class="ml-2">${JSON.stringify(item, null, 2)}</span>
+              <span class="text-gray-500 ml-2">(${typeof item})</span>
             </div>
           </template>
         </signal-list>

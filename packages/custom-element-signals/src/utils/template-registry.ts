@@ -1,9 +1,17 @@
 // Why: Provides centralized template management for signal components
 export const templateRegistry = new Map<string, string>();
 
+
+export function getTemplate(templateId: string): string | null {
+  return templateRegistry.get(templateId) || null;
+}
+
+export function setTemplate(templateId: string, template: string): void {
+  templateRegistry.set(templateId, template);
+}
+
 export function getOrCreateTemplate(
-  templateId: string | null,
-  fallbackContent?: () => string
+  templateId: string | null
 ): string | null {
   // If no templateId, return null to let component handle fallback logic
   if (!templateId) return null;
@@ -20,15 +28,6 @@ export function getOrCreateTemplate(
     templateRegistry.set(templateId, template);
     templateElement.remove();
     return template;
-  }
-
-  // If fallback content provided, use that
-  if (fallbackContent) {
-    const fallbackTemplate = fallbackContent();
-    if (fallbackTemplate) {
-      templateRegistry.set(templateId, fallbackTemplate);
-      return fallbackTemplate;
-    }
   }
 
   return null;
