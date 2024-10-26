@@ -51,8 +51,6 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         config-file: .github/codeql/codeql-config.yml
-        queries: security-extended,security-and-quality
-        packs: +codeql/javascript-queries:recommended
         tools: latest
         debug: true
 
@@ -65,5 +63,5 @@ jobs:
         category: "/language:${{matrix.language}}"
         upload: true
         output: sarif-results
-        ram: 4096
-        threads: 4
+        ram: 6144
+        threads: 2

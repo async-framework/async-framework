@@ -1,38 +1,25 @@
-name: "Deno CodeQL Config"
+name: "Custom CodeQL Config"
 
 paths:
   - 'packages/**'
 
 paths-ignore:
-  - 'packages/**/test/**'
-  - 'packages/**/tests/**'
-  - 'packages/examples/**'
+  - '**/test/**'
+  - '**/tests/**'
+  - '**/dist/**'
   - '**/node_modules/**'
   - '**/*.test.ts'
   - '**/*.test.js'
-  - '**/*.spec.ts'
-  - '**/*.spec.js'
-  - 'dist/**'
-  - 'build/**'
-  - '.vscode/**'
-  - 'vendor/**'
-  - 'fixtures/**'
 
 queries:
   - uses: security-extended
   - uses: security-and-quality
-  - uses: codeql/javascript-queries/Security
-  - uses: codeql/typescript-queries/Security
 
 query-filters:
   - exclude:
       problem.severity:
         - warning
         - recommendation
-  - include:
-      tags:
-        - security
-        - correctness
 
 database:
   analyze-builtin-pretrained-model: true
@@ -42,19 +29,9 @@ database:
 extraction:
   javascript:
     index-typescript: true
-    typescript:
-      version: 5.x
-      features:
-        - decorators
-        - modules
-      dependencies:
-        typescript: '*'
-    source-type: module
-    file-types:
-      - .js
-      - .ts
-      - .mts
-      - .cts
+    typescript: true
+    index-javascript: true
+    debug: true
 
 output:
   sarif:
