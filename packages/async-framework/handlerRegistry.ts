@@ -1,14 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 // handlerRegistry.js
-
-/**
- * Checks if a value is a promise.
- * @param {any} value - The value to check.
- * @returns {boolean} - True if the value is a promise, false otherwise.
- */
-function isPromise(value: any): value is Promise<any> {
-  return value && typeof value === "object" && typeof value.then === "function";
-}
+import { isPromise } from "./utils.js";
 
 /**
  * Converts an event string to a title case event name.
@@ -92,6 +84,7 @@ export class HandlerRegistry {
     const processedAttrValue = Array.isArray(attrValue)
       ? attrValue
       : this.parseAttribute(attrValue);
+    // console.log("HandlerRegistry.handler: processedAttrValue", context.element.tagName, JSON.stringify(processedAttrValue, null, 2));
     for (const scriptPath of processedAttrValue) {
       try {
         // Retrieve the handler from the registry
@@ -99,7 +92,7 @@ export class HandlerRegistry {
         let handler = this.getHandler(scriptPath, context);
         // If we need to grab an async handler, wait for it to resolve
         if (isPromise(handler)) {
-          // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
+          // console.log('HandlerRegistry.handler: waiting for handler to resolve', scriptPath);
           handler = await (handler as Promise<any>);
         }
         if (typeof handler === "function") {
@@ -108,7 +101,7 @@ export class HandlerRegistry {
           let returnedValue = (handler as handlerType)(context);
           // if the handler returns a promise, wait for it to resolve
           if (isPromise(returnedValue)) {
-            // console.log('handleContainerEvent: waiting for handler to resolve', scriptPath);
+            // console.log('HandlerRegistry.handler: waiting for handler to resolve', scriptPath);
             // Execute the handler asynchronously
             returnedValue = await (returnedValue as Promise<any>);
           }
@@ -118,7 +111,13 @@ export class HandlerRegistry {
             context.value = returnedValue;
           }
           // If the handler sets break to true, stop processing further handlers for this event
-          if (context.break) break;
+          if (context.canceled) {
+            console.log(
+              "HandlerRegistry.handler: event was cancelled by the handler",
+              context,
+            );
+            break;
+          }
         }
       } catch (error) {
         console.error(

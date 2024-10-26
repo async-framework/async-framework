@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-
+import { escapeSelector, isPromise } from "./utils.js";
 export interface AsyncLoaderConfig {
   handlerRegistry: { handler: (context: any) => Promise<any> | any };
   eventPrefix?: string;
@@ -61,7 +61,9 @@ export class AsyncLoader {
     this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containers = config.containers || new Map();
-    this.events = config.events || this.discoverCustomEvents(document.body);
+    this.events = this.dedupeEvents(
+      config.events || this.discoverCustomEvents(document.body),
+    );
 
     // Set of processed containers
     this.processedContainers = config.processedContainers || new WeakSet();
@@ -71,6 +73,10 @@ export class AsyncLoader {
   // Why: Sets up event listeners and observers for all relevant containers upon initialization.
   init(containerElement = document.body) {
     this.parseDOM(containerElement); // Start parsing from the body element
+  }
+
+  dedupeEvents(events: string[]) {
+    return [...new Set(events)];
   }
 
   // Discovers custom events on the container element
@@ -85,10 +91,11 @@ export class AsyncLoader {
       .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));
 
-    // Remove duplicates
-    const events = [...new Set(customEventAttributes)];
-    console.log("discoverCustomEvents: discovered custom events:", events);
-    return events;
+    console.log(
+      "discoverCustomEvents: discovered custom events:",
+      this.dedupeEvents(customEventAttributes),
+    );
+    return customEventAttributes;
   }
 
   // Parses a root element to identify and handle new containers
@@ -301,9 +308,16 @@ export class AsyncLoader {
   // the "Object is possibly 'undefined'" linter error. This approach supports a flexible and scalable event
   // system that can handle both static and dynamically generated content, allowing for efficient communication
   // between different parts of the application while maintaining type safety.
-  dispatch(eventName, detail) {
+  dispatch(eventName: string | CustomEvent, detail?: any) {
     // create the custom event
-    const customEvent = this.createEvent(eventName, detail);
+    let customEvent;
+    if (eventName instanceof CustomEvent) {
+      customEvent = eventName;
+      detail = eventName.detail;
+      eventName = eventName.type;
+    } else {
+      customEvent = this.createEvent(eventName, detail);
+    }
     // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
     this.containers.forEach((listeners, containerElement) => {
       // console.log('dispatch: parsing container elements for event', eventName);
@@ -371,7 +385,8 @@ export class AsyncLoader {
     }
 
     let element = domEvent.target;
-    while (element && element !== containerElement) {
+    let stop = false;
+    while (element && element !== containerElement && !stop) {
       // console.log('handleContainerEvent: handling event for element', element.tagName, event.type, eventListeners);
       if (eventListeners.has(element)) {
         // Define the context with getters for accessing current state and elements
@@ -406,8 +421,14 @@ export class AsyncLoader {
           get container() {
             return containerElement;
           },
+          get canceled() {
+            return stop;
+          },
           // If the handler sets break to true, stop processing further handlers for this event
-          break: false,
+          stop() {
+            stop = true;
+            return stop;
+          },
         };
         // copy the context properties from the async loader
         Object.defineProperties(
@@ -419,7 +440,10 @@ export class AsyncLoader {
         );
 
         try {
-          /* context = */ await self.handlerRegistry.handler(context);
+          const res = self.handlerRegistry.handler(context);
+          if (isPromise(res)) {
+            await res;
+          }
         } catch (error) {
           // Reset value if there's an error
           value = undefined;
@@ -432,14 +456,26 @@ export class AsyncLoader {
         value = undefined;
 
         // If the event doesn't bubble, stop after handling the first matching element
-        if (!domEvent.bubbles) break;
+        if (stop) {
+          console.log(
+            "handleContainerEvent: event was stopped by the handler",
+            domEvent,
+          );
+          break;
+        }
+        if (!domEvent.bubbles) {
+          console.log("handleContainerEvent: event does not bubble", domEvent);
+          stop = true;
+          break;
+        }
+        // if (domEvent.cancelBubble) {
+        //   console.log('handleContainerEvent: event was cancelled by the handler', domEvent);
+        //   stop = true;
+        //   break;
+        // }
       }
       // Traverse up the DOM tree for event delegation
       element = element.parentElement;
     }
   }
-}
-// Why: Escapes special characters in selectors to ensure they are treated as literal characters in CSS selectors
-function escapeSelector(selector) {
-  return selector.replace(/[^\w\s-]/g, (match) => `\\${match}`);
 }
