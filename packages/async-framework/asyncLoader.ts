@@ -412,7 +412,7 @@ export class AsyncLoader {
         // copy the context properties from the async loader
         Object.defineProperties(
           context,
-          Object.getOwnPropertyDescriptors(this.context)
+          Object.getOwnPropertyDescriptors(this.context),
           // get signals() {
           //   return container._controller.signals;
           // }

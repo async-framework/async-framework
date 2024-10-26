@@ -72,7 +72,10 @@
           />
         </div>
         <p>
-          Full Name: <signal-text name="firstName" class="font-bold"></signal-text>
+          Full Name: <signal-text
+            name="firstName"
+            class="font-bold"
+          ></signal-text>
           <signal-text name="lastName" class="font-bold"></signal-text>
         </p>
       </section>
@@ -108,8 +111,11 @@
             <li class="mb-2">
               <span class="mr-2">${item}</span>
               <signal-text name="counter" class="font-bold"></signal-text>
-              <button data-index="${index}" onclick="removeTodo(this.dataset.index)" 
-                class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
+              <button
+                data-index="${index}"
+                onclick="removeTodo(this.dataset.index)"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm"
+              >
                 Remove
               </button>
             </li>
@@ -127,13 +133,31 @@
           <span class="inline-flex items-center">
             <!-- Normal State -->
             <span class="normal-state">Start Stream</span>
-            
+
             <!-- Loading State (hidden by default) -->
             <span class="loading-state" hidden>
               <span class="inline-flex items-center">
-                <svg class="inline animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  class="inline animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  >
+                  </circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  >
+                  </path>
                 </svg>
                 <span>loading...</span>
               </span>
@@ -153,10 +177,8 @@
       <section id="objectList" class="bg-white rounded-lg shadow-md p-6 mt-8">
         <h2 class="text-2xl font-semibold mb-4">Object List</h2>
         <let-signal name="users">
-          [
-            {"id": 1, "name": "Alice", "role": "Admin"},
-            {"id": 2, "name": "Bob", "role": "User"}
-          ]
+          [ {"id": 1, "name": "Alice", "role": "Admin"}, {"id": 2, "name":
+          "Bob", "role": "User"} ]
         </let-signal>
         <button
           id="addUserBtn"
@@ -166,12 +188,14 @@
         </button>
         <signal-list name="users">
           <template>
-            <div class="mb-2 p-3 bg-blue-50 rounded flex justify-between items-center">
+            <div
+              class="mb-2 p-3 bg-blue-50 rounded flex justify-between items-center"
+            >
               <div>
                 <span class="font-bold">${item.name}</span>
                 <span class="text-gray-600 ml-2">(${item.role})</span>
               </div>
-              <button 
+              <button
                 data-id="${item.id}"
                 onclick="removeUser(this.dataset.id)"
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm"
@@ -183,16 +207,14 @@
         </signal-list>
       </section>
 
-      <section id="mixedList" class="bg-white rounded-lg shadow-md p-6 mt-8 mb-8">
+      <section
+        id="mixedList"
+        class="bg-white rounded-lg shadow-md p-6 mt-8 mb-8"
+      >
         <h2 class="text-2xl font-semibold mb-4">Mixed Types List</h2>
         <let-signal name="mixedItems">
-          [
-            "Hello",
-            {"type": "object", "value": "World"},
-            42,
-            ["nested", "array"],
-            true
-          ]
+          [ "Hello", {"type": "object", "value": "World"}, 42, ["nested",
+          "array"], true ]
         </let-signal>
         <button
           id="shuffleMixedBtn"
@@ -278,23 +300,23 @@
       // Async Stream Example
       const streamSignal = signalRegistry.get("streamData");
       const startStreamBtn = document.getElementById("startStreamBtn");
-      
+
       async function* generateStream() {
         let count = 0;
         while (count < 10) {
           console.log("generateStream", count);
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
           yield `Stream data ${count++} at ${new Date().toLocaleTimeString()}`;
         }
         yield "Stream complete";
       }
-      
+
       startStreamBtn.addEventListener("click", async () => {
         startStreamBtn.disabled = true;
         startStreamBtn.querySelector("span.normal-state").hidden = true;
         startStreamBtn.querySelector("span.loading-state").hidden = false;
         streamSignal.set(generateStream());
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         startStreamBtn.disabled = false;
         startStreamBtn.querySelector("span.loading-state").hidden = true;
         startStreamBtn.querySelector("span.normal-state").hidden = false;
@@ -304,7 +326,14 @@
       const usersSignal = signalRegistry.get("users");
       const addUserBtn = document.getElementById("addUserBtn");
 
-      const randomNames = ["Charlie", "Diana", "Edward", "Fiona", "George", "Helen"];
+      const randomNames = [
+        "Charlie",
+        "Diana",
+        "Edward",
+        "Fiona",
+        "George",
+        "Helen",
+      ];
       const randomRoles = ["User", "Editor", "Viewer", "Manager"];
 
       addUserBtn.addEventListener("click", () => {
@@ -312,14 +341,14 @@
         const newUser = {
           id: Date.now(),
           name: randomNames[Math.floor(Math.random() * randomNames.length)],
-          role: randomRoles[Math.floor(Math.random() * randomRoles.length)]
+          role: randomRoles[Math.floor(Math.random() * randomRoles.length)],
         };
         usersSignal.set([...users, newUser]);
       });
 
       window.removeUser = (id) => {
         const users = usersSignal.get();
-        const newUsers = users.filter(user => user.id !== Number(id));
+        const newUsers = users.filter((user) => user.id !== Number(id));
         usersSignal.set(newUsers);
       };
 
@@ -347,7 +376,7 @@
           "Organize",
           "Schedule",
           "Prepare",
-          "Create"
+          "Create",
         ];
 
         const subjects = [
@@ -360,7 +389,7 @@
           "code review",
           "user research",
           "marketing strategy",
-          "design mockups"
+          "design mockups",
         ];
 
         const timeframes = [
@@ -373,7 +402,7 @@
           "by Monday",
           "for the meeting",
           "ASAP",
-          "within 2 days"
+          "within 2 days",
         ];
 
         const action = actions[Math.floor(Math.random() * actions.length)];

@@ -6,5 +6,4 @@ export default function updateTemperature({ signals, element }) {
 
   celsius.value = value;
   fahrenheit.value = ((celsius.value * 9) / 5 + 32).toFixed(2);
-
 }

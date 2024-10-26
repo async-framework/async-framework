@@ -57,7 +57,6 @@
         display: none;
       }
     </style>
-
   </head>
   <body class="bg-gray-100" data-container="root">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
@@ -71,8 +70,7 @@
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <!-- Alert Container -->
       <let-signal name="alerts">[]</let-signal>
-      <div class="fixed top-4 right-4 z-50 space-y-2" id="alertContainer">
-      </div>
+      <div class="fixed top-4 right-4 z-50 space-y-2" id="alertContainer"></div>
 
       <!-- Create Resource Form -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -85,8 +83,7 @@
           <div class="grid grid-cols-1 gap-4">
             <div>
               <label for="title" class="block text-sm font-medium text-gray-700"
-                >Title</label
-              >
+              >Title</label>
               <input
                 type="text"
                 id="title"
@@ -99,8 +96,7 @@
               <label
                 for="details"
                 class="block text-sm font-medium text-gray-700"
-                >Details</label
-              >
+              >Details</label>
               <input
                 id="details"
                 name="details"
@@ -112,8 +108,7 @@
             <div>
               <label for="data" class="block text-sm font-medium text-gray-700">
                 Data (JSON)
-              </label
-              >
+              </label>
               <textarea
                 id="data"
                 name="data"
@@ -140,7 +135,9 @@
         <let-signal name="resources">[]</let-signal>
         <div class="overflow-x-auto">
           <!-- Header -->
-          <div class="bg-gray-50 grid grid-cols-6 gap-4 p-4 font-medium text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
+          <div
+            class="bg-gray-50 grid grid-cols-6 gap-4 p-4 font-medium text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200"
+          >
             <div>Code</div>
             <div>Title</div>
             <div>Details</div>
@@ -148,12 +145,14 @@
             <div>Status</div>
             <div>Actions</div>
           </div>
-          
+
           <!-- List Container -->
           <div class="divide-y divide-gray-200">
             <signal-list name="resources">
               <template>
-                <div class="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50">
+                <div
+                  class="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50"
+                >
                   <div class="text-sm font-medium text-gray-900 truncate">
                     ${item.code}
                   </div>
@@ -166,19 +165,25 @@
                   <div class="text-sm text-gray-500">
                     <button
                       class="text-indigo-600 hover:text-indigo-900 text-sm"
-                      data-json='${JSON.stringify(item.data)}'
+                      data-json="${JSON.stringify(item.data)}"
                       on:click="toggleModal.js"
                     >
                       View JSON
                     </button>
                   </div>
                   <div>
-                    <span class="status-badge px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                          data-status="${item.deactivated}">
-                      <span class="status-active bg-green-100 text-green-800 px-2 rounded-full">
+                    <span
+                      class="status-badge px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      data-status="${item.deactivated}"
+                    >
+                      <span
+                        class="status-active bg-green-100 text-green-800 px-2 rounded-full"
+                      >
                         Active
                       </span>
-                      <span class="status-inactive bg-red-100 text-red-800 px-2 rounded-full">
+                      <span
+                        class="status-inactive bg-red-100 text-red-800 px-2 rounded-full"
+                      >
                         Inactive
                       </span>
                     </span>
@@ -208,27 +213,45 @@
     </main>
 
     <!-- Add this right after the main closing tag, before the script -->
-    <let-signal name="modalState">{"isOpen": false, "content": null}</let-signal>
+    <let-signal name="modalState"
+    >{"isOpen": false, "content": null}</let-signal>
     <signal-modal name="modalState" watch="isOpen" template-id="modal-template">
       <div class="p-6">
         <!-- Header -->
-        <div class="flex items-center justify-between pb-4 border-b border-gray-200">
-          <h3 class="text-xl font-semibold leading-6 text-gray-900">JSON Data</h3>
-          <button 
-            type="button" 
+        <div
+          class="flex items-center justify-between pb-4 border-b border-gray-200"
+        >
+          <h3 class="text-xl font-semibold leading-6 text-gray-900">
+            JSON Data
+          </h3>
+          <button
+            type="button"
             class="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
             on:click="toggleModal.js"
           >
             <span class="sr-only">Close</span>
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        
+
         <!-- Content -->
         <div class="my-6">
-          <pre class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-6 rounded-lg overflow-auto max-h-[400px] border border-gray-100"><signal-html name="modalState" template-id="modal-state-template"></signal-html></pre>
+          <pre
+            class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-6 rounded-lg overflow-auto max-h-[400px] border border-gray-100"
+          ><signal-html name="modalState" template-id="modal-state-template"></signal-html></pre
+          >
         </div>
 
         <!-- Footer -->
@@ -248,24 +271,43 @@
     <template id="modal-state-template">${this.content}</template>
 
     <!-- Add this before the closing body tag -->
-    <let-signal name="confirmModalState">{"isOpen": false, "message": "", "onConfirm": null}</let-signal>
-    <signal-modal name="confirmModalState" watch="isOpen" template-id="confirm-modal-template">
+    <let-signal name="confirmModalState"
+    >{"isOpen": false, "message": "", "onConfirm": null}</let-signal>
+    <signal-modal
+      name="confirmModalState"
+      watch="isOpen"
+      template-id="confirm-modal-template"
+    >
       <div class="p-6">
         <!-- Header -->
-        <div class="flex items-center justify-between pb-4 border-b border-gray-200">
-          <h3 class="text-xl font-semibold leading-6 text-gray-900">Confirm Action</h3>
-          <button 
-            type="button" 
+        <div
+          class="flex items-center justify-between pb-4 border-b border-gray-200"
+        >
+          <h3 class="text-xl font-semibold leading-6 text-gray-900">
+            Confirm Action
+          </h3>
+          <button
+            type="button"
             class="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
             on:click="cancelConfirmModal.js"
           >
             <span class="sr-only">Close</span>
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        
+
         <!-- Content -->
         <div class="my-6">
           <p class="text-sm text-gray-500">
@@ -303,10 +345,9 @@
       import preventStopDefault from "./prevent-stop-default.js";
       import preventDefault from "./prevent-default.js";
       import toggleModal from "./toggleModal.js";
-      import { cancelConfirmModal, confirmAction } from './confirmModal.js';
-      import deleteResource from './deleteResource.js';
+      import { cancelConfirmModal, confirmAction } from "./confirmModal.js";
+      import deleteResource from "./deleteResource.js";
 
-      
       // Initialize signals with mock data
       const mockResources = [
         {
@@ -332,12 +373,12 @@
       const handlers = new HandlerRegistry({
         basePath: location.pathname,
         registry: new Map([
-          ['prevent-default.js', preventDefault],
-          ['prevent-stop-default.js', preventStopDefault],
-          ['toggleModal.js', toggleModal],
-          ['deleteResource.js', deleteResource],
-          ['cancelConfirmModal.js', cancelConfirmModal],
-          ['confirmAction.js', confirmAction],
+          ["prevent-default.js", preventDefault],
+          ["prevent-stop-default.js", preventStopDefault],
+          ["toggleModal.js", toggleModal],
+          ["deleteResource.js", deleteResource],
+          ["cancelConfirmModal.js", cancelConfirmModal],
+          ["confirmAction.js", confirmAction],
         ]),
       });
 
@@ -363,7 +404,10 @@
       });
 
       // Add this observer to handle modal visibility
-      const modalSignal = signals.getOrCreate('modalState', { isOpen: false, content: null });
+      const modalSignal = signals.getOrCreate("modalState", {
+        isOpen: false,
+        content: null,
+      });
     </script>
   </body>
 </html>

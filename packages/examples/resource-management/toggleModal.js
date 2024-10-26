@@ -28,7 +28,7 @@ function formatJSON(json) {
           cls = "text-red-600"; // null
         }
         return `<span class="${cls}">${match}</span>`;
-      }
+      },
     );
 }
 

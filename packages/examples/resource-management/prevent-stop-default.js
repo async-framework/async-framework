@@ -1,4 +1,4 @@
 export default function preventStopDefault({ event }) {
-    event.preventDefault();
-    event.stopPropagation();
+  event.preventDefault();
+  event.stopPropagation();
 }

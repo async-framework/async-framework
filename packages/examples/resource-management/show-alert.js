@@ -24,9 +24,10 @@ export async function processAlertQueue() {
     const { message, type } = alertQueue.shift();
 
     const alert = document.createElement("div");
-    alert.className = `mb-4 px-4 py-3 rounded shadow-md text-white transform transition-all duration-200 ${
-      type === "success" ? "bg-green-500" : "bg-red-500"
-    }`;
+    alert.className =
+      `mb-4 px-4 py-3 rounded shadow-md text-white transform transition-all duration-200 ${
+        type === "success" ? "bg-green-500" : "bg-red-500"
+      }`;
     alert.textContent = message;
 
     // Add with animation
@@ -58,8 +59,11 @@ export async function processAlertQueue() {
 // TODO: refactor to signals and async-framework
 export function showAlert(message, type = "success") {
   const newAlert = { message, type, id: Date.now() };
-  
+
   alertQueue.push(newAlert);
-  console.log("showAlert: alerts", alertQueue.map((alert) => alert.message).join(", "));
+  console.log(
+    "showAlert: alerts",
+    alertQueue.map((alert) => alert.message).join(", "),
+  );
   processAlertQueue();
 }
