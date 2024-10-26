@@ -24,8 +24,11 @@ export function getOrCreateTemplate(
 
   // If fallback content provided, use that
   if (fallbackContent) {
-    templateRegistry.set(templateId, fallbackContent());
-    return templateRegistry.get(templateId) || null;
+    const fallbackTemplate = fallbackContent();
+    if (fallbackTemplate) {
+      templateRegistry.set(templateId, fallbackTemplate);
+      return fallbackTemplate;
+    }
   }
 
   return null;

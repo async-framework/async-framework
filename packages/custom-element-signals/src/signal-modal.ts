@@ -1,6 +1,5 @@
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
-import { getOrCreateTemplate } from "./utils/template-registry";
 import { generateTemplateId } from "./utils/template-utils";
 import { getTemplateContent } from "./utils/template-helpers";
 
@@ -13,11 +12,12 @@ export class SignalModal extends HTMLElement {
   private handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private handleClickOutside: ((e: MouseEvent) => void) | null = null;
   private modalId: string;
-
+  private modalBackdropId: string;
   constructor() {
     super();
     this.signalRegistry = window.signalRegistry || signalStore;
     this.modalId = `modal-${Math.random().toString(36).substr(2, 9)}`;
+    this.modalBackdropId = `modal-backdrop-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   connectedCallback() {
@@ -36,9 +36,9 @@ export class SignalModal extends HTMLElement {
 
     // Create modal wrapper with template content
     this.innerHTML = `
-      <div id="${this.modalId}" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity hidden">
+      <div id="${this.modalId}" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity hidden" style="pointer-events: auto;">
         <div class="fixed inset-0 z-10 overflow-y-auto">
-          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div id="${this.modalBackdropId}" class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0" style="pointer-events: auto;">
             <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
               ${content}
             </div>
@@ -49,6 +49,7 @@ export class SignalModal extends HTMLElement {
 
     // Get modal element using ID
     const modalElement = document.getElementById(this.modalId) as HTMLElement;
+    const modalBackdropElement = document.getElementById(this.modalBackdropId) as HTMLElement;
 
     // Subscribe to signal changes
     this.signal = this.signalRegistry.get(name) ?? null;
@@ -65,7 +66,8 @@ export class SignalModal extends HTMLElement {
 
     // Create bound event handlers that we can remove later
     this.handleClickOutside = (e: MouseEvent) => {
-      if (e.target === modalElement) {
+      // Check if click target is either the backdrop or the modal overlay
+      if (e.target === modalElement || e.target === modalBackdropElement) {
         this.signal?.set({ 
           ...this.signal.get(), 
           [watchProp]: false 
@@ -84,6 +86,7 @@ export class SignalModal extends HTMLElement {
 
     // Add event listeners
     modalElement?.addEventListener('click', this.handleClickOutside);
+    modalBackdropElement?.addEventListener('click', this.handleClickOutside);
     window.addEventListener('keydown', this.handleKeyDown);
   }
 
@@ -101,6 +104,12 @@ export class SignalModal extends HTMLElement {
     const modalElement = document.getElementById(this.modalId);
     if (modalElement && this.handleClickOutside) {
       modalElement.removeEventListener('click', this.handleClickOutside as EventListener);
+      this.handleClickOutside = null;
+    }
+
+    const modalBackdropElement = document.getElementById(this.modalBackdropId);
+    if (modalBackdropElement && this.handleClickOutside) {
+      modalBackdropElement.removeEventListener('click', this.handleClickOutside as EventListener);
       this.handleClickOutside = null;
     }
   }
