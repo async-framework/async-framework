@@ -25,9 +25,12 @@ export function getOrCreateTemplate(
   const templateElement = document.getElementById(templateId);
   if (templateElement) {
     const template = templateElement.innerHTML;
-    templateRegistry.set(templateId, template);
     templateElement.remove();
-    return template;
+    console.log(`Using template from template-id: ${templateId}`);
+    if (template) {
+      templateRegistry.set(templateId, template);
+      return template;
+    }
   }
 
   return null;

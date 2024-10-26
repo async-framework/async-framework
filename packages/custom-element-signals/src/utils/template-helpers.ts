@@ -15,6 +15,10 @@ export function getTemplateContent(
   
   
   registryTemplate = getOrCreateTemplate(templateId);
+  if (registryTemplate) {
+    return registryTemplate;
+  }
+
   if (!registryTemplate) {
     const templateElement = element.querySelector("template");
     if (templateElement) {
@@ -26,15 +30,11 @@ export function getTemplateContent(
       }
       return content;
     }
-  } else {
-    console.warn(`${componentName} must have either:
-    1. A template element with id="${templateId}"
-    2. An inline <template> element
-    3. Direct innerHTML content`);
   }
   // Use innerHTML if available
-  if (element.innerHTML.trim()) {
-    const content = element.innerHTML;
+  const innerHTML = element.innerHTML.trim();
+  if (innerHTML) {
+    const content = innerHTML;
     console.log(`Using innerHTML: ${templateId}`);
     if (templateId) {
       setTemplate(templateId, content);

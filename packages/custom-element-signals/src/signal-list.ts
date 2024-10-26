@@ -53,8 +53,9 @@ export class SignalList<T> extends HTMLElement {
 
   connectedCallback() {
     this._id = this._id || `-${Math.random().toString(36).substring(2, 15)}`;
+    const attributeTemplateId = this.getAttribute("template-id");
     const name = this.getAttribute("name");
-    const templateId = this.getAttribute("template-id") || `signal-list-${generateTemplateId(this)}-${this._id}`;
+    const templateId = attributeTemplateId || `signal-list-${generateTemplateId(this)}-${this._id}`;
 
     if (!name) {
       throw new Error("signal-list must have a name attribute");
