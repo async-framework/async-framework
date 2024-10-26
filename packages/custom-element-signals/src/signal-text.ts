@@ -5,16 +5,19 @@ import { signalStore } from "./signal-store-instance";
 export class SignalText extends HTMLElement {
   static observedAttributes = [
     "name",
+    "watch",
     "data-dangerous-html",
   ];
 
   attributes!: NamedNodeMap & {
     name: { value: string };
+    watch?: { value: string };
     "data-dangerous-html"?: { value: false | "false" };
   };
 
   signal: null | Signal<any> = null;
   _signalRegistry: Map<string, Signal<any>>;
+  _watch: string | null = null;
 
   ready = false;
   mounted = false;
@@ -29,6 +32,7 @@ export class SignalText extends HTMLElement {
   connectedCallback() {
     this.mounted = true;
     const name = this.attributes["name"]?.value;
+    this._watch = this.attributes["watch"]?.value ?? null;
     if (!name) {
       throw new Error("signal-text must have a name attribute");
     }
@@ -58,6 +62,9 @@ export class SignalText extends HTMLElement {
 
     if (dangerousHtml === "false" || dangerousHtml === false) {
       return;
+    }
+    if (this._watch) {
+      newValue = newValue[this._watch];
     }
     switch (newValue) {
       case NaN:

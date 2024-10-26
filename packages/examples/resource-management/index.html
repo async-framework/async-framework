@@ -210,16 +210,90 @@
     <!-- Add this right after the main closing tag, before the script -->
     <let-signal name="modalState">{"isOpen": false, "content": null}</let-signal>
     <signal-modal name="modalState" watch="isOpen" template-id="modal-template">
-      <div class="mt-3 text-center sm:mt-0 sm:text-left">
-        <h3 class="text-base font-semibold leading-6 text-gray-900">JSON Data</h3>
-        <div class="mt-2">
-          <pre
-            class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-4 rounded-lg overflow-auto max-h-[400px]"
-            ><signal-html name="modalState" template-id="modal-state-template"></signal-html></pre>
+      <div class="p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+          <h3 class="text-xl font-semibold leading-6 text-gray-900">JSON Data</h3>
+          <button 
+            type="button" 
+            class="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
+            on:click="toggleModal.js"
+          >
+            <span class="sr-only">Close</span>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="my-6">
+          <pre class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-6 rounded-lg overflow-auto max-h-[400px] border border-gray-100"><signal-html name="modalState" template-id="modal-state-template"></signal-html></pre>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-4 border-t border-gray-200">
+          <div class="flex justify-end">
+            <button
+              type="button"
+              class="inline-flex justify-center rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              on:click="toggleModal.js"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </signal-modal>
     <template id="modal-state-template">${this.content}</template>
+
+    <!-- Add this before the closing body tag -->
+    <let-signal name="confirmModalState">{"isOpen": false, "message": "", "onConfirm": null}</let-signal>
+    <signal-modal name="confirmModalState" watch="isOpen" template-id="confirm-modal-template">
+      <div class="p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+          <h3 class="text-xl font-semibold leading-6 text-gray-900">Confirm Action</h3>
+          <button 
+            type="button" 
+            class="text-gray-400 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100"
+            on:click="cancelConfirmModal.js"
+          >
+            <span class="sr-only">Close</span>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="my-6">
+          <p class="text-sm text-gray-500">
+            <signal-text name="confirmModalState" watch="message"></signal-text>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-4 border-t border-gray-200">
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              class="inline-flex justify-center rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              on:click="cancelConfirmModal.js"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="inline-flex justify-center rounded-md bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+              on:click="confirmAction.js"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </signal-modal>
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
@@ -229,6 +303,8 @@
       import preventStopDefault from "./prevent-stop-default.js";
       import preventDefault from "./prevent-default.js";
       import toggleModal from "./toggleModal.js";
+      import { cancelConfirmModal, confirmAction } from './confirmModal.js';
+      import deleteResource from './deleteResource.js';
 
       
       // Initialize signals with mock data
@@ -259,6 +335,9 @@
           ['prevent-default.js', preventDefault],
           ['prevent-stop-default.js', preventStopDefault],
           ['toggleModal.js', toggleModal],
+          ['deleteResource.js', deleteResource],
+          ['cancelConfirmModal.js', cancelConfirmModal],
+          ['confirmAction.js', confirmAction],
         ]),
       });
 

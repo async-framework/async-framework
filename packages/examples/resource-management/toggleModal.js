@@ -35,7 +35,6 @@ function formatJSON(json) {
 export default function toggleModal({ event, signals }) {
   const button = event.target;
   const jsonData = button.dataset.json;
-  console.log("jsonData", jsonData);
 
   // Get or initialize the modal state signal
   const modalSignal = signals.getOrCreate("modalState", {
@@ -47,12 +46,13 @@ export default function toggleModal({ event, signals }) {
   // Toggle modal and set content
   if (!signal.isOpen) {
     const content = formatJSON(jsonData);
-    console.log("opening modal", content);
+    console.log("opening modal");
     modalSignal.value = {
       isOpen: true,
       content,
     };
   } else {
+    console.log("closing modal");
     modalSignal.value = {
       isOpen: false,
       content: "",
