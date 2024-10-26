@@ -24,7 +24,8 @@
   <body class="bg-gray-100 min-h-screen">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
       <div class="container mx-auto">
-        <a href="/" class="text-xl font-bold hover:underline">← Back to Examples</a>
+        <a href="/" class="text-xl font-bold hover:underline"
+        >← Back to Examples</a>
       </div>
     </header>
     <div class="flex flex-col items-center justify-center">
@@ -32,9 +33,17 @@
         class="bg-white p-8 rounded-lg shadow-md max-w-md w-full"
         data-container="root"
       >
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Tic-Tac-Toe</h1>
-        <div id="game-board" class="grid grid-cols-3 gap-2 mb-4" on:click="makeMove.js"></div>
-        <div id="game-status" class="text-center text-xl font-semibold mb-4"></div>
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+          Tic-Tac-Toe
+        </h1>
+        <div
+          id="game-board"
+          class="grid grid-cols-3 gap-2 mb-4"
+          on:click="makeMove.js"
+        >
+        </div>
+        <div id="game-status" class="text-center text-xl font-semibold mb-4">
+        </div>
         <button
           id="reset-button"
           class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
@@ -47,8 +56,8 @@
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
-      import { initializeState } from './STATE.js';
-      import renderBoard from './renderBoard.js';
+      import { initializeState } from "./STATE.js";
+      import renderBoard from "./renderBoard.js";
 
       const handlerRegistry = new HandlerRegistry({
         basePath: location.pathname,

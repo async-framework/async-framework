@@ -48,9 +48,16 @@
           <div class="flex justify-center">
             <button
               type="submit"
-              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 mr-2"
             >
               Add Todo
+            </button>
+            <button
+              type="button"
+              class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+              on:click="addRandomTodo.js"
+            >
+              Add Random Todo
             </button>
           </div>
         </form>
@@ -69,13 +76,15 @@
       import keydown from './keydown.js';
       import updateTodoList from './updateTodoList.js';
       import { getState, setState, saveState, loadState } from './STATE.js';
+      import addRandomTodo from './addRandomTodo.js';
 
       const handlerRegistry = new HandlerRegistry({
         // preload handlers
         registry: new Map([
           ['prevent-default.js', preventDefault],
           ['keydown.js', keydown],
-          ['update-todo-list', updateTodoList]
+          ['update-todo-list', updateTodoList],
+          ['addRandomTodo.js', addRandomTodo]
         ]),
         basePath: location.pathname,
       });
@@ -83,7 +92,7 @@
       const todoListEvents = ['change', 'click'];
 
       const asyncLoader = new AsyncLoader({
-        events: ['submit', 'keydown', 'update-todo-list', ...todoListEvents],
+        events: ['submit', 'keydown', 'click', 'update-todo-list', ...todoListEvents],
         handlerRegistry,
       });
 
