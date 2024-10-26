@@ -15,6 +15,14 @@ function getAlertContainer() {
   return container;
 }
 
+function createStackContainer(message, type) {
+  const stackKey = `${type}-${message}`;
+  const stackContainer = document.createElement("div");
+  stackContainer.className = "relative";
+  stackContainer.dataset.stackKey = stackKey;
+  return stackContainer;
+}
+
 export async function processAlertQueue() {
   if (alertQueue.length === 0) return;
   if (isProcessing) {
@@ -28,7 +36,14 @@ export async function processAlertQueue() {
 
   while (alertQueue.length > 0) {
     const { message, type } = alertQueue.shift();
+    const stackKey = `${type}-${message}`;
     
+    let stackContainer = container.querySelector(`[data-stack-key="${stackKey}"]`);
+    if (!stackContainer) {
+      stackContainer = createStackContainer(message, type);
+      container.appendChild(stackContainer);
+    }
+
     const alert = document.createElement("div");
     alert.className = `
       mb-4 px-4 py-3 rounded-lg shadow-lg 
@@ -38,12 +53,19 @@ export async function processAlertQueue() {
       translate-x-full opacity-0
     `;
 
-    // Create message container
+    // Add stacking effect if there are existing alerts
+    const existingAlerts = stackContainer.children;
+    if (existingAlerts.length > 0) {
+      alert.style.position = "absolute";
+      alert.style.top = "-3px";
+      alert.style.right = "-3px";
+      alert.style.width = "100%";
+    }
+
     const messageDiv = document.createElement("div");
     messageDiv.className = `${type === "success" ? "text-green-700" : "text-red-700"}`;
     messageDiv.textContent = message;
 
-    // Create close button
     const closeButton = document.createElement("button");
     closeButton.innerHTML = "×";
     closeButton.className = `
@@ -52,34 +74,38 @@ export async function processAlertQueue() {
       focus:outline-none
     `;
     
-    // Add click handler to close button
     closeButton.onclick = async () => {
       await animateOut(alert);
       if (alert.isConnected) {
-        container.removeChild(alert);
+        stackContainer.removeChild(alert);
+        if (stackContainer.childElementCount === 0) {
+          container.removeChild(stackContainer);
+        }
         if (container.childElementCount === 0) {
           container.remove();
         }
       }
     };
 
-    // Assemble alert
     alert.appendChild(messageDiv);
     alert.appendChild(closeButton);
-    container.appendChild(alert);
+    stackContainer.appendChild(alert);
 
-    // Animate in one at a time
-    await new Promise(resolve => setTimeout(resolve, 100)); // Delay between alerts
+    // Animate in
+    await new Promise(resolve => setTimeout(resolve, 100));
     alert.style.transform = "translateX(0)";
     alert.style.opacity = "1";
     alert.style.transition = "all 0.2s ease-out";
 
-    // Set up auto-removal after delay
+    // Auto-removal
     setTimeout(async () => {
       if (alert.isConnected) {
         await animateOut(alert);
         if (alert.isConnected) {
-          container.removeChild(alert);
+          stackContainer.removeChild(alert);
+          if (stackContainer.childElementCount === 0) {
+            container.removeChild(stackContainer);
+          }
           if (container.childElementCount === 0) {
             container.remove();
           }
@@ -91,7 +117,7 @@ export async function processAlertQueue() {
   isProcessing = false;
   if (processAgain) {
     processAgain = false;
-    setTimeout(() => processAlertQueue(), 250); // Delay before processing next batch
+    setTimeout(() => processAlertQueue(), 250);
   }
 }
 
@@ -105,8 +131,6 @@ async function animateOut(alert) {
 // TODO: refactor to signals and async-framework
 export function showAlert(message, type = "success") {
   const newAlert = { message, type, id: Date.now() };
-
-  // Remove the skip check and always queue the alert
   alertQueue.push(newAlert);
   console.log(
     "showAlert: queued alert",
