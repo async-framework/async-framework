@@ -9,7 +9,7 @@ export function getTemplateContent(
   // Try template registry first if templateId exists
   let registryTemplate = templateId ? getTemplate(templateId) : null;
   if (registryTemplate) {
-    console.log(`Using template from registry: ${templateId}`);
+    // console.log(`Using template from registry: ${templateId}`);
     return registryTemplate;
   }
   
@@ -25,7 +25,7 @@ export function getTemplateContent(
     if (templateElement) {
       const template = templateElement.innerHTML;
       templateElement.remove();
-      console.log(`Using template from template-id: ${templateId}`);
+      // console.log(`Using template from template-id: ${templateId}`);
       if (template) {
         setTemplate(templateId, template);
         return template;
@@ -39,7 +39,7 @@ export function getTemplateContent(
     if (templateElement) {
       const content = templateElement.innerHTML;
       templateElement.remove();
-      console.log(`Using template from element: ${templateId}`);
+      // console.log(`Using template from element: ${templateId}`);
       if (templateId) {
         setTemplate(templateId, content);
       }
@@ -50,7 +50,7 @@ export function getTemplateContent(
   const innerHTML = element.innerHTML.trim();
   if (innerHTML) {
     const content = innerHTML;
-    console.log(`Using template from innerHTML: ${templateId}`);
+    // console.log(`Using template from innerHTML: ${templateId}`);
     if (templateId) {
       setTemplate(templateId, content);
     }
