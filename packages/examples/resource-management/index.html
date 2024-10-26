@@ -17,7 +17,7 @@
     <script type="module" src="/livereload.js"></script>
     <link rel="modulepreload" href="/async-framework.js" />
     <link rel="modulepreload" href="/custom-signals.js" />
-    <link rel="modulepreload" href="/custom-element-signals.js" />
+    <!-- <link rel="modulepreload" href="/custom-element-signals.js" /> -->
     <!-- handlers -->
     <link rel="modulepreload" href="prevent-stop-default.js" />
     <link rel="modulepreload" href="prevent-default.js" />
@@ -209,34 +209,22 @@
 
     <!-- Add this right after the main closing tag, before the script -->
     <let-signal name="modalState">{"isOpen": false, "content": null}</let-signal>
-    <div id="jsonModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" style="display: none;">
-      <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-              <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                <h3 class="text-base font-semibold leading-6 text-gray-900">JSON Data</h3>
-                <div class="mt-2">
-                  <pre class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-4 rounded-lg overflow-auto max-h-[400px]"><signal-html name="modalState">${value.content}</signal-html></pre>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-              <button 
-                type="button" 
-                on:click="toggleModal.js"
-                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                Close
-              </button>
-            </div>
-          </div>
+    <signal-modal name="modalState" watch="isOpen" template-id="modal-template">
+      <div class="mt-3 text-center sm:mt-0 sm:text-left">
+        <h3 class="text-base font-semibold leading-6 text-gray-900">JSON Data</h3>
+        <div class="mt-2">
+          <pre
+            class="whitespace-pre-wrap text-sm text-gray-500 bg-gray-50 p-4 rounded-lg overflow-auto max-h-[400px]"
+            ><signal-html name="modalState" template-id="modal-state-template"></signal-html></pre>
         </div>
       </div>
-    </div>
+    </signal-modal>
+    <template id="modal-state-template">${this.content}</template>
 
     <script type="module">
       import { AsyncLoader, HandlerRegistry } from "async-framework";
       import { signalRegistry as signals } from "custom-signals";
+
       import * as customElementSignals from "custom-element-signals";
       import preventStopDefault from "./prevent-stop-default.js";
       import preventDefault from "./prevent-default.js";
@@ -297,10 +285,6 @@
 
       // Add this observer to handle modal visibility
       const modalSignal = signals.getOrCreate('modalState', { isOpen: false, content: null });
-      modalSignal.subscribe((state) => {
-        const modal = document.getElementById('jsonModal');
-        modal.style.display = state.isOpen ? 'block' : 'none';
-      });
     </script>
   </body>
 </html>

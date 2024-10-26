@@ -1,6 +1,8 @@
 import { Signal } from "./signal-store";
 import { signalStore } from "./signal-store-instance";
-import { interpolateTemplate } from "./utils/template-utils";
+import { interpolateTemplate, getAttributeKey, generateTemplateId } from "./utils/template-utils";
+import { getOrCreateTemplate } from "./utils/template-registry";
+import { getTemplateContent } from "./utils/template-helpers";
 
 export class SignalList<T> extends HTMLElement {
   static observedAttributes = ["name", "template", "let-item", "let-index"];
@@ -52,31 +54,22 @@ export class SignalList<T> extends HTMLElement {
 
   connectedCallback() {
     const name = this.getAttribute("name");
+    const templateId = this.getAttribute("template-id") || generateTemplateId(this);
+
     if (!name) {
       throw new Error("signal-list must have a name attribute");
+    }
+
+    const content = getTemplateContent(this, templateId, "signal-list");
+    if (content) {
+      this._template = content;
+    } else {
+      return;
     }
 
     this.letItem = this.getAttribute("let-item") || "item";
     this.letIndex = this.getAttribute("let-index") || "index";
 
-    // Get template
-    let templateContent = this.getAttribute("template");
-    const templateElement = this.querySelector("template");
-
-    if (templateElement) {
-      templateContent = templateElement.innerHTML;
-      templateElement.remove();
-    } else {
-      templateContent = this.innerHTML;
-    }
-
-    if (!templateContent) {
-      throw new Error(
-        "signal-list must have a template attribute or template child element",
-      );
-    }
-
-    this._template = templateContent;
     this.signal = this._signalRegistry.get(name) ?? null;
 
     if (!this.signal) {
@@ -315,7 +308,7 @@ export class SignalList<T> extends HTMLElement {
     if (this.templateInfo.hasIndexInAttributes && this._attributePatterns) {
       this.walkElements(element, (el) => {
         Array.from(el.attributes || []).forEach((attr) => {
-          const key = this.getAttributeKey(el, attr.name);
+          const key = getAttributeKey(el, attr.name);
           const pattern = this._attributePatterns[key];
           if (pattern) {
             const value = pattern.pattern.replace(
@@ -326,7 +319,7 @@ export class SignalList<T> extends HTMLElement {
           }
         });
       });
-    }
+    });
   }
 
   private appendItem(item: unknown): void {
@@ -433,7 +426,7 @@ export class SignalList<T> extends HTMLElement {
       const attributes = Array.from(element.attributes || []);
       attributes.forEach((attr) => {
         if (attr.value.includes(`\${${this.letIndex}}`)) {
-          const key = this.getAttributeKey(element, attr.name);
+          const key = getAttributeKey(element, attr.name);
           this._attributePatterns[key] = {
             element,
             attributeName: attr.name,
@@ -452,18 +445,5 @@ export class SignalList<T> extends HTMLElement {
     this.templateInfo.hasIndexInContent = template.includes(
       `\${${this.letIndex}}`,
     );
-  }
-
-  // Helper to generate a unique key for each attribute
-  private getAttributeKey(element: Element, attrName: string): string {
-    // Create a path to the element
-    const path: string[] = [];
-    let current = element;
-    while (current.parentElement) {
-      const index = Array.from(current.parentElement.children).indexOf(current);
-      path.unshift(`${current.tagName}:${index}`);
-      current = current.parentElement;
-    }
-    return `${path.join(">")}@${attrName}`;
   }
 }

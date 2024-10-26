@@ -36,20 +36,63 @@ export function interpolateTemplate(
   return template.replace(/\${([^}]+)}/g, (match, expr) => {
     try {
       // Handle JSON.stringify specifically
+      const contextKeys = Object.keys(context);
+      const contextValues = Object.values(context);
       if (expr.includes('JSON.stringify')) {
         const objPath = expr.match(/JSON\.stringify\((.*?)\)/)?.[1];
         if (!objPath) return '';
         
-        const value = new Function(...Object.keys(context), `return ${objPath}`)(...Object.values(context));
+        const value = new Function(...contextKeys, `return ${objPath}`)(...contextValues);
         return escapeValue(JSON.stringify(value), escapeHtml);
       }
       
       // Regular expression evaluation
-      const value = new Function(...Object.keys(context), `return ${expr}`)(...Object.values(context));
+      const value = new Function(...contextKeys, `return ${expr}`)(...contextValues);
       return escapeValue(value, escapeHtml);
     } catch (error) {
       console.error('Error interpolating template:', error);
       return '';
     }
   });
+}
+
+/**
+ * Transforms template expressions by replacing 'this.' with '$this.' within ${...} blocks
+ * @param template - The template string to transform
+ * @returns The transformed template string
+ */
+export function transformTemplate(template: string): string {
+  return template.replace(/\${(.*?)}/g, (match, expr) => {
+    return '${' + expr.replace(/this\./g, '$this.') + '}';
+  });
+}
+
+/**
+ * Generates a path-based key for an element based on its position in the DOM
+ */
+export function getElementPath(element: Element): string {
+  const path: string[] = [];
+  let current = element;
+  while (current.parentElement) {
+    const index = Array.from(current.parentElement.children).indexOf(current);
+    path.unshift(`${current.tagName}:${index}`);
+    current = current.parentElement;
+  }
+  return path.join(">");
+}
+
+/**
+ * Generates a unique key for an element's attribute
+ */
+export function getAttributeKey(element: Element, attrName: string): string {
+  return `${getElementPath(element)}@${attrName}`;
+}
+
+/**
+ * Generates a unique template ID based on the element's position in the DOM and name
+ */
+export function generateTemplateId(element: Element): string {
+  const path = getElementPath(element);
+  const hash = path.split('>').map(p => p.split(':')[0]).join('-').toLowerCase();
+  return `template-id-${hash}`;
 }
