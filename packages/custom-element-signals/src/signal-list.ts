@@ -71,20 +71,27 @@ export class SignalList<T> extends HTMLElement {
     this.letItem = this.getAttribute("let-item") || "item";
     this.letIndex = this.getAttribute("let-index") || "index";
 
-    this.signal = this._signalRegistry.get(name) ?? null;
+    const signal = this._signalRegistry.get(name) ?? null;
 
-    if (!this.signal) {
+    if (!signal) {
       console.warn(`No signal found with name: ${name}`);
       return;
     }
 
     // Subscribe to changes
-    this.cleanUp = this.signal.subscribe((newValue, oldValue) => {
-      this.handleValue(newValue, oldValue);
+    this.cleanUp = signal.subscribe((newValue, oldValue) => {
+      // console.log("signal-list: value changed", newValue, oldValue);
+      return this.handleValue(newValue, oldValue);
     });
+    this.signal = signal;
 
     // Initial render
-    this.handleValue(this.signal.get(), []);
+    const initialValue = signal.get();
+    if (initialValue instanceof Signal) {
+      throw new Error("Signal initial value cannot be a Signal");
+    }
+    // console.log("signal-list: initial render complete", typeof initialValue, initialValue);
+    this.handleValue(initialValue, []);
   }
 
   private async handleValue(

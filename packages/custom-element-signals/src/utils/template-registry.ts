@@ -21,17 +21,5 @@ export function getOrCreateTemplate(
     return templateRegistry.get(templateId) || null;
   }
 
-  // Look for template in document first
-  const templateElement = document.getElementById(templateId);
-  if (templateElement) {
-    const template = templateElement.innerHTML;
-    templateElement.remove();
-    console.log(`Using template from template-id: ${templateId}`);
-    if (template) {
-      templateRegistry.set(templateId, template);
-      return template;
-    }
-  }
-
   return null;
 }

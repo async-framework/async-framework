@@ -1,6 +1,6 @@
 import { parseAttributeValue } from "./utils/parse-attribute-value";
 import { Signal } from "./signal-store";
-import { signalStore } from "./signal-store-instance";
+import { SignalStoreInstance, signalStore } from "./signal-store-instance";
 
 // its better not to use this but ask the developer to do it otherwise there is a flicker
 // const STYLE_ID = 'let-signal-style';
@@ -16,18 +16,20 @@ import { signalStore } from "./signal-store-instance";
 //   document.head.appendChild(style);
 // }
 
+
 declare global {
   interface Window {
-    signalRegistry?: Map<string, any>;
+    signalRegistry?: SignalStoreInstance;
     [key: string]: any;
   }
 }
 
 export class LetSignal<T> extends HTMLElement {
   static observedAttributes = ["name", "value", "save"];
+  hasConnectedCallback = false;
 
   signal: null | Signal<T> = null;
-  _signalRegistry: Map<string, Signal<any>>;
+  _signalRegistry: SignalStoreInstance;
 
   attributes!: NamedNodeMap & {
     name: { value: string };
@@ -36,6 +38,14 @@ export class LetSignal<T> extends HTMLElement {
   };
   constructor() {
     super();
+    // if ((globalThis as any).signalRegistry) {
+    //   console.log("let-signal: using global signalRegistry");
+    //   this._signalRegistry = (globalThis as any).signalRegistry;
+    // } else {
+    //   console.log("let-signal: using signalStore");
+    //   this._signalRegistry = signalStore;
+    // }
+
     // if the signal registry is not in the window, then we need to create a new one
     // we want to use some form of context here. maybe this.closest('let-signal-registry')?
     this._signalRegistry = window.signalRegistry || signalStore;
@@ -47,22 +57,25 @@ export class LetSignal<T> extends HTMLElement {
     this.signal?.set(value);
   }
 
-  createSignal(value?: any) {
+  createSignal(name: string, value?: any) {
     // Use the value attribute if it exists, otherwise use the innerHTML
     if (value === undefined) {
       const strValue = this.attributes?.["value"]?.value || this.innerHTML ||
         "";
       value = parseAttributeValue(strValue);
     }
-    const signal = new Signal(value);
-    return signal;
+    return this._signalRegistry.getOrCreate(name, value);
   }
 
   connectedCallback() {
+    // attributeChangedCallback fires before connectedCallback
+    this.hasConnectedCallback = true;
+
     const name = this.attributes["name"]?.value;
     if (!name) {
       throw new Error("let-signal must have a name attribute");
     }
+    // console.log('connectedCallback', name)
 
     const save = this.attributes["save"]?.value;
     let value = undefined;
@@ -79,9 +92,8 @@ export class LetSignal<T> extends HTMLElement {
       }
     }
 
-    this.signal = this.createSignal(value);
+    this.signal = this.createSignal(name, value);
 
-    this._signalRegistry.set(name, this.signal);
     if (save) {
       this.signal.subscribe((value) => {
         if (window[save]) {
@@ -102,9 +114,15 @@ export class LetSignal<T> extends HTMLElement {
     if (oldValue === newValue) {
       return;
     }
+    if (!this.hasConnectedCallback) {
+      // console.log('attributeChangedCallback hasConnectedCallback', name, oldValue, newValue, 'not connected')
+      return;
+    }
+
     if (name === "name") {
+      // console.log('attributeChangedCallback', name, oldValue, newValue)
       this._signalRegistry.delete(oldValue);
-      this.signal = this.createSignal(this.value);
+      this.signal = this.createSignal(newValue, this.value);
       this._signalRegistry.set(newValue, this.signal);
     } else if (name === "value") {
       this.value = parseAttributeValue(newValue);
@@ -114,7 +132,8 @@ export class LetSignal<T> extends HTMLElement {
   disconnectedCallback() {
     const name = this.attributes["name"].value;
     this._signalRegistry.delete(name);
-    (this as any)._signalRegistry = null;
+    this.hasConnectedCallback = false;
+    // (this as any)._signalRegistry = null;
     this.signal?.cleanUp();
   }
 }

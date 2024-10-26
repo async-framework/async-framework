@@ -5,32 +5,37 @@ export class Signal<T = any> {
   private _observers = new Set<(value: T, oldValue: T) => void>();
 
   constructor(initialValue: T) {
+    if (initialValue instanceof Signal) {
+      throw new Error("Signal initial value cannot be a Signal");
+    }
     this._value = initialValue;
   }
 
   get value(): T {
-    return this._value;
+    return this.get();
   }
 
   set value(newVal: T) {
-    if (this._value !== newVal) {
-      const oldValue = this._value;
-      this._value = newVal;
-      this._notifyObservers(oldValue, newVal);
-    }
+    this.set(newVal);
   }
   get(): T {
     return this._value;
   }
   set(newVal: T) {
-    this.value = newVal;
+    if (newVal instanceof Signal) {
+      throw new Error("Signal value cannot be a Signal");
+    }
+    const oldValue = this._value;
+    this._value = newVal;
+    this._notifyObservers(newVal, oldValue);
   }
 
   notifyObservers() {
-    this._notifyObservers(this._value, this._value);
+    const value = this._value;
+    this._notifyObservers(value, value);
   }
 
-  private _notifyObservers(oldValue: T, newValue: T) {
+  private _notifyObservers(newValue: T, oldValue: T) {
     for (const observer of this._observers) {
       try {
         observer(newValue, oldValue);

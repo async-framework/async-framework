@@ -19,6 +19,21 @@ export function getTemplateContent(
     return registryTemplate;
   }
 
+  // Look for template in document
+  if (templateId) {
+    const templateElement = document.getElementById(templateId);
+    if (templateElement) {
+      const template = templateElement.innerHTML;
+      templateElement.remove();
+      console.log(`Using template from template-id: ${templateId}`);
+      if (template) {
+        setTemplate(templateId, template);
+        return template;
+      }
+    }
+  }
+
+
   if (!registryTemplate) {
     const templateElement = element.querySelector("template");
     if (templateElement) {
