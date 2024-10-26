@@ -27,15 +27,15 @@
       let-signal {
         display: none !important;
       }
+      /* hide the signal-modal element until it is defined */
+      signal-modal:not(:defined),
+      signal-modal {
+        display: none;
+      }
     </style>
 
     <!-- Add this style block in the head section -->
     <style>
-      let-signal:not(:defined),
-      let-signal {
-        display: none !important;
-      }
-
       /* Status badge styles */
       .status-badge {
         position: relative;

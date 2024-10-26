@@ -60,7 +60,15 @@ export class SignalModal extends HTMLElement {
 
     this.cleanUp = this.signal.subscribe((state) => {
       if (modalElement) {
-        modalElement.classList.toggle('hidden', !state[watchProp]);
+        const isOpen = state[watchProp];
+        if (isOpen) {
+          this.removeAttribute('hidden');
+          this.style.display = 'block';
+        } else {
+          this.setAttribute('hidden', '');
+          this.style.display = 'none';
+        }
+        modalElement.classList.toggle('hidden', !isOpen);
       }
     });
 
