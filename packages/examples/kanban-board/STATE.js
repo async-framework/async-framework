@@ -21,3 +21,9 @@ export function saveState(key) {
 export function loadState(key) {
   return JSON.parse(localStorage.getItem(key) || "null");
 }
+
+export const initialState = {
+  todo: [],
+  inprogress: [],
+  done: [],
+};

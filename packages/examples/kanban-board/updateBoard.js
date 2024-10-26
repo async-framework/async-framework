@@ -4,7 +4,8 @@ export default function updateBoard({ event }) {
 
   Object.keys(board).forEach((column) => {
     const columnElement = document.getElementById(column);
-    columnElement.innerHTML = board[column].map((task) => /*html*/ `
+    const tasks = board[column];
+    columnElement.innerHTML = tasks.map((task) => /*html*/ `
       <div
         class="bg-gray-100 p-2 mb-2 rounded shadow cursor-move"
         draggable="true"

@@ -50,6 +50,20 @@
           >
             Add Task
           </button>
+          <button
+            type="button"
+            class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+            on:click="prevent-default.js, addRandomTask.js"
+          >
+            Add Random Task
+          </button>
+          <button
+            type="button"
+            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+            on:click="prevent-default.js, clearState.js"
+          >
+            Clear State
+          </button>
         </form>
       </div>
       <div

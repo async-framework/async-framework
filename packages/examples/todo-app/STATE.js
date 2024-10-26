@@ -18,6 +18,10 @@ export function loadState(key) {
   return JSON.parse(localStorage.getItem(key) || "[]");
 }
 
+export const initialState = {
+  todos: [],
+};
+
 function generateId(label) {
   // Normalize the label:
   // 1. Convert to lowercase

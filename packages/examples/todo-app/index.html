@@ -18,8 +18,8 @@
     <link rel="modulepreload" href="/async-framework.js" />
     <link rel="modulepreload" href="prevent-default.js" />
     <link rel="modulepreload" href="keydown.js" />
-    <link rel="modulepreload" href="STATE.js" />
     <link rel="modulepreload" href="updateTodoList.js" />
+    <link rel="modulepreload" href="STATE.js" />
   </head>
   <body class="bg-gray-100 min-h-screen">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
@@ -106,8 +106,6 @@
           ["keydown.js", keydown],
           ["update-todo-list", updateTodoList],
           ["addRandomTodo.js", addRandomTodo],
-          // not a real file, but we need to register it for the clear button
-          ["clearState.js", clearState],
         ]),
         basePath: location.pathname,
       });
