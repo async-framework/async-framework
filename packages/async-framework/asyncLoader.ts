@@ -76,7 +76,17 @@ export class AsyncLoader {
   }
 
   dedupeEvents(events: string[]) {
-    return [...new Set(events)];
+    const uniqueEvents = new Set(events);
+    if (uniqueEvents.size < events.length) {
+      const duplicates = events.filter((event, index) =>
+        events.indexOf(event) !== index
+      );
+      console.warn(
+        "AsyncLoader.dedupeEvents: Found duplicate events:",
+        duplicates,
+      );
+    }
+    return [...uniqueEvents];
   }
 
   // Discovers custom events on the container element
@@ -92,7 +102,7 @@ export class AsyncLoader {
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));
 
     console.log(
-      "discoverCustomEvents: discovered custom events:",
+      "AsyncLoader.discoverCustomEvents: discovered custom events:",
       this.dedupeEvents(customEventAttributes),
     );
     return customEventAttributes;
@@ -118,7 +128,7 @@ export class AsyncLoader {
     } else if (containerElement?.hasAttribute?.("data-container")) {
       this.handleNewContainer(containerElement);
     } else {
-      console.warn("parseDOM: no container element provided");
+      console.warn("AsyncLoader.parseDOM: no container element provided");
     }
   }
 
@@ -138,7 +148,7 @@ export class AsyncLoader {
     // Avoid reprocessing the same container
     if (!el.isConnected) {
       console.warn(
-        "handleNewContainer: container was processed but is not connected",
+        "AsyncLoader.handleNewContainer: container was processed but is not connected",
         el,
       );
       this.processedContainers.delete(el);
@@ -155,12 +165,12 @@ export class AsyncLoader {
     } else {
       if (!el.isConnected) {
         console.log(
-          "handleNewContainer: container was processed but is not connected",
+          "AsyncLoader.handleNewContainer: container was processed but is not connected",
           el,
         );
       } else {
         console.warn(
-          "handleNewContainer: container was processed but is not connected",
+          "AsyncLoader.handleNewContainer: container was processed but is not connected",
           el,
         );
         this.processedContainers.delete(el);
@@ -252,7 +262,7 @@ export class AsyncLoader {
   addEventData(containerElement, eventName, element, attrValue) {
     if (!containerElement.isConnected) {
       console.warn(
-        "addEventData: container is not connected",
+        "AsyncLoader.addEventData: container is not connected",
         containerElement,
       );
       this.processedContainers.delete(containerElement);
@@ -262,7 +272,7 @@ export class AsyncLoader {
     const listeners = this.containers.get(containerElement);
     if (!listeners) {
       console.warn(
-        "addEventData: no listeners found for container",
+        "AsyncLoader.addEventData: no listeners found for container",
         containerElement,
       );
       return;
@@ -277,7 +287,10 @@ export class AsyncLoader {
       if (element.isConnected) {
         eventListeners.set(element, attrValue); // Map script paths to the element for the given event
       } else {
-        console.warn("addEventData: element is not connected", element);
+        console.warn(
+          "AsyncLoader.addEventData: element is not connected",
+          element,
+        );
         eventListeners.delete(element);
       }
     } else {
@@ -448,7 +461,7 @@ export class AsyncLoader {
           // Reset value if there's an error
           value = undefined;
           console.error(
-            `handleContainerEvent: Error`,
+            `AsyncLoader.handleContainerEvent: Error`,
             error,
           ); // Log any errors during handler execution
         }
@@ -458,13 +471,16 @@ export class AsyncLoader {
         // If the event doesn't bubble, stop after handling the first matching element
         if (stop) {
           console.log(
-            "handleContainerEvent: event was stopped by the handler",
+            "AsyncLoader.handleContainerEvent: event was stopped by the handler",
             domEvent,
           );
           break;
         }
         if (!domEvent.bubbles) {
-          console.log("handleContainerEvent: event does not bubble", domEvent);
+          console.log(
+            "AsyncLoader.handleContainerEvent: event does not bubble",
+            domEvent,
+          );
           stop = true;
           break;
         }
