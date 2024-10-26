@@ -1,22 +1,22 @@
 name: "Deno CodeQL Config"
 
 paths:
-  - packages
-  - '!packages/**/test'
-  - '!packages/**/tests'
-  - '!packages/examples'
-  - '!**/node_modules'
-  - '!**/*.test.ts'
-  - '!**/*.test.js'
-  - '!**/*.spec.ts'
-  - '!**/*.spec.js'
+  - 'packages/**'
 
 paths-ignore:
-  - '**/dist/**'
-  - '**/build/**'
-  - '**/.vscode/**'
-  - '**/vendor/**'
-  - '**/fixtures/**'
+  - 'packages/**/test/**'
+  - 'packages/**/tests/**'
+  - 'packages/examples/**'
+  - '**/node_modules/**'
+  - '**/*.test.ts'
+  - '**/*.test.js'
+  - '**/*.spec.ts'
+  - '**/*.spec.js'
+  - 'dist/**'
+  - 'build/**'
+  - '.vscode/**'
+  - 'vendor/**'
+  - 'fixtures/**'
 
 queries:
   - uses: security-extended
