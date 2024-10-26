@@ -26,7 +26,7 @@ declare global {
 
 export class LetSignal<T> extends HTMLElement {
   static observedAttributes = ["name", "value", "save"];
-  hasConnectedCallback = false;
+  ready = false;
 
   signal: null | Signal<T> = null;
   _signalRegistry: SignalStoreInstance;
@@ -69,7 +69,7 @@ export class LetSignal<T> extends HTMLElement {
 
   connectedCallback() {
     // attributeChangedCallback fires before connectedCallback
-    this.hasConnectedCallback = true;
+    this.ready = true;
 
     const name = this.attributes["name"]?.value;
     if (!name) {
@@ -79,6 +79,7 @@ export class LetSignal<T> extends HTMLElement {
 
     const save = this.attributes["save"]?.value;
     let value = undefined;
+    // use handler registry
     if (save) {
       const key = "signal-" + name;
       const method = "getItem" in window[save] ? "getItem" : "get";
@@ -114,7 +115,7 @@ export class LetSignal<T> extends HTMLElement {
     if (oldValue === newValue) {
       return;
     }
-    if (!this.hasConnectedCallback) {
+    if (!this.ready) {
       // console.log('attributeChangedCallback hasConnectedCallback', name, oldValue, newValue, 'not connected')
       return;
     }
@@ -132,7 +133,7 @@ export class LetSignal<T> extends HTMLElement {
   disconnectedCallback() {
     const name = this.attributes["name"].value;
     this._signalRegistry.delete(name);
-    this.hasConnectedCallback = false;
+    this.ready = false;
     // (this as any)._signalRegistry = null;
     this.signal?.cleanUp();
   }

@@ -5,14 +5,12 @@ import { signalStore } from "./signal-store-instance";
 export class SignalText extends HTMLElement {
   static observedAttributes = [
     "name",
-    "watch",
-    "data-dangerous-html",
+    "watch"
   ];
 
   attributes!: NamedNodeMap & {
     name: { value: string };
     watch?: { value: string };
-    "data-dangerous-html"?: { value: false | "false" };
   };
 
   signal: null | Signal<any> = null;
@@ -56,11 +54,6 @@ export class SignalText extends HTMLElement {
 
   updateChildren = (newValue: any): void => {
     if (!this.ready) {
-      return;
-    }
-    const dangerousHtml = this.attributes["data-dangerous-html"]?.value;
-
-    if (dangerousHtml === "false" || dangerousHtml === false) {
       return;
     }
     if (this._watch) {
