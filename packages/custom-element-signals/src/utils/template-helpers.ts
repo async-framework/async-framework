@@ -35,7 +35,7 @@ export function getTemplateContent(
   const innerHTML = element.innerHTML.trim();
   if (innerHTML) {
     const content = innerHTML;
-    console.log(`Using innerHTML: ${templateId}`);
+    console.log(`Using template from innerHTML: ${templateId}`);
     if (templateId) {
       setTemplate(templateId, content);
     }
