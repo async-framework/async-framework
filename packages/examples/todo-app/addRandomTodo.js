@@ -5,7 +5,7 @@ export default function addRandomTodo({ dispatch }) {
   const todos = getState("todos") || [];
   const todoText = generateRandomTodo();
   const newTodo = {
-    id: Date.now(),
+    id: `${Date.now()}-${todoText}`,
     text: todoText,
     completed: false,
   };

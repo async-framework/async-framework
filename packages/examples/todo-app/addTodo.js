@@ -9,7 +9,7 @@ export default function addTodo({ element, dispatch }) {
     console.log("addTodo: adding todo", todoText);
     const todos = getState("todos");
     const newTodos = [...todos, {
-      id: Date.now(),
+      id: `${Date.now()}-${todoText}`,
       text: todoText,
       completed: false,
     }];
