@@ -44,6 +44,11 @@ jobs:
         languages: ${{ matrix.language }}
         config-file: .github/codeql/codeql-config.yml
         queries: +security-extended,security-and-quality
+        setup-python-dependencies: false
+        tools: latest
+        init: |
+          config:
+            disable-default-queries: true
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
@@ -53,3 +58,6 @@ jobs:
       with:
         category: "/language:${{matrix.language}}"
         upload: true
+        output: sarif-results
+        ram: 4096
+        threads: auto
