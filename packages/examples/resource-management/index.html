@@ -397,7 +397,6 @@
       const resourceSignal = signals.updateOrCreate("resources", mockResources);
       const alertsSignal = signals.updateOrCreate("alerts", []);
 
-      
       // Add this observer to handle modal visibility
       const modalSignal = signals.getOrCreate("modalState", {
         isOpen: false,
