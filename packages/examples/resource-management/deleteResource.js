@@ -8,7 +8,7 @@ export default function deleteResource({ event, signals }) {
     onConfirm: null,
   });
 
-  confirmModalSignal.value = {
+  confirmModalSignal.set({
     isOpen: true,
     message:
       "Are you sure you want to delete this resource? This action cannot be undone.",
@@ -23,10 +23,10 @@ export default function deleteResource({ event, signals }) {
       );
 
       // Update resources
-      resourceSignal.value = updatedResources;
+      resourceSignal.set(updatedResources);
 
       // Show success alert
       showAlert("Resource deleted successfully");
     },
-  };
+  });
 }

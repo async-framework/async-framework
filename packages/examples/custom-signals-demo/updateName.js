@@ -5,10 +5,10 @@ export default function updateName({ signals, element }) {
   console.log("updateName", element.id);
 
   if (element.id === "firstName") {
-    firstName.value = element.value;
-    fullName.value = `${firstName.value} ${lastName.value}`.trim();
+    firstName.set(element.value);
+    fullName.set(`${firstName.get()} ${lastName.get()}`.trim());
   } else if (element.id === "lastName") {
-    lastName.value = element.value;
-    fullName.value = `${firstName.value} ${lastName.value}`.trim();
+    lastName.set(element.value);
+    fullName.set(`${firstName.get()} ${lastName.get()}`.trim());
   }
 }

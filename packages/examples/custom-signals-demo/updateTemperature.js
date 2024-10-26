@@ -4,6 +4,6 @@ export default function updateTemperature({ signals, element }) {
   const value = parseFloat(element.value) || 0;
   console.log("updateTemperature", value);
 
-  celsius.value = value;
-  fahrenheit.value = ((celsius.value * 9) / 5 + 32).toFixed(2);
+  celsius.set(value);
+  fahrenheit.set(((celsius.value * 9) / 5 + 32).toFixed(2));
 }

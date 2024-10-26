@@ -56,7 +56,9 @@ export class AsyncLoader {
   private eventPrefix: string;
   private processedContainers: WeakSet<Element>;
   private context: any;
+  private config: AsyncLoaderConfig;
   constructor(config: AsyncLoaderConfig) {
+    this.config = config;
     this.context = config.context || {};
     this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
@@ -81,10 +83,12 @@ export class AsyncLoader {
       const duplicates = events.filter((event, index) =>
         events.indexOf(event) !== index
       );
-      console.warn(
-        "AsyncLoader.dedupeEvents: Found duplicate events:",
-        duplicates,
-      );
+      if (this.config.events) {
+        console.warn(
+          "AsyncLoader.dedupeEvents: Found duplicate events:",
+          duplicates,
+        );
+      }
     }
     return [...uniqueEvents];
   }
