@@ -327,7 +327,7 @@ export class SignalList<T> extends HTMLElement {
           }
         });
       });
-    });
+    }
   }
 
   private appendItem(item: unknown): void {

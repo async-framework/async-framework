@@ -48,3 +48,20 @@ trap:
       typescript:
         experimental:
           type-tracking: true
+        parse-error-recovery: true
+        skip-parsing-on-error: false
+        max-parse-errors: 10
+
+extraction:
+  javascript:
+    index-typescript: true
+    typescript-tracing: true
+    typescript:
+      diagnostic-mode: true
+      experimental-features: true
+
+diagnostics:
+  debug:
+    - typescript-extractor
+    - trap-errors
+  export-diagnostics: true
