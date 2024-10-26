@@ -61,6 +61,16 @@
               </button>
             </div>
           </form>
+          <div class="flex justify-center">
+            <button
+              type="button"
+              class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+              on:click="prevent-default.js, clearState.js"
+            >
+              Clear State
+            </button>
+          </div>
+
           <div class="space-y-2" on:update-todo-list="updateTodoList.js">
             <!-- hardcoded empty list to show loading state until we get SSR -->
             <ul class="divide-y divide-gray-200">
@@ -81,16 +91,23 @@
       import preventDefault from "./prevent-default.js";
       import keydown from "./keydown.js";
       import updateTodoList from "./updateTodoList.js";
-      import { getState, loadState, saveState, setState } from "./STATE.js";
+      import {
+        clearState,
+        getState,
+        loadState,
+        saveState,
+        setState,
+      } from "./STATE.js";
       import addRandomTodo from "./addRandomTodo.js";
 
       const handlerRegistry = new HandlerRegistry({
-        // preload handlers
         registry: new Map([
           ["prevent-default.js", preventDefault],
           ["keydown.js", keydown],
           ["update-todo-list", updateTodoList],
           ["addRandomTodo.js", addRandomTodo],
+          // not a real file, but we need to register it for the clear button
+          ["clearState.js", clearState],
         ]),
         basePath: location.pathname,
       });
@@ -101,7 +118,6 @@
         events: [
           "submit",
           "keydown",
-          "click",
           "update-todo-list",
           ...todoListEvents,
         ],

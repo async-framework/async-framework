@@ -1,11 +1,11 @@
 import { generateRandomTodo } from "./generateRandomTodo.js";
-import { getState, setState } from "./STATE.js";
+import { createId, getState, setState } from "./STATE.js";
 
 export default function addRandomTodo({ dispatch }) {
   const todos = getState("todos") || [];
   const todoText = generateRandomTodo();
   const newTodo = {
-    id: `${Date.now()}-${todoText}`,
+    id: createId(todoText),
     text: todoText,
     completed: false,
   };
