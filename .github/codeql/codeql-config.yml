@@ -21,6 +21,8 @@ paths-ignore:
 queries:
   - uses: security-extended
   - uses: security-and-quality
+  - uses: codeql/javascript-queries/Security
+  - uses: codeql/typescript-queries/Security
 
 query-filters:
   - exclude:
@@ -32,36 +34,30 @@ query-filters:
         - security
         - correctness
 
+database:
+  analyze-builtin-pretrained-model: true
+  max-disk: 1024
+  max-ram: 4096
+
+extraction:
+  javascript:
+    index-typescript: true
+    typescript:
+      version: 5.x
+      features:
+        - decorators
+        - modules
+      dependencies:
+        typescript: '*'
+    source-type: module
+    file-types:
+      - .js
+      - .ts
+      - .mts
+      - .cts
+
 output:
   sarif:
     category: "/language:javascript-typescript"
     level: "error"
     add-snippets: true
-
-database:
-  analyze-builtin-pretrained-model: true
-
-trap:
-  typescript:
-    enabled: true
-    extractor:
-      typescript:
-        experimental:
-          type-tracking: true
-        parse-error-recovery: true
-        skip-parsing-on-error: false
-        max-parse-errors: 10
-
-extraction:
-  javascript:
-    index-typescript: true
-    typescript-tracing: true
-    typescript:
-      diagnostic-mode: true
-      experimental-features: true
-
-diagnostics:
-  debug:
-    - typescript-extractor
-    - trap-errors
-  export-diagnostics: true
