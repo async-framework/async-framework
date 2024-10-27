@@ -2,11 +2,13 @@
 import { escapeSelector, isPromise } from "./utils.js";
 export interface AsyncLoaderConfig {
   handlerRegistry: { handler: (context: any) => Promise<any> | any };
+  containerAttribute?: string;
   eventPrefix?: string;
   containers?: Map<Element, Map<string, Map<Element, string>>>;
   events?: string[];
   processedContainers?: WeakSet<Element>;
   context?: any;
+  domRoot?: Element | HTMLElement;
 }
 
 export class AsyncLoader {
@@ -54,17 +56,21 @@ export class AsyncLoader {
   private handlerRegistry: { handler: (context: any) => Promise<any> | any };
   private events: string[];
   private eventPrefix: string;
+  private containerAttribute: string;
   private processedContainers: WeakSet<Element>;
   private context: any;
+  private domRoot: Element | HTMLElement;
   private config: AsyncLoaderConfig;
   constructor(config: AsyncLoaderConfig) {
     this.config = config;
     this.context = config.context || {};
     this.handlerRegistry = config.handlerRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
+    this.containerAttribute = config.containerAttribute || "data-container";
     this.containers = config.containers || new Map();
+    this.domRoot = config.domRoot || document.body;
     this.events = this.dedupeEvents(
-      config.events || this.discoverCustomEvents(document.body),
+      config.events || this.discoverCustomEvents(this.domRoot),
     );
 
     // Set of processed containers
@@ -73,7 +79,7 @@ export class AsyncLoader {
 
   // Initializes the event handling system by parsing the DOM
   // Why: Sets up event listeners and observers for all relevant containers upon initialization.
-  init(containerElement = document.body) {
+  init(containerElement = this.domRoot) {
     this.parseDOM(containerElement); // Start parsing from the body element
   }
 
@@ -93,14 +99,36 @@ export class AsyncLoader {
     return [...uniqueEvents];
   }
 
+  // refactor to DOM class??
+  query(element: Element | HTMLElement = this.domRoot, selector = "*") {
+    return Array.from(element.querySelectorAll(selector));
+  }
+  getContainers(
+    containerName?: string,
+    bodyElement?: Element | HTMLElement,
+  ): Array<Element | HTMLElement> {
+    let selector = "";
+    if (containerName === "*") {
+      selector = containerName;
+    } else if (containerName) {
+      selector = `[${this.containerAttribute}="${containerName}"]`;
+    } else {
+      selector = `[${this.containerAttribute}]`;
+    }
+    if (!bodyElement) {
+      bodyElement = this.domRoot;
+    }
+    return this.query(bodyElement, selector);
+  }
+
   // Discovers custom events on the container element
   // Why: This method identifies and returns all custom events defined on the container element.
   // It does this by querying all elements within the container, extracting their attributes,
   // filtering those that start with the event prefix, and mapping the remaining attributes to event names.
   // The method ensures that each event is represented only once in the resulting array,
   // eliminating duplicates and providing a list of unique custom events.
-  discoverCustomEvents(container) {
-    const customEventAttributes = Array.from(container.querySelectorAll("*"))
+  discoverCustomEvents(bodyElement: Element) {
+    const customEventAttributes = this.getContainers()
       .flatMap((el: any) => Array.from(el.attributes))
       .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));
@@ -122,14 +150,12 @@ export class AsyncLoader {
   // This approach maintains a robust and adaptable event system for evolving DOM structures.
   parseDOM(containerElement: undefined | any[] | any) {
     if (!containerElement) {
-      const containerEls = Array.from(
-        document.body.querySelectorAll("[data-container]"),
-      );
+      const containerEls = this.getContainers();
       containerEls.forEach((el) => this.handleNewContainer(el));
     }
     if (Array.isArray(containerElement)) {
       containerElement.forEach((el) => this.handleNewContainer(el));
-    } else if (containerElement?.hasAttribute?.("data-container")) {
+    } else if (containerElement?.hasAttribute?.(this.containerAttribute)) {
       this.handleNewContainer(containerElement);
     } else {
       console.warn("AsyncLoader.parseDOM: no container element provided");
@@ -241,7 +267,8 @@ export class AsyncLoader {
   parseContainerElement(containerElement, eventName) {
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
-    const elements = containerElement.querySelectorAll(
+    const elements = this.query(
+      containerElement,
       `[${escapeSelector(eventAttr)}]`,
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
