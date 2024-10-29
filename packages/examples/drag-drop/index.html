@@ -17,13 +17,35 @@
     <link rel="modulepreload" href="STATE.js" />
     <style>
       .note {
-        transition: border-color 0.2s;
+        position: relative;
+        cursor: move;
+        user-select: none;
       }
-      .note[data-drop-position="top"] {
-        border-top: 2px solid #3b82f6;
+      .note.dragging {
+        opacity: 0.5;
       }
-      .note[data-drop-position="bottom"] {
-        border-bottom: 2px solid #3b82f6;
+      .note.drag-over {
+        outline: 2px dashed #3b82f6;
+        outline-offset: 2px;
+      }
+      .note::before {
+        content: "";
+        position: absolute;
+        left: -4px;
+        right: -4px;
+        height: 3px;
+        background: #3b82f6;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+      }
+      .note[data-drop-position="top"]::before {
+        top: -4px;
+        opacity: 1;
+      }
+      .note[data-drop-position="bottom"]::before {
+        bottom: -4px;
+        opacity: 1;
       }
     </style>
   </head>
@@ -45,7 +67,9 @@
             draggable="true"
             data-id="1"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Note 1</h3>
@@ -57,7 +81,9 @@
             draggable="true"
             data-id="2"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Note 2</h3>
@@ -69,7 +95,9 @@
             draggable="true"
             data-id="3"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Note 3</h3>
@@ -81,7 +109,9 @@
             draggable="true"
             data-id="4"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Shopping List</h3>
@@ -93,7 +123,9 @@
             draggable="true"
             data-id="5"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Meeting Notes</h3>
@@ -105,7 +137,9 @@
             draggable="true"
             data-id="6"
             on:dragstart="dragHandlers.js"
+            on:dragend="dragHandlers.js"
             on:dragover="dragHandlers.js"
+            on:dragleave="dragHandlers.js"
             on:drop="dragHandlers.js"
           >
             <h3 class="font-semibold">Ideas</h3>
@@ -128,7 +162,7 @@
         ]),
       });
 
-      const events = ["dragstart", "dragover", "drop"];
+      const events = ["dragstart", "dragend", "dragover", "dragleave", "drop"];
 
       const asyncLoader = new AsyncLoader({
         events,

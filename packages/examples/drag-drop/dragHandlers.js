@@ -1,68 +1,111 @@
 import { getState, setState } from "./STATE.js";
 import { showAlert } from "../resource-management/show-alert.js";
 
+// Helper function to clear drop styles from all notes
+function clearAllDropStyles() {
+  document.querySelectorAll(".note").forEach((note) => {
+    note.classList.remove("drag-over");
+    note.dataset.dropPosition = "";
+  });
+  setState("dropPosition", null);
+}
+
 export function onDragstart({ event, element }) {
-  console.log("onDragstart", event, element);
-  const id = element.dataset.id;
-  setState("draggedId", id);
-  event.dataTransfer.setData("note", id);
+  element.classList.add("dragging");
+  setState("draggedId", element.dataset.id);
+  event.dataTransfer.setData("text/plain", element.dataset.id);
+  event.dataTransfer.effectAllowed = "move";
+}
+
+export function onDragend({ event, element }) {
+  element.classList.remove("dragging");
+  setState("draggedId", null);
+  clearAllDropStyles();
 }
 
 export function onDragover({ event, element }) {
-  // console.log("onDragover", event, element);
   event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
 
-  if (!event.dataTransfer?.types.includes("note")) {
-    setState("dropPosition", false);
-    element.dataset.dropPosition = "";
+  const draggedId = getState("draggedId");
+  if (!draggedId || draggedId === element.dataset.id) {
     return;
   }
 
+  const draggedElement = document.querySelector(`[data-id="${draggedId}"]`);
+  if (!draggedElement) return;
+
+  // Don't allow dropping between two adjacent items that are being reordered
+  if (
+    (element.previousElementSibling === draggedElement &&
+      event.clientY <
+        element.getBoundingClientRect().top + element.offsetHeight / 2) ||
+    (element.nextElementSibling === draggedElement &&
+      event.clientY >
+        element.getBoundingClientRect().top + element.offsetHeight / 2)
+  ) {
+    clearAllDropStyles();
+    return;
+  }
+
+  // Clear any existing drop styles first
+  clearAllDropStyles();
+
   const rect = element.getBoundingClientRect();
-  const isTop = event.clientY < rect.top + rect.height / 2;
+  const mouseY = event.clientY;
+  const threshold = rect.top + (rect.height * 0.5);
+  const isTop = mouseY < threshold;
+
   setState("dropPosition", isTop ? "top" : "bottom");
   element.dataset.dropPosition = isTop ? "top" : "bottom";
+  element.classList.add("drag-over");
+}
+
+export function onDragleave({ event, element }) {
+  element.classList.remove("drag-over");
+  element.dataset.dropPosition = "";
 }
 
 export function onDrop({ event, element }) {
-  console.log("onDrop", event, element);
   event.preventDefault();
 
   try {
-    if (!event.dataTransfer?.types.includes("note")) {
-      return;
-    }
-
-    const noteId = event.dataTransfer.getData("note");
+    const draggedId = getState("draggedId");
     const dropPosition = getState("dropPosition");
 
-    if (!noteId || noteId === element.dataset.id) {
+    if (!draggedId || draggedId === element.dataset.id) {
       return;
     }
 
-    if (dropPosition === "top") {
-      if (element.previousElementSibling?.dataset.id === noteId) {
-        return;
-      }
-      element.parentNode.insertBefore(
-        document.querySelector(`[data-id="${noteId}"]`),
-        element,
-      );
-    }
+    const draggedElement = document.querySelector(`[data-id="${draggedId}"]`);
+    if (!draggedElement) return;
 
-    if (dropPosition === "bottom") {
-      if (element.nextElementSibling?.dataset.id === noteId) {
+    // Simple insertion logic based on drop position
+    if (dropPosition === "top") {
+      // Don't do anything if trying to drop between the same elements
+      if (draggedElement === element.previousElementSibling) {
         return;
       }
+      // Insert before the target element
+      element.parentNode.insertBefore(draggedElement, element);
+    } else {
+      // Don't do anything if trying to drop between the same elements
+      if (draggedElement === element.nextElementSibling) {
+        return;
+      }
+      // Insert after the target element
       element.parentNode.insertBefore(
-        document.querySelector(`[data-id="${noteId}"]`),
-        element.nextSibling,
+        draggedElement,
+        element.nextElementSibling,
       );
     }
 
     showAlert("Note moved successfully!", "success");
+  } catch (error) {
+    console.error("Drop error:", error);
+    showAlert("Failed to move note", "error");
   } finally {
-    setState("dropPosition", false);
-    element.dataset.dropPosition = "";
+    clearAllDropStyles();
+    setState("draggedId", null);
   }
 }

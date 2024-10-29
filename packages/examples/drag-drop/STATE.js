@@ -1,13 +1,12 @@
-// Shared state between drag handlers
-export const state = {
-  dropPosition: false, // "top" | "bottom" | false
+let state = {
   draggedId: null,
+  dropPosition: null,
 };
-
-export function setState(key, value) {
-  state[key] = value;
-}
 
 export function getState(key) {
   return state[key];
+}
+
+export function setState(key, value) {
+  state[key] = value;
 }
