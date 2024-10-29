@@ -142,9 +142,18 @@ export class HandlerRegistry {
     scriptPath,
     context,
   ): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
+    // console.log("HandlerRegistry.getHandler: scriptPath", scriptPath);
     if (this.registry.has(scriptPath)) {
       // console.log('HandlerRegistry.getHandler: returning cached handler for', scriptPath);
-      return this.registry.get(scriptPath);
+      const module = this.registry.get(scriptPath);
+      const eventName = context.eventName;
+      const handlerName = eventName
+        ? this.eventPrefix + convertToEventName(eventName)
+        : this.defaultHandler;
+      const onHandler = eventName ? module[handlerName] : null;
+      const handler = onHandler || module.default || null;
+      // console.log("HandlerRegistry.getHandler: returning cached handler", handler);
+      return handler;
     }
 
     try {
@@ -158,6 +167,7 @@ export class HandlerRegistry {
         : this.defaultHandler;
       const onHandler = eventName ? module[handlerName] : null;
       const handler = onHandler || module.default || null;
+      // console.log("HandlerRegistry.getHandler: onHandler", onHandler, eventName, module[handlerName]);
       if (typeof handler === "function") {
         this.registry.set(scriptPath, handler);
         return handler;

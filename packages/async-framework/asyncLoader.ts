@@ -78,7 +78,7 @@ export class AsyncLoader {
   }
 
   // Initializes the event handling system by parsing the DOM
-  // Why: Entry point that bootstraps the event handling system. It initializes event listeners 
+  // Why: Entry point that bootstraps the event handling system. It initializes event listeners
   // and container management starting from a specified root element or the default domRoot.
   init(containerElement = this.domRoot) {
     this.parseDOM(containerElement); // Start parsing from the body element
