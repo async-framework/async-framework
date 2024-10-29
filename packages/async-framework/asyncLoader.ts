@@ -78,7 +78,8 @@ export class AsyncLoader {
   }
 
   // Initializes the event handling system by parsing the DOM
-  // Why: Sets up event listeners and observers for all relevant containers upon initialization.
+  // Why: Entry point that bootstraps the event handling system. It initializes event listeners 
+  // and container management starting from a specified root element or the default domRoot.
   init(containerElement = this.domRoot) {
     this.parseDOM(containerElement); // Start parsing from the body element
   }
@@ -122,11 +123,11 @@ export class AsyncLoader {
   }
 
   // Discovers custom events on the container element
-  // Why: This method identifies and returns all custom events defined on the container element.
-  // It does this by querying all elements within the container, extracting their attributes,
-  // filtering those that start with the event prefix, and mapping the remaining attributes to event names.
-  // The method ensures that each event is represented only once in the resulting array,
-  // eliminating duplicates and providing a list of unique custom events.
+  // Why: Automatically detects all custom event types used in the application by:
+  // 1. Scanning all container elements for attributes starting with the event prefix
+  // 2. Extracting and normalizing event names from these attributes
+  // 3. Removing duplicates to ensure each event type is only registered once
+  // This enables automatic event registration without manual event configuration.
   discoverCustomEvents(bodyElement: Element) {
     const customEventAttributes = this.getContainers()
       .flatMap((el: any) => Array.from(el.attributes))
@@ -141,13 +142,12 @@ export class AsyncLoader {
   }
 
   // Parses a root element to identify and handle new containers
-  // Why: Ensures dynamic and consistent event handling across the application by:
-  // 1. Supporting containers added after initial load
-  // 2. Handling various input types (undefined, array, single element)
-  // 3. Targeting only elements with 'data-container' attribute
-  // 4. Providing error handling for invalid inputs
-  // 5. Scaling from simple to complex DOM structures
-  // This approach maintains a robust and adaptable event system for evolving DOM structures.
+  // Why: Processes DOM elements to set up event handling by:
+  // 1. Handling different input types (undefined, arrays, single elements)
+  // 2. Processing only valid container elements with the specified container attribute
+  // 3. Avoiding duplicate processing of containers
+  // 4. Supporting both initial load and dynamically added containers
+  // This ensures consistent event handling setup across the application.
   parseDOM(containerElement: undefined | any[] | any) {
     if (!containerElement) {
       const containerEls = this.getContainers();
@@ -163,17 +163,12 @@ export class AsyncLoader {
   }
 
   // Handles the setup for a new container
-  // Why: This method is crucial for initializing and managing new containers in the application.
-  // It performs several important tasks:
-  // 1. Prevents duplicate processing of containers, ensuring efficiency
-  // 2. Sets up event listeners for the container, enabling event delegation
-  // 3. Prepares the container for dynamic content changes (commented out observer)
-  // 4. Marks the container as processed to avoid redundant setup
-  // 5. Provides a hook for potential lifecycle management (commented out onMount)
-  // This comprehensive approach ensures that each container is properly integrated into the
-  // event handling system, supporting both initial load and dynamically added containers.
-  // It lays the groundwork for efficient event handling and potential future enhancements
-  // like DOM observation and component lifecycle management.
+  // Why: Manages the lifecycle of container elements by:
+  // 1. Verifying container connectivity to prevent processing detached elements
+  // 2. Preventing duplicate processing through WeakSet tracking
+  // 3. Setting up event delegation through container listeners
+  // 4. Managing cleanup for disconnected elements
+  // This ensures proper initialization and cleanup of container elements.
   handleNewContainer(el) {
     // Avoid reprocessing the same container
     if (!el.isConnected) {
@@ -214,21 +209,12 @@ export class AsyncLoader {
   }
 
   // Sets up event listeners for a container based on its elements
-  // Why: This method implements an efficient and flexible event handling system for each container.
-  // It achieves this through several key strategies:
-  // 1. Event Delegation: Uses a single listener per event type on the container,
-  //    rather than individual listeners on child elements. This significantly
-  //    reduces the number of event listeners, improving performance and memory usage.
-  // 2. Dynamic Handler Association: Allows for runtime binding of handlers to elements,
-  //    supporting both initial and dynamically added content without requiring manual updates.
-  // 3. Lazy Parsing: Defers the parsing of event handlers until they're needed,
-  //    optimizing initial load time and supporting dynamic content efficiently.
-  // 4. Capture Phase Utilization: Intercepts events early in the propagation cycle,
-  //    ensuring custom logic can be applied before other listeners.
-  // 5. Asynchronous Handling: Supports both synchronous and asynchronous event handlers,
-  //    allowing for complex operations without blocking the main thread.
-  // This approach creates a scalable, performant, and flexible event system that can
-  // adapt to changing DOM structures and complex application needs.
+  // Why: Implements efficient event delegation by:
+  // 1. Creating a single listener per event type at the container level
+  // 2. Using event capturing for early interception
+  // 3. Supporting lazy parsing of event handlers
+  // 4. Maintaining a map of event listeners for proper cleanup
+  // This reduces memory usage and improves performance compared to individual element listeners.
   setupContainerListeners(containerElement): boolean {
     if (!containerElement.isConnected) {
       return false;
@@ -263,7 +249,11 @@ export class AsyncLoader {
   }
 
   // Parses elements within a container to identify and register event handlers
-  // Why: Associates event types and handler scripts with specific elements, enabling dynamic event handling.
+  // Why: Analyzes container elements for event bindings by:
+  // 1. Finding elements with specific event attributes
+  // 2. Registering handler associations in the event map
+  // 3. Supporting lazy parsing for better performance
+  // This enables dynamic handler registration without requiring immediate processing of all elements.
   parseContainerElement(containerElement, eventName) {
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${this.eventPrefix}${eventName}`;
@@ -285,11 +275,12 @@ export class AsyncLoader {
   }
 
   // Registers event listeners for specific elements within a container
-  // Why: This method organizes event handlers by associating them with specific elements and event types within a container.
-  // It enables efficient lookup and invocation of handlers during event propagation.
-  // By storing handlers in a nested map structure (container -> event -> element -> handlers),
-  // it allows for quick retrieval and execution of relevant handlers when an event occurs,
-  // supporting the event delegation pattern and improving performance for containers with many elements.
+  // Why: Manages the event handler registry by:
+  // 1. Maintaining a three-level map structure (container → event → element → handler)
+  // 2. Validating element connectivity before registration
+  // 3. Handling cleanup of disconnected elements
+  // 4. Preventing duplicate handler registration
+  // This provides efficient lookup and management of event handlers during event delegation.
   addEventData(containerElement, eventName, element, attrValue) {
     if (!containerElement.isConnected) {
       console.warn(
@@ -344,14 +335,12 @@ export class AsyncLoader {
   }
 
   // Dispatches a custom event to all registered listeners across containers
-  // Why: This method provides a centralized mechanism for broadcasting custom events throughout the application.
-  // It creates a custom event with the given name and detail, then iterates through all registered containers
-  // to find elements with matching event listeners. By parsing container elements on-demand and dispatching
-  // the event to relevant elements, it ensures that newly added or dynamically created elements are included.
-  // The method uses a null check before accessing properties of potentially undefined objects, addressing
-  // the "Object is possibly 'undefined'" linter error. This approach supports a flexible and scalable event
-  // system that can handle both static and dynamically generated content, allowing for efficient communication
-  // between different parts of the application while maintaining type safety.
+  // Why: Enables custom event broadcasting across the application by:
+  // 1. Supporting both string-based and CustomEvent dispatching
+  // 2. Lazy-parsing containers for relevant event handlers
+  // 3. Managing cleanup of disconnected elements during dispatch
+  // 4. Ensuring events reach all registered handlers
+  // This provides a reliable system for cross-component communication.
   dispatch(eventName: string | CustomEvent, detail?: any) {
     // create the custom event
     let customEvent;
@@ -391,18 +380,13 @@ export class AsyncLoader {
   }
 
   // Handles an event occurring within a container
-  // Why: This method is responsible for coordinating the execution of event handlers for a given event within a container.
-  // It implements event delegation by traversing the DOM tree from the event target up to the container,
-  // allowing for efficient event handling even with dynamically added elements.
-  // The method:
-  // 1. Retrieves the appropriate handler data for the event type and elements
-  // 2. Creates a context object with relevant information about the event and container
-  // 3. Delegates the actual handler execution to the HandlerRegistry
-  // 4. Supports both bubbling and non-bubbling events
-  // 5. Manages the execution flow, allowing handlers to break the chain if needed
-  // This approach ensures proper coordination between the AsyncLoader and HandlerRegistry,
-  // providing a flexible and performant event handling system while keeping the core logic
-  // of handler execution separate and reusable.
+  // Why: Coordinates event handling and delegation by:
+  // 1. Traversing the DOM from target to container for matching handlers
+  // 2. Creating and managing handler execution context
+  // 3. Supporting both synchronous and asynchronous handlers
+  // 4. Implementing event bubbling control
+  // 5. Providing error handling and cleanup
+  // This ensures reliable and controlled execution of event handlers while maintaining proper context.
   async handleContainerEvent(containerElement, domEvent) {
     // deno-lint-ignore no-this-alias
     const self = this;
