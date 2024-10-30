@@ -24,7 +24,6 @@ export function onDragend({ event, element }) {
 }
 
 export function onDragover({ event, element }) {
-  event.preventDefault();
   event.dataTransfer.dropEffect = "move";
 
   const draggedId = getState("draggedId");
@@ -67,8 +66,6 @@ export function onDragleave({ event, element }) {
 }
 
 export function onDrop({ event, element }) {
-  event.preventDefault();
-
   try {
     const draggedId = getState("draggedId");
     const dropPosition = getState("dropPosition");

@@ -13,6 +13,7 @@
       }
     </script>
     <script type="module" src="/livereload.js"></script>
+    <link rel="modulepreload" href="/async-framework.js" />
     <link rel="modulepreload" href="dragHandlers.js" />
     <link rel="modulepreload" href="STATE.js" />
     <style>
@@ -68,9 +69,9 @@
             data-id="1"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Note 1</h3>
             <p>Drag me around to reorder!</p>
@@ -82,9 +83,9 @@
             data-id="2"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Note 2</h3>
             <p>You can drop notes above or below me.</p>
@@ -96,9 +97,9 @@
             data-id="3"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Note 3</h3>
             <p>Try dragging and dropping!</p>
@@ -110,9 +111,9 @@
             data-id="4"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Shopping List</h3>
             <p>🛒 Milk, Bread, Eggs, Coffee</p>
@@ -124,9 +125,9 @@
             data-id="5"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Meeting Notes</h3>
             <p>📅 Team sync at 2 PM</p>
@@ -138,9 +139,9 @@
             data-id="6"
             on:dragstart="dragHandlers.js"
             on:dragend="dragHandlers.js"
-            on:dragover="dragHandlers.js"
+            on:dragover="prevent-default.js, dragHandlers.js"
             on:dragleave="dragHandlers.js"
-            on:drop="dragHandlers.js"
+            on:drop="prevent-default.js, dragHandlers.js"
           >
             <h3 class="font-semibold">Ideas</h3>
             <p>💡 Build a better drag & drop interface</p>
@@ -157,6 +158,7 @@
       const handlers = new HandlerRegistry({
         basePath: location.pathname,
         registry: new Map([
+          ...Object.entries(HandlerRegistry.defaultHandlers),
           ["dragHandlers.js", dragHandlers],
           ["STATE.js", STATE],
         ]),

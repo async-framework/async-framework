@@ -1,6 +1,42 @@
 // deno-lint-ignore-file no-explicit-any
 // handlerRegistry.js
 import { isPromise } from "./utils.js";
+import {
+  preventAndStop,
+  preventDefault,
+  stopPropagation,
+} from "./defaultHandlers.js";
+
+type FileModule = {
+  default?: any;
+  [key: string]: any;
+};
+/**
+ * Grabs the handler from the module based on the event name and handler name.
+ * @param {FileModule} mod - The module to grab the handler from.
+ * @param {string} eventName - The event name.
+ * @param {string} handlerName - The handler name.
+ * @returns {any} - The handler.
+ */
+function grabHandler(mod: FileModule, eventName: string, handlerName: string) {
+  // Return specific event handler if available
+  // e.g. mod[handlerName] = onDragover
+  if (eventName && mod[handlerName]) {
+    return mod[handlerName];
+  }
+
+  // Return default export if available
+  if (typeof mod.default === "function") {
+    return mod.default;
+  }
+
+  // Return module if it's a function if the user manually set the handler
+  if (typeof mod === "function") {
+    return mod;
+  }
+
+  return null;
+}
 
 /**
  * Converts an event string to a title case event name.
@@ -22,6 +58,11 @@ function convertToEventName(eventString: string) {
 }
 
 export class HandlerRegistry {
+  static defaultHandlers = {
+    "prevent-default.js": preventDefault,
+    "stop-propagation.js": stopPropagation,
+    "prevent-and-stop.js": preventAndStop,
+  };
   public splitIndex: string;
   private registry: Map<string, any>;
   private attributeRegistry: Map<string, any>;
@@ -35,7 +76,9 @@ export class HandlerRegistry {
    * @param {Object} config - Configuration object.
    */
   constructor(config: any = {}) {
-    this.registry = config.registry || new Map();
+    this.registry = config.registry || new Map([
+      ...Object.entries(HandlerRegistry.defaultHandlers),
+    ]);
     this.attributeRegistry = config.attributeRegistry || new Map();
     this.eventPrefix = (config.eventPrefix || "on").toLowerCase().replace(
       /:|-/g,
@@ -150,8 +193,7 @@ export class HandlerRegistry {
       const handlerName = eventName
         ? this.eventPrefix + convertToEventName(eventName)
         : this.defaultHandler;
-      const onHandler = eventName ? module[handlerName] : null;
-      const handler = onHandler || module.default || null;
+      const handler = grabHandler(module, eventName, handlerName);
       // console.log("HandlerRegistry.getHandler: returning cached handler", handler);
       return handler;
     }
@@ -165,8 +207,7 @@ export class HandlerRegistry {
       const handlerName = eventName
         ? this.eventPrefix + convertToEventName(eventName)
         : this.defaultHandler;
-      const onHandler = eventName ? module[handlerName] : null;
-      const handler = onHandler || module.default || null;
+      const handler = grabHandler(module, eventName, handlerName);
       // console.log("HandlerRegistry.getHandler: onHandler", onHandler, eventName, module[handlerName]);
       if (typeof handler === "function") {
         this.registry.set(scriptPath, handler);
