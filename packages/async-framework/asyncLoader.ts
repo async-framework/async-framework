@@ -129,7 +129,7 @@ export class AsyncLoader {
   // 3. Removing duplicates to ensure each event type is only registered once
   // This enables automatic event registration without manual event configuration.
   discoverCustomEvents(bodyElement: Element) {
-    const customEventAttributes = this.getContainers()
+    const customEventAttributes = this.getContainers("*", bodyElement)
       .flatMap((el: any) => Array.from(el.attributes))
       .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));

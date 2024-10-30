@@ -185,38 +185,45 @@ export class HandlerRegistry {
     scriptPath,
     context,
   ): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
-    // console.log("HandlerRegistry.getHandler: scriptPath", scriptPath);
-    if (this.registry.has(scriptPath)) {
-      // console.log('HandlerRegistry.getHandler: returning cached handler for', scriptPath);
-      const module = this.registry.get(scriptPath);
+    // Split the path and hash consistently at the start
+    const [path, hash] = scriptPath.split("#");
+    const cacheKey = hash ? `${path}#${hash}` : path;
+
+    // Check cache using the consistent key
+    if (this.registry.has(cacheKey)) {
+      const module = this.registry.get(cacheKey);
       const eventName = context.eventName;
-      const handlerName = eventName
-        ? this.eventPrefix + convertToEventName(eventName)
-        : this.defaultHandler;
+      const handlerName = hash ||
+        (eventName
+          ? this.eventPrefix + convertToEventName(eventName)
+          : this.defaultHandler);
       const handler = grabHandler(module, eventName, handlerName);
-      // console.log("HandlerRegistry.getHandler: returning cached handler", handler);
       return handler;
     }
 
     try {
-      // console.log('HandlerRegistry.getHandler: loading async handler at', scriptPath);
-      const module = await import(
-        `${this.origin}${this.basePath}${scriptPath}`
-      );
+      // Import the module using just the path
+      const module = await import(`${this.origin}${this.basePath}${path}`);
+
       const eventName = context.eventName;
-      const handlerName = eventName
-        ? this.eventPrefix + convertToEventName(eventName)
-        : this.defaultHandler;
+      const handlerName = hash ||
+        (eventName
+          ? this.eventPrefix + convertToEventName(eventName)
+          : this.defaultHandler);
+
       const handler = grabHandler(module, eventName, handlerName);
-      // console.log("HandlerRegistry.getHandler: onHandler", onHandler, eventName, module[handlerName]);
+
       if (typeof handler === "function") {
-        this.registry.set(scriptPath, handler);
+        // Cache using the consistent key
+        this.registry.set(cacheKey, module);
         return handler;
       } else {
         console.error(
-          `HandlerRegistry.getHandler: Handler at ${scriptPath} is not a function.`,
+          `HandlerRegistry.getHandler: Handler "${handlerName}" at ${scriptPath} is not a function.`,
         );
-        throw new Error(`Handler at ${scriptPath} is not a function.`);
+        throw new Error(
+          `Handler "${handlerName}" at ${scriptPath} is not a function.`,
+        );
       }
     } catch (error) {
       console.error(

@@ -1,12 +1,12 @@
-let state = {
+const STATE = {
   draggedId: null,
   dropPosition: null,
 };
 
 export function getState(key) {
-  return state[key];
+  return STATE[key];
 }
 
 export function setState(key, value) {
-  state[key] = value;
+  STATE[key] = value;
 }

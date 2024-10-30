@@ -1,5 +1,6 @@
 import { getState, setState } from "./STATE.js";
-import { showAlert } from "../resource-management/show-alert.js";
+//
+import { showAlert } from "./show-alert.js";
 
 // Helper function to clear drop styles from all notes
 function clearAllDropStyles() {
@@ -17,7 +18,7 @@ export function onDragstart({ event, element }) {
   event.dataTransfer.effectAllowed = "move";
 }
 
-export function onDragend({ event, element }) {
+export function onDragend({ element }) {
   element.classList.remove("dragging");
   setState("draggedId", null);
   clearAllDropStyles();
@@ -60,12 +61,12 @@ export function onDragover({ event, element }) {
   element.classList.add("drag-over");
 }
 
-export function onDragleave({ event, element }) {
+export function onDragleave({ element }) {
   element.classList.remove("drag-over");
   element.dataset.dropPosition = "";
 }
 
-export function onDrop({ event, element }) {
+export function onDrop({ element }) {
   try {
     const draggedId = getState("draggedId");
     const dropPosition = getState("dropPosition");
