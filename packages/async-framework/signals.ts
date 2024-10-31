@@ -6,6 +6,20 @@ export function signal<T>(initialValue: T) {
   const subscribers = new Set<(value: T, oldValue: T) => void>();
   let value = initialValue;
 
+  function get() {
+    // Track when the signal is read
+    if (currentTracker) {
+      subscribers.add(currentTracker);
+    }
+    return value;
+  }
+  function set(newValue: T) {
+    const oldValue = value;
+    value = newValue;
+    // Notify all subscribers of the change
+    subscribers.forEach((subscriber) => subscriber(value, oldValue));
+  }
+
   return {
     get value() {
       // Track when the signal is read
@@ -18,22 +32,10 @@ export function signal<T>(initialValue: T) {
       const oldValue = value;
       value = newValue;
       // Notify all subscribers of the change
-      subscribers.forEach(subscriber => subscriber(value, oldValue));
+      subscribers.forEach((subscriber) => subscriber(value, oldValue));
     },
-    get: () => {
-      // Track when the signal is read
-      if (currentTracker) {
-        subscribers.add(currentTracker);
-      }
-      return value;
-    },
-    set: (newValue: T) => {
-      const oldValue = value;
-      value = newValue;
-      // Notify all subscribers of the change
-      subscribers.forEach(subscriber => subscriber(value, oldValue));
-
-    },
+    get,
+    set,
     subscribe(callback: (value: T, oldValue: T) => void) {
       subscribers.add(callback);
       return () => subscribers.delete(callback);
@@ -54,27 +56,32 @@ export function signal<T>(initialValue: T) {
   };
 }
 
-export function createSignal<T>(initialValue: T): [() => T, (newValue: T) => void] {
+export function createSignal<T>(
+  initialValue: T,
+): [() => T, (newValue: T) => void, ReturnType<typeof signal<T>>] {
   const sig = signal<T>(initialValue);
-  return [sig.get, sig.set];
+  return [sig.get, sig.set, sig];
 }
 
 // Why: Creates a computed signal that tracks its dependencies
 export function computed<T>(computation: () => T) {
   const sig = signal<T>(computation());
-  
+
   // Initial computation with tracking
   sig.track(() => {
     sig.value = computation();
   });
-  
+
   return sig;
 }
 
 // Why: Helps debug signal usage and dependencies
 // Usage example:
 // const count = debugSignal(createSignal(0), "count");
-export function debugSignal<T>(sig: ReturnType<typeof signal<T>>, name: string) {
+export function debugSignal<T>(
+  sig: ReturnType<typeof signal<T>>,
+  name: string,
+) {
   return {
     ...sig,
     get value() {
@@ -84,6 +91,6 @@ export function debugSignal<T>(sig: ReturnType<typeof signal<T>>, name: string) 
     set value(newValue: T) {
       console.log(`Setting signal "${name}" to:`, newValue);
       sig.value = newValue;
-    }
+    },
   };
 }
