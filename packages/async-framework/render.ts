@@ -11,14 +11,18 @@ export interface RenderConfig {
   context?: Record<string, unknown>;
 }
 
-export function render(element: HTMLElement, config: RenderConfig | HTMLElement) {
+export function render(
+  element: HTMLElement,
+  config: RenderConfig | HTMLElement,
+) {
   // Handle case where config is just the root element
   const domRoot = config instanceof HTMLElement ? config : config.root;
   const renderConfig = config instanceof HTMLElement ? {} : config;
   if (!domRoot) {
     throw new Error("Root element is required for rendering");
   }
-  const containerAttribute = renderConfig.containerAttribute ?? "data-container";
+  const containerAttribute = renderConfig.containerAttribute ??
+    "data-container";
   const context = renderConfig.context ?? {};
   const events = renderConfig.events ?? [];
   const basePath = renderConfig.basePath ?? "./handlers/";
@@ -74,4 +78,4 @@ export function render(element: HTMLElement, config: RenderConfig | HTMLElement)
 //   origin: '',
 //   eventPrefix: 'on:',
 //   context: { someSharedState: {} }
-// }); 
+// });
