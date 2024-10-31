@@ -3,6 +3,7 @@
   "deno.lint": true,
   "deno.enablePaths": [
     "./packages/examples",
+    "./packages/example-apps",
     "./packages/async-loader",
     "./packages/custom-signals",
     "./packages/dev"
@@ -17,6 +18,9 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "files.exclude": {
+    ".gitignore": true,
+    "LICENSE": true,
+    ".github/codeql": true,
     "**/.git": true,
     "**/.svn": true,
     "**/.hg": true,

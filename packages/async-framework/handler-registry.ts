@@ -1,11 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
-// handlerRegistry.js
-import { isPromise } from "./utils.js";
+// handlerRegistry.ts
+import { isPromise } from "./utils.ts";
 import {
   preventAndStop,
   preventDefault,
   stopPropagation,
-} from "./defaultHandlers.js";
+} from "./default-handlers.ts";
 
 type FileModule = {
   default?: any;

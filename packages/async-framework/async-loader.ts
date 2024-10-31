@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { escapeSelector, isPromise } from "./utils.js";
+import { escapeSelector, isPromise } from "./utils.ts";
 export interface AsyncLoaderConfig {
   handlerRegistry: { handler: (context: any) => Promise<any> | any };
   containerAttribute?: string;

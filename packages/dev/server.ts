@@ -10,7 +10,7 @@ import {
   renderDirectoryListing,
 } from "./server-utils/renderDirectoryListing.ts";
 import { createBundler } from "./server-utils/bundler.ts";
-import { createCache } from "./server-utils/request-cache.ts";
+// import { createCache } from "./server-utils/request-cache.ts";
 
 const rootRepoDir = Deno.cwd();
 const serverDirectory = dirname(fromFileUrl(import.meta.url));
@@ -20,10 +20,36 @@ console.log("CWD directory:", rootRepoDir);
 console.log("Examples directory:", exampleDirectory);
 
 const CACHE = new Map();
-const cacheResponse = createCache(CACHE, 3600);
+// const cacheResponse = createCache(CACHE, 3600);
 const app = new Hono();
 
 app.use(logger());
+
+// Add this route to handle .tsx files
+app.get(async (c, next) => {
+  if (c.req.path.endsWith(".tsx")) {
+    console.log("GET: *.tsx", c.req.path);
+    const path = c.req.path;
+    try {
+    const fullPath = join(packagesDirectory, path);
+    const bundleContent = await bundle(fullPath);
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error for tsx file:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+      );
+    }
+  } else {
+    return next();
+  }
+});
 
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
@@ -65,7 +91,7 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
-app.get("/tailwind.css", cacheResponse, async (c) => {
+app.get("/tailwind.css", async (c) => {
   try {
     const tailwindCss = await Deno.readTextFile(
       join(serverDirectory, "tailwind.css"),
@@ -87,11 +113,10 @@ app.get("/tailwind.css", cacheResponse, async (c) => {
 // Get the directory of the current file
 const bundle = createBundler(rootRepoDir);
 // bundle framework code
-app.get("/async-framework.js", cacheResponse, async (c) => {
+app.get("/async-framework.js", async (c) => {
   try {
     const bundleContent = await bundle(
       join(packagesDirectory, "async-framework/index.ts"),
-      "AsyncFramework",
     );
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
@@ -109,11 +134,10 @@ app.get("/async-framework.js", cacheResponse, async (c) => {
 });
 
 // custom-signals
-app.get("/custom-signals.js", cacheResponse, async (c) => {
+app.get("/custom-signals.js", async (c) => {
   try {
     const bundleContent = await bundle(
       join(packagesDirectory, "custom-signals/index.ts"),
-      "CustomSignals",
     );
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
@@ -131,11 +155,10 @@ app.get("/custom-signals.js", cacheResponse, async (c) => {
 });
 
 // custom-element signals
-app.get("/custom-element-signals.js", cacheResponse, async (c) => {
+app.get("/custom-element-signals.js", async (c) => {
   try {
     const bundleContent = await bundle(
       join(packagesDirectory, "custom-element-signals/src/index.ts"),
-      "CustomElementSignals",
     );
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
@@ -152,8 +175,9 @@ app.get("/custom-element-signals.js", cacheResponse, async (c) => {
   }
 });
 
+
 // Update the /bundle route
-app.get("/bundle", cacheResponse, async (c) => {
+app.get("/bundle", async (c) => {
   const entryPoint = c.req.query("entry");
   if (!entryPoint) {
     return c.text("No entry point specified", 400);
@@ -199,7 +223,7 @@ app.get("/livereload", (c) => {
   return response;
 });
 // serve client side livereload script
-app.get("/livereload.js", cacheResponse, async (c) => {
+app.get("/livereload.js", async (c) => {
   try {
     const livereloadJs = await Deno.readTextFile(
       join(serverDirectory, "livereload.js"),

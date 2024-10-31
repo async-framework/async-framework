@@ -5,9 +5,19 @@
     "fmt": "deno fmt packages/examples/ packages/async-framework/ --ignore=packages/custom-element-signals/",
     "test": "deno test -RWN --allow-run=deno,bun,node,npx --clean --trace-leaks",
     "start": "deno run -A packages/dev/server.ts",
+    "start:app": "deno run -A packages/example-apps/hello-world/server.tsx",
     "dev": "deno run -A --watch packages/dev/server.ts --livereload"
   },
   "imports": {
+    // packages
+    "custom-signals": "./packages/custom-signals/index.ts",
+    "custom-signals/": "./packages/custom-signals/",
+    "async-framework": "./packages/async-framework/index.ts",
+    "async-framework/": "./packages/async-framework/",
+    "custom-element-signals": "./packages/custom-element-signals/index.ts",
+    // deps
+    "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.11.0",
+    "esbuild": "npm:esbuild@^0.24.0",
     "hono": "npm:hono@^4",
     "zod": "npm:zod",
     "@hono/zod-validator": "npm:@hono/zod-validator",
@@ -27,7 +37,9 @@
     "checkJs": false,
     "lib": ["deno.window", "deno.unstable", "deno.ns", "dom"],
     "strict": true,
-    "jsx": "precompile",
+    "jsx": "react-jsx",
+    // "jsxFactory": "Async.createElement",
+    // "jsxFragmentFactory": "Async.Fragment",
     "jsxImportSource": "hono/jsx"
   }
 }

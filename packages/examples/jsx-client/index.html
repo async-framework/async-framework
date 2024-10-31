@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client JSX Example</title>
+    <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "async-framework": "/async-framework.js",
+          "custom-signals": "/custom-signals.js",
+          "custom-element-signals": "/custom-element-signals.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import { App } from "./App.tsx";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const root = document.getElementById("app");
+        if (root) {
+          root.appendChild(App());
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
