@@ -113,7 +113,7 @@ app.get("/tailwind.css", async (c) => {
 // Get the directory of the current file
 const bundle = createBundler(rootRepoDir);
 // bundle framework code
-app.get("/async-framework.js", async (c) => {
+const asyncFramework = async (c) => {
   try {
     const bundleContent = await bundle(
       join(packagesDirectory, "async-framework/index.ts"),
@@ -131,7 +131,9 @@ app.get("/async-framework.js", async (c) => {
       500,
     );
   }
-});
+}
+app.get("/async-framework.js", asyncFramework);
+app.get("/async-framework.ts", asyncFramework);
 
 // custom-signals
 app.get("/custom-signals.js", async (c) => {

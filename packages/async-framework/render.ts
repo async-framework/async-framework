@@ -15,6 +15,9 @@ export function render(
   element: HTMLElement,
   config: RenderConfig | HTMLElement,
 ) {
+  if (!config) {
+    config = document.querySelector("[data-container='root']") as HTMLElement;
+  }
   // Handle case where config is just the root element
   const domRoot = config instanceof HTMLElement ? config : config.root;
   const renderConfig = config instanceof HTMLElement ? {} : config;
