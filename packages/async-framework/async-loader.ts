@@ -462,9 +462,19 @@ export class AsyncLoader {
         let value = undefined;
         const attrValue = eventListeners.get(element); // || element.getAttribute(this.eventPrefix + domEvent.type);
         const context = {
+          get event() {
+            return domEvent;
+          },
+          get element() {
+            return element;
+          },
+          dispatch: self.dispatch.bind(self),
+
+          // set the value to pass between chained handlers
           set value(v) {
             value = v;
           },
+          // get the value to pass between chained handlers
           get value() {
             return value;
           },
@@ -472,15 +482,7 @@ export class AsyncLoader {
           get attrValue() {
             return attrValue;
           },
-          get dispatch() {
-            return self.dispatch.bind(self);
-          },
-          get element() {
-            return element;
-          },
-          get event() {
-            return domEvent;
-          },
+          // get the event name
           get eventName() {
             return domEvent.type;
           },

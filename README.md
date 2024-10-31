@@ -347,16 +347,18 @@ Examples:
 ```
 Handler Context:
 ```jsonc
-    {
-      event,        // Original DOM event
-      element,      // Target element
-      value,        // Passed between chained handlers
-      attrValue,    // Original attribute value
-      dispatch,     // Dispatch custom events
-      eventName,    // Name of the event
-      container,    // Container element
-      stop()        // Stop event propagation
-    }
+{
+   event,        // Original DOM event
+   element,      // Target element
+   dispatch(),   // Dispatch custom events
+   value,        // Passed between chained handlers
+   attrValue,    // Original attribute value
+   eventName,    // Name of the event
+   handlers,     // Handler registry
+   container,    // Container element
+   canceled,     // is we canceled the chained handlers
+   stop()        // break out of chained handlers
+}
 ```
 Control Flow:
 - Set context.canceled = true to stop handler chain
