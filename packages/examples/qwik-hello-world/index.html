@@ -14,7 +14,10 @@
     q:head
   >
     <meta charset="utf-8" q:head />
+    <!-- added for /examples/ -->
     <base href="/examples/qwik-hello-world/" />
+
+    <!-- changed to relative path -->
     <link rel="manifest" href="manifest.json" q:key="35_0" q:head />
     <!--qv q:id=2 q:key=zrbr:35_1-->
     <!--qv q:key=OA_0-->
@@ -25,11 +28,13 @@
       content="width=device-width, initial-scale=1.0"
       q:head
     />
+    <!-- changed to relative path -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg" q:head />
     <meta name="description" content="Qwik site description" q:head />
     <!--/qv-->
     <!--/qv-->
     <!--qv q:key=35_2-->
+    <!-- no service worker -->
     <!-- <script q:key="P4_7" q:head>
       ((i, r, a, o) => {
         (a = (e) => {
@@ -922,6 +927,7 @@
     <main>
       <!--qv q:s q:sref=5 q:key=--><!--qv q:id=7 q:key=xYL1:P4_0--><!--qv q:key=H1_7--><!--qv q:id=8 q:key=fle1:H1_0-->
       <div class="container _hero_resu5_1" q:key="nG_1">
+        <!-- changed to relative path -->
         <img
           decoding="async"
           loading="lazy"
@@ -1167,7 +1173,9 @@
       "q-DzIc0_di.js",
     ]);
     document.dispatchEvent(
-      new CustomEvent("qprefetch", { detail: { links: [location.pathname] } })
+      new CustomEvent("qprefetch", {
+        detail: { links: [location.pathname] }
+      })
     );
   </script>
   <script type="qwik/json">
@@ -1207,6 +1215,7 @@
       (p0) => p0.value,
     ];
   </script>
+  <!-- should be replaced with async-framework -->
   <script id="qwikloader">
     (() => {
       var e = Object.defineProperty,
