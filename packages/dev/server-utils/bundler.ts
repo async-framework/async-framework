@@ -42,13 +42,15 @@ export function createBundler(rootDir: string) {
         ...options,
         define: {
           ...options.define,
-          "import.meta.url": "import_meta_url",
+          // "import.meta.url": "import_meta_url",
         },
         write: false,
         jsxFactory: "jsx",
         jsxFragment: "Fragment",
         jsxImportSource: "async-framework",
         entryPoints: [absolutePath],
+        // format: "iife",
+        // format: "cjs",
         format: "esm",
         plugins: [
           {

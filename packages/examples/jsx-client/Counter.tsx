@@ -1,5 +1,5 @@
 // deno-lint-ignore no-unused-vars
-import { cls, computed, jsx, signal } from "async-framework";
+import { jsx, cls, computed, signal } from "async-framework";
 
 export function Counter() {
   const count = signal(0);
@@ -33,9 +33,9 @@ export function Counter() {
           Count: {count}
         </h2>
         <button
-          onClick={() => (theme.value = theme.value === "light"
-            ? "dark"
-            : "light")}
+          onClick={() =>
+            (theme.value = theme.value === "light" ? "dark" : "light")
+          }
           class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors"
         >
           Toggle Theme

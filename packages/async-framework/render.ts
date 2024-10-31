@@ -19,16 +19,21 @@ export function render(
     config = document.querySelector("[data-container='root']") as HTMLElement;
   }
   // Handle case where config is just the root element
-  const domRoot = config instanceof HTMLElement ? config : config.root;
+  let domRoot = config instanceof HTMLElement ? config : config.root;
   const renderConfig = config instanceof HTMLElement ? {} : config;
   if (!domRoot) {
-    throw new Error("Root element is required for rendering");
+    domRoot = document.querySelector("[data-container='root']") as HTMLElement;
+    if (!domRoot) {
+      throw new Error("Root element is required for rendering");
+    }
   }
+  const currentPath = location.pathname;
   const containerAttribute = renderConfig.containerAttribute ??
     "data-container";
   const context = renderConfig.context ?? {};
   const events = renderConfig.events ?? [];
-  const basePath = renderConfig.basePath ?? "./handlers/";
+  // should be /handlers?
+  const basePath = renderConfig.basePath ?? currentPath;
   const origin = renderConfig.origin ?? "";
   const eventPrefix = renderConfig.eventPrefix ?? "on:";
 
@@ -61,13 +66,14 @@ export function render(
   loader.init();
 
   // Return utilities for cleanup and access to loader/registry
-  return {
+  const asyncFramework = {
     loader,
     handlers: registry,
     unmount: () => {
       domRoot.removeChild(element);
     },
   };
+  return asyncFramework;
 }
 
 // Example usage:

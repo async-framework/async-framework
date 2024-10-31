@@ -1,7 +1,20 @@
 // deno-lint-ignore-file no-explicit-any
 import { escapeSelector, isPromise } from "./utils.ts";
+
+export interface AsyncLoaderContext {
+  value: any;
+  attrValue: string;
+  dispatch: (eventName: string, detail?: any) => void;
+  element: Element;
+  event: Event;
+  eventName: string;
+  handlers: { handler: (context: AsyncLoaderContext) => Promise<any> | any };
+  container: Element;
+  stop: () => void;
+}
+
 export interface AsyncLoaderConfig {
-  handlerRegistry: { handler: (context: any) => Promise<any> | any };
+  handlerRegistry: { handler: (context: AsyncLoaderContext) => Promise<any> | any };
   containerAttribute?: string;
   eventPrefix?: string;
   containers?: Map<Element, Map<string, Map<Element, string>>>;
@@ -226,11 +239,16 @@ export class AsyncLoader {
     const listeners = new Map();
     this.containers.set(containerElement, listeners);
 
+    // TODO: We still need to parse the container for the event type
+    // even when doing lazy event registration
     this.events.forEach((eventName) => {
       // console.log('setupContainerListeners: adding event listener for', eventName);
       containerElement.addEventListener(
         eventName,
         (event) => {
+          // TODO: we may not need to parse the container anymore for the event type
+          // when doing lazy event registration
+
           // Lazy parse the element for the event type before handling the event
           this.parseContainerElement(containerElement, eventName);
           // Handle the event when it occurs
@@ -344,6 +362,7 @@ export class AsyncLoader {
   dispatch(eventName: string | CustomEvent, detail?: any) {
     // create the custom event
     let customEvent;
+    let result = false;
     if (eventName instanceof CustomEvent) {
       customEvent = eventName;
       detail = eventName.detail;
@@ -353,10 +372,30 @@ export class AsyncLoader {
     }
     // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
     this.containers.forEach((listeners, containerElement) => {
+      // TODO: refactor code to avoid adding the same event listener multiple times
+      // this is now lazy registering
+      if (!this.events.includes(eventName)) {
+        this.events.push(eventName);
+        // add the event listener to the container
+        containerElement.addEventListener(
+          eventName,
+          (event) => {
+            // TODO: we don't need to parse the container for the event type
+            // when doing lazy event registration
+
+            // Lazy parse the element for the event type before handling the event
+            // this.parseContainerElement(containerElement, eventName);
+            // Handle the event when it occurs
+            this.handleContainerEvent(containerElement, event);
+            // console.log('setupContainerListeners: event handled', res);
+          },
+          true, // Use capturing phase to ensure the handler runs before other listeners
+        );
+        // add the event to the events array
+      }
       // console.log('dispatch: parsing container elements for event', eventName);
       // lazy parse the container for the event type
       this.parseContainerElement(containerElement, eventName);
-
       // if there are listeners for the event and rely on side effects
       if (listeners.has(eventName)) {
         // Parse the container for the event type before handling the event
@@ -366,6 +405,7 @@ export class AsyncLoader {
           eventListeners.forEach((_attrValue, element) => {
             if (element.isConnected) {
               element.dispatchEvent(customEvent);
+              result = true;
             } else {
               cleanup.push(element);
             }
@@ -377,6 +417,7 @@ export class AsyncLoader {
         }
       }
     });
+    return result;
   }
 
   // Handles an event occurring within a container
