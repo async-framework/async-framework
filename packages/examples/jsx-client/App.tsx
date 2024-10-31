@@ -1,15 +1,15 @@
 // deno-lint-ignore no-unused-vars
-import { jsx, createSignal } from "async-framework";
+import { createSignal, jsx } from "async-framework";
 import { Counter } from "./Counter.tsx";
 
 export function App() {
-  const [name, setName] = createSignal("World");
+  const [name, setName, nameSig] = createSignal("World");
 
   return (
     <div class="min-h-screen bg-gray-100 py-8 px-4">
       <div class="max-w-3xl mx-auto space-y-8">
         <div class="bg-white rounded-lg shadow-md p-6">
-          <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {name()}</h1>
+          <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {nameSig}</h1>
           <input
             type="text"
             value={name()}
