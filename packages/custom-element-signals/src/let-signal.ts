@@ -30,12 +30,6 @@ export class LetSignal<T> extends HTMLElement {
 
   signal: null | Signal<T> = null;
   _signalRegistry: SignalStoreInstance;
-
-  attributes!: NamedNodeMap & {
-    name: { value: string };
-    value: { value: string };
-    save: { value: string };
-  };
   constructor() {
     super();
     // if ((globalThis as any).signalRegistry) {
@@ -60,7 +54,7 @@ export class LetSignal<T> extends HTMLElement {
   createSignal(name: string, value?: any) {
     // Use the value attribute if it exists, otherwise use the innerHTML
     if (value === undefined) {
-      const strValue = this.attributes?.["value"]?.value || this.innerHTML ||
+      const strValue = this.getAttribute("value") || this.innerHTML ||
         "";
       value = parseAttributeValue(strValue);
     }
@@ -71,13 +65,13 @@ export class LetSignal<T> extends HTMLElement {
     // attributeChangedCallback fires before connectedCallback
     this.ready = true;
 
-    const name = this.attributes["name"]?.value;
+    const name = this.getAttribute("name");
     if (!name) {
       throw new Error("let-signal must have a name attribute");
     }
     // console.log('connectedCallback', name)
 
-    const save = this.attributes["save"]?.value;
+    const save = this.getAttribute("save");
     let value = undefined;
     // use handler registry
     if (save) {
@@ -131,8 +125,10 @@ export class LetSignal<T> extends HTMLElement {
   }
 
   disconnectedCallback() {
-    const name = this.attributes["name"].value;
-    this._signalRegistry.delete(name);
+    const name = this.getAttribute("name");
+    if (name) {
+      this._signalRegistry.delete(name);
+    }
     this.ready = false;
     // (this as any)._signalRegistry = null;
     this.signal?.cleanUp();

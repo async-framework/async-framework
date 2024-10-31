@@ -6,11 +6,6 @@ import { getTemplateContent } from "./utils/template-helpers";
 
 export class SignalHtml extends HTMLElement {
   static observedAttributes = ["name", "template-id"];
-  attributes!: NamedNodeMap & {
-    name: { value: string };
-    "template-id"?: { value: string };
-  };
-
   private signal: Signal<any> | null = null;
   private cleanUp: (() => void) | null = null;
   private template: string = '';
@@ -30,12 +25,12 @@ export class SignalHtml extends HTMLElement {
   
   connectedCallback() {
     if (!this.isConnected) return;
-    const name = this.attributes["name"]?.value;
+    const name = this.getAttribute("name");
     if (!name) {
       throw new Error("signal-html must have a name attribute");
     }
 
-    const templateId = this.attributes["template-id"]?.value || generateTemplateId(this);
+    const templateId = this.getAttribute("template-id") || generateTemplateId(this);
     const content = getTemplateContent(this, templateId, "signal-html");
     
     if (content) {

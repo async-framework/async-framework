@@ -8,11 +8,6 @@ export class SignalText extends HTMLElement {
     "watch"
   ];
 
-  attributes!: NamedNodeMap & {
-    name: { value: string };
-    watch?: { value: string };
-  };
-
   signal: null | Signal<any> = null;
   _signalRegistry: Map<string, Signal<any>>;
   _watch: string | null = null;
@@ -29,8 +24,8 @@ export class SignalText extends HTMLElement {
 
   connectedCallback() {
     this.mounted = true;
-    const name = this.attributes["name"]?.value;
-    this._watch = this.attributes["watch"]?.value ?? null;
+    const name = this.getAttribute("name");
+    this._watch = this.getAttribute("watch") ?? null;
     if (!name) {
       throw new Error("signal-text must have a name attribute");
     }
