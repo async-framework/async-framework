@@ -1,30 +1,41 @@
 // deno-lint-ignore no-unused-vars
-import { jsx, signal } from "async-framework";
+import { jsx, signal, cls, computed } from "async-framework";
 
 export function Counter() {
   const count = signal(0);
   const theme = signal<"light" | "dark">("light");
 
-  const toggleTheme = () => {
-    theme.value = theme.value === "light" ? "dark" : "light";
-  };
+  // Create computed signals that automatically track dependencies
+  const isDark = computed(() => theme.value === "dark");
+  const isPositive = computed(() => count.value > 0);
+  const isNegative = computed(() => count.value < 0);
+  const isZero = computed(() => count.value === 0);
+
+  // Example of using track directly
+  const classes = computed(() =>
+    cls("rounded-lg shadow-md p-6", {
+      "bg-gray-800": isDark.value,
+      "bg-white": !isDark.value,
+    })
+  );
 
   return (
-    <div
-      class={`bg-white rounded-lg shadow-md p-6 ${
-        theme.value === "dark" ? "bg-gray-800" : "bg-white"
-      }`}
-    >
+    <div class={classes}>
       <div class="flex justify-between items-center mb-4">
         <h2
-          class={`text-2xl font-semibold ${
-            theme.value === "dark" ? "text-white" : "text-gray-800"
-          }`}
+          class={computed(() =>
+            cls("text-2xl font-semibold", {
+              "text-white": isDark.value,
+              "text-gray-800": !isDark.value,
+            })
+          )}
         >
           Count: {count}
         </h2>
         <button
-          onClick={toggleTheme}
+          onClick={() =>
+            (theme.value = theme.value === "light" ? "dark" : "light")
+          }
           class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors"
         >
           Toggle Theme
@@ -53,19 +64,21 @@ export function Counter() {
       </div>
 
       <div
-        class={`mt-4 p-4 rounded-md ${
-          count.value > 0
-            ? "bg-green-100 text-green-800"
-            : count.value < 0
-            ? "bg-red-100 text-red-800"
-            : "bg-gray-100 text-gray-800"
-        }`}
+        class={computed(() =>
+          cls("mt-4 p-4 rounded-md", {
+            "bg-green-100 text-green-800": isPositive.value,
+            "bg-red-100 text-red-800": isNegative.value,
+            "bg-gray-100 text-gray-800": isZero.value,
+          })
+        )}
       >
-        {count.value > 0
-          ? "Number is positive!"
-          : count.value < 0
-          ? "Number is negative!"
-          : "Number is zero!"}
+        {computed(() =>
+          count.value > 0
+            ? "Number is positive!"
+            : count.value < 0
+            ? "Number is negative!"
+            : "Number is zero!"
+        )}
       </div>
     </div>
   );
