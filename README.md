@@ -14,7 +14,7 @@ A lightweight, signal-based framework for building reactive web applications wit
 ### 1. Signals
 
 Signals are reactive state containers that automatically track dependencies and update subscribers:
-
+```tsx
     import { signal, computed } from './async-framework';
 
     // Create a basic signal
@@ -26,11 +26,12 @@ Signals are reactive state containers that automatically track dependencies and 
 
     // Create a computed signal
     const doubled = computed(() => count.value * 2);
+```
 
 ### 2. Custom Elements
 
 Create reactive web components using signals:
-
+```tsx
     // counter-element.js
     import { signal } from './async-framework';
 
@@ -53,13 +54,14 @@ Create reactive web components using signals:
     }
 
     customElements.define('counter-element', CounterElement);
+```
 
 ### 3. Async Event Handlers
 
 Event handlers can be loaded asynchronously and chained:
 
 HTML:
-
+```html
     <!-- Multiple handlers separated by commas -->
     <button 
       on:click="./handlers/validate.js,./handlers/submit.js">
@@ -70,9 +72,10 @@ HTML:
     <div on:dragover="./handlers/drag.js#onDragover">
       Drag here
     </div>
+```
 
 Handler files:
-
+```tsx
     // handlers/validate.js
     export function handler(context) {
       const { event, element } = context;
@@ -88,11 +91,12 @@ Handler files:
       const result = await submitData(element.value);
       return result;
     }
+```
 
 ### 4. JSX Components
 
 Create components using JSX/TSX:
-
+```tsx
     // Counter.tsx
     import { signal } from './async-framework';
 
@@ -108,13 +112,13 @@ Create components using JSX/TSX:
         </div>
       );
     }
-
+```
 ## Complete Example
 
 Here's a complete example combining all features:
 
 index.html:
-
+```html
     <!DOCTYPE html>
     <html>
     <head>
@@ -123,7 +127,7 @@ index.html:
     <body>
       <todo-app>
         <input type="text" on:keyup="./handlers/input.js">
-        <button on:click="./handlers/add-todo.js,./handlers/clear-input.js">
+        <button on:click="./handlers/add-todo.js, ./handlers/clear-input.js">
           Add Todo
         </button>
         <ul id="todo-list"></ul>
@@ -135,9 +139,9 @@ index.html:
       </script>
     </body>
     </html>
-
+```
 TodoApp.js:
-
+```tsx
     import { signal } from './async-framework';
 
     export class TodoApp extends HTMLElement {
@@ -161,9 +165,10 @@ TodoApp.js:
         });
       }
     }
+```
 
 Handlers:
-
+```tsx
     // handlers/input.js
     export function handler(context) {
       const { element, component } = context;
@@ -185,6 +190,7 @@ Handlers:
       component.inputValue.value = '';
       context.element.querySelector('input').value = '';
     }
+```
 
 ## Key Features
 
@@ -206,12 +212,14 @@ Handlers:
 
 ## Project Structure
 
+```
     packages/
       examples/          # Example applications
       async-loader/      # Core async loading functionality
       custom-signals/    # Signal implementation
       dev/              # Development server
       custom-element-signals/  # Custom element integration
+```
 
 ## Getting Started
 
@@ -235,6 +243,7 @@ I'm using a custom web framework with the following characteristics:
 
 BASIC SETUP:
 - Create an index.html with this structure:
+```html
     <!DOCTYPE html>
     <html>
     <head>
@@ -243,7 +252,7 @@ BASIC SETUP:
     <body>
       <div id="app"></div>
       <script type="module">
-        import { render } from './async-framework/index.ts';
+        import { render } from 'async-framework';
         import { App } from './App.tsx';
         
         // Bootstrap the application
@@ -251,11 +260,13 @@ BASIC SETUP:
       </script>
     </body>
     </html>
-
+```
 JSX COMPONENTS (Preferred Method):
 - Create components in .tsx files
 - Use signals for state management
+
 Example App.tsx:
+```tsx
     import { signal } from './async-framework';
 
     export function App() {
@@ -268,6 +279,7 @@ Example App.tsx:
         </div>
       );
     }
+```
 
 EVENT HANDLING:
 - Events are handled using file paths in on: attributes
@@ -277,38 +289,44 @@ EVENT HANDLING:
 Handler Patterns:
 
 1. Default Export:
+```tsx
     // handlers/submit.js
     export default function(context) {
       // Used when no specific method is referenced
     }
-
+```
 2. Named Event Handler:
+```tsx
     // handlers/form.js
     export function onSubmit(context) {
       // Automatically matched when event name is "submit"
     }
+```
 
 3. Hash-Referenced Export:
+```jsx
     // handlers/drag.js
     export function onDragstart(context) {}
     export function onDragend(context) {}
     
     <!-- Use hash to target specific export -->
     <div on:drag="./handlers/drag.js#onDragstart">
-
+```
 4. Direct Handler Function:
+```tsx
     // handlers/click.js
     export function handler(context) {
       // Generic handler function
     }
-
+```
 5. Inline Function (JSX):
+```tsx
     <button on:click={(context) => {
       console.log('Clicked!', context);
     }}>
-
+```
 Examples:
-
+```html
     <!-- Chain multiple handler files -->
     <button on:click="./handlers/validate.js,./handlers/submit.js">
       Submit
@@ -323,8 +341,9 @@ Examples:
     <form on:submit="./handlers/form.js">
       <!-- handler will use onSubmit export -->
     </form>
-
+```
 Handler Context:
+```jsonc
     {
       event,        // Original DOM event
       element,      // Target element
@@ -335,7 +354,7 @@ Handler Context:
       container,    // Container element
       stop()        // Stop event propagation
     }
-
+```
 Control Flow:
 - Set context.canceled = true to stop handler chain
 - Return values are passed to next handler via context.value
@@ -347,20 +366,23 @@ SIGNALS:
 - Access value with .value
 - Can be computed using computed(() => ...)
 Example:
+```tsx
     const count = signal(0);
     count.value++;  // Updates all subscribers
     const doubled = computed(() => count.value * 2);
-
+```
 HANDLER FILES:
 - Create in handlers/ directory
 - Export a handler function
 Example handlers/increment.js:
+```tsx
     export function handler(context) {
       const { component } = context;
       component.count.value++;
     }
-
+```
 FILE STRUCTURE:
+```
     project/
       ├── index.html
       ├── App.tsx
@@ -369,6 +391,7 @@ FILE STRUCTURE:
       └── handlers/
           ├── increment.js
           └── submit.js
+```
 
 When working with this framework, please follow these conventions and patterns. The framework emphasizes clean separation of concerns, reactive state management, and async event handling.
 
