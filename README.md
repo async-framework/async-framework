@@ -42,9 +42,9 @@ Create reactive web components using signals:
       }
 
       connectedCallback() {
-        this.innerHTML = 
+        this.innerHTML = /*html*/`
           <button on:click="./handlers/increment.js">Count: ${this.count.value}</button>
-        ;
+        `;
         
         // Auto-update view when signal changes
         this.count.subscribe(newValue => {
@@ -155,12 +155,12 @@ TodoApp.js:
         this.todos.subscribe(todos => {
           const list = this.querySelector('#todo-list');
           list.innerHTML = todos
-            .map(todo => 
+            .map(todo => /*html*/`
               <li>
                 ${todo}
                 <button on:click="./handlers/remove-todo.js">Remove</button>
               </li>
-            )
+            `)
             .join('');
         });
       }
@@ -244,22 +244,25 @@ I'm using a custom web framework with the following characteristics:
 BASIC SETUP:
 - Create an index.html with this structure:
 ```html
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>App</title>
-    </head>
-    <body>
-      <div id="app"></div>
-      <script type="module">
-        import { render } from 'async-framework';
-        import { App } from './App.tsx';
-        
-        // Bootstrap the application
-        render(<App />, document.getElementById('app'));
-      </script>
-    </body>
-    </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>App</title>
+</head>
+<body>
+
+  <div id="app"></div>
+
+  <script type="module">
+    import { render } from 'async-framework';
+    import { App } from './App.tsx';
+    
+    // Bootstrap the application
+    render(<App />, document.getElementById('app'));
+  </script>
+
+</body>
+</html>
 ```
 JSX COMPONENTS (Preferred Method):
 - Create components in .tsx files
@@ -295,7 +298,7 @@ Handler Patterns:
       // Used when no specific method is referenced
     }
 ```
-2. Named Event Handler:
+1. Named Event Handler:
 ```tsx
     // handlers/form.js
     export function onSubmit(context) {
@@ -303,7 +306,7 @@ Handler Patterns:
     }
 ```
 
-3. Hash-Referenced Export:
+1. Hash-Referenced Export:
 ```jsx
     // handlers/drag.js
     export function onDragstart(context) {}
@@ -312,14 +315,14 @@ Handler Patterns:
     <!-- Use hash to target specific export -->
     <div on:drag="./handlers/drag.js#onDragstart">
 ```
-4. Direct Handler Function:
+1. Direct Handler Function:
 ```tsx
     // handlers/click.js
     export function handler(context) {
       // Generic handler function
     }
 ```
-5. Inline Function (JSX):
+1. Inline Function (JSX):
 ```tsx
     <button on:click={(context) => {
       console.log('Clicked!', context);
@@ -328,7 +331,7 @@ Handler Patterns:
 Examples:
 ```html
     <!-- Chain multiple handler files -->
-    <button on:click="./handlers/validate.js,./handlers/submit.js">
+    <button on:click="./handlers/validate.js, ./handlers/submit.js">
       Submit
     </button>
 
