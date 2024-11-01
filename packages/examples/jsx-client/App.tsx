@@ -1,5 +1,5 @@
 // deno-lint-ignore no-unused-vars
-import { jsx, AsyncLoaderContext, createSignal, signal } from "async-framework";
+import { AsyncLoaderContext, createSignal, jsx, signal } from "async-framework";
 import { Counter } from "./Counter.tsx";
 
 export function onUpdate(context: AsyncLoaderContext<string>) {
@@ -29,7 +29,7 @@ export function App() {
                 setName(e.target.value);
                 const success = globalThis.framework.loader.dispatch(
                   "update",
-                  e.target.value
+                  e.target.value,
                 );
                 if (!success) {
                   console.error("Failed to dispatch update event");

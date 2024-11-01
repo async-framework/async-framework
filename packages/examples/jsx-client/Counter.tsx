@@ -1,10 +1,10 @@
 import {
-  // deno-lint-ignore no-unused-vars
-  jsx,
+  AsyncLoaderContext,
   cls,
   computed,
+  // deno-lint-ignore no-unused-vars
+  jsx,
   signal,
-  AsyncLoaderContext,
 } from "async-framework";
 
 export function onUpdate(context: AsyncLoaderContext<string>) {
@@ -44,9 +44,9 @@ export function Counter() {
           Count: {count}
         </h2>
         <button
-          onClick={() =>
-            (theme.value = theme.value === "light" ? "dark" : "light")
-          }
+          onClick={() => (theme.value = theme.value === "light"
+            ? "dark"
+            : "light")}
           class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors"
         >
           Toggle Theme

@@ -11,7 +11,7 @@ export interface AsyncLoaderContext<T = any, M = any> {
   handlers: {
     handler: <R = any>(
       this: M,
-      context: AsyncLoaderContext<T, M>
+      context: AsyncLoaderContext<T, M>,
     ) => Promise<R> | R;
   };
   container: Element;
@@ -177,12 +177,12 @@ export class AsyncLoader {
     const self = this;
     if (!containerElement) {
       const containerEls = this.getContainers();
-      containerEls.forEach(function newHandleForEachContainer(el){
+      containerEls.forEach(function newHandleForEachContainer(el) {
         self.handleNewContainer(el);
       });
     }
     if (Array.isArray(containerElement)) {
-      containerElement.forEach(function newHandleForEachContainer(el){
+      containerElement.forEach(function newHandleForEachContainer(el) {
         self.handleNewContainer(el);
       });
     } else if (containerElement?.hasAttribute?.(this.containerAttribute)) {
@@ -388,55 +388,57 @@ export class AsyncLoader {
     }
     const self = this;
     // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
-    this.containers.forEach(function newAddEventListener(listeners, containerElement) {
-      // TODO: refactor code to avoid adding the same event listener multiple times
-      // this is now lazy registering
-      if (!self.events.includes(eventName)) {
-        self.events.push(eventName);
-        // add the event listener to the container
-        containerElement.addEventListener(
-          eventName,
-          function newHandleContainerEvent(event) {
-            // TODO: we don't need to parse the container for the event type
-            // when doing lazy event registration
+    this.containers.forEach(
+      function newAddEventListener(listeners, containerElement) {
+        // TODO: refactor code to avoid adding the same event listener multiple times
+        // this is now lazy registering
+        if (!self.events.includes(eventName)) {
+          self.events.push(eventName);
+          // add the event listener to the container
+          containerElement.addEventListener(
+            eventName,
+            function newHandleContainerEvent(event) {
+              // TODO: we don't need to parse the container for the event type
+              // when doing lazy event registration
 
-            // Lazy parse the element for the event type before handling the event
-            // this.parseContainerElement(containerElement, eventName);
-            // Handle the event when it occurs
-            self.handleContainerEvent(containerElement, event);
-            // console.log('setupContainerListeners: event handled', res);
-          },
-          true, // Use capturing phase to ensure the handler runs before other listeners
-        );
-        // add the event to the events array
-      }
-      // console.log('dispatch: parsing container elements for event', eventName);
-      // lazy parse the container for the event type
-      self.parseContainerElement(containerElement, eventName);
-      // if there are listeners for the event and rely on side effects
-      if (listeners.has(eventName)) {
-        // Parse the container for the event type before handling the event
-        const eventListeners = listeners.get(eventName);
-        if (eventListeners) {
-          const cleanup: Element[] = [];
-          eventListeners.forEach(function newHandleEventListeners(
-            _attrValue,
-            element,
-          ) {
-            if (element.isConnected) {
-              element.dispatchEvent(customEvent);
-              success = true;
-            } else {
-              cleanup.push(element);
-            }
-          });
-          // remove elements that are not connected
-          cleanup.forEach(function newHandleCleanup(element) {
-            eventListeners.delete(element);
-          });
+              // Lazy parse the element for the event type before handling the event
+              // this.parseContainerElement(containerElement, eventName);
+              // Handle the event when it occurs
+              self.handleContainerEvent(containerElement, event);
+              // console.log('setupContainerListeners: event handled', res);
+            },
+            true, // Use capturing phase to ensure the handler runs before other listeners
+          );
+          // add the event to the events array
         }
-      }
-    });
+        // console.log('dispatch: parsing container elements for event', eventName);
+        // lazy parse the container for the event type
+        self.parseContainerElement(containerElement, eventName);
+        // if there are listeners for the event and rely on side effects
+        if (listeners.has(eventName)) {
+          // Parse the container for the event type before handling the event
+          const eventListeners = listeners.get(eventName);
+          if (eventListeners) {
+            const cleanup: Element[] = [];
+            eventListeners.forEach(function newHandleEventListeners(
+              _attrValue,
+              element,
+            ) {
+              if (element.isConnected) {
+                element.dispatchEvent(customEvent);
+                success = true;
+              } else {
+                cleanup.push(element);
+              }
+            });
+            // remove elements that are not connected
+            cleanup.forEach(function newHandleCleanup(element) {
+              eventListeners.delete(element);
+            });
+          }
+        }
+      },
+    );
     return success;
   }
 

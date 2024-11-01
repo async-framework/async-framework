@@ -300,6 +300,7 @@ EVENT HANDLING:
   attrValue,       // Original attribute value
   handlers,        // Handler registry
   container,       // Container element
+  // TODO: component,       // Component ref
   module,          // Module file instance of the handler
   canceled,        // If we canceled the chained handlers
   break(),         // break out of chained handlers
@@ -386,6 +387,7 @@ Handler Context:
   attrValue,       // Original attribute value
   handlers,        // Handler registry
   container,       // Container element
+  // TODO: component,       // Component ref
   module,          // Module file instance of the handler
   canceled,        // If we canceled the chained handlers
   break(),         // break out of chained handlers

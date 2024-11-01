@@ -3,6 +3,13 @@ let currentTracker: (() => void) | null = null;
 
 export const signalSymbol = Symbol("signal");
 
+// Why: Defines a read-only version of a signal
+export type ReadSignal<T> =
+  & Omit<ReturnType<typeof signal<T>>, "set" | "value">
+  & {
+    readonly value: T;
+  };
+
 // Why: Creates a signal with tracking capabilities
 export function signal<T>(initialValue: T) {
   const subscribers = new Set<(value: T, oldValue: T) => void>();
@@ -72,8 +79,25 @@ export function createSignal<T>(
   return [sig.get, sig.set, sig];
 }
 
-// Why: Creates a computed signal that tracks its dependencies
-export function computed<T>(computation: () => T) {
+// Why: Creates a read-only version of a signal
+export function readSignal<T>(
+  sig: ReturnType<typeof signal<T>>,
+): ReadSignal<T> {
+  return {
+    get: sig.get,
+    subscribe: sig.subscribe,
+    track: sig.track,
+    valueOf: sig.valueOf,
+    get value() {
+      return sig.value;
+    },
+  };
+}
+
+// Why: Creates a computed signal that tracks its dependencies and returns a getter and read-only signal
+export function createComputed<T>(
+  computation: () => T,
+): [() => T, ReadSignal<T>] {
   const self = this;
   // console.log("computed.self", self);
   const sig = signal<T>(computation());
@@ -83,7 +107,21 @@ export function computed<T>(computation: () => T) {
     sig.value = computation.call(self);
   });
 
-  return sig;
+  return [sig.get, readSignal(sig)];
+}
+
+// Why: Creates a computed signal that tracks its dependencies
+export function computed<T>(computation: () => T): ReadSignal<T> {
+  const self = this;
+  // console.log("computed.self", self);
+  const sig = signal<T>(computation());
+
+  // Why: To initial computation with tracking
+  sig.track(function signalComputed() {
+    sig.value = computation.call(self);
+  });
+
+  return readSignal(sig);
 }
 
 // Why: Helps debug signal usage and dependencies
