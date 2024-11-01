@@ -79,6 +79,9 @@ const createPackageBundle = (entryPath: string) => {
 app.get("/async-framework.js", createPackageBundle("async-framework/index.ts"));
 app.get("/async-framework.ts", createPackageBundle("async-framework/index.ts"));
 app.get("/async-framework/jsx-runtime.ts", createPackageBundle("async-framework/jsx-runtime.ts"));
+app.get("/@async/framework.js", createPackageBundle("async-framework/index.ts"));
+app.get("/@async/framework.ts", createPackageBundle("async-framework/index.ts"));
+app.get("/@async/framework/jsx-runtime.ts", createPackageBundle("async-framework/jsx-runtime.ts"));
 
 
 // Handle both root and /examples routes
