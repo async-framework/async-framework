@@ -527,6 +527,13 @@ export class AsyncLoader {
           get canceled() {
             return stop;
           },
+          set canceled(v) {
+            console.warn(
+              "Please use context.break() instead of context.canceled",
+              v,
+            );
+            stop = Boolean(v);
+          },
           stringify(value, replacer = null, space = 2) {
             return JSON.stringify(value, replacer, space);
           },
