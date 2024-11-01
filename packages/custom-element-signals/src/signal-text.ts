@@ -54,8 +54,14 @@ export class SignalText extends HTMLElement {
     if (this._watch) {
       newValue = newValue[this._watch];
     }
+    
+    // Handle NaN separately since it can't be used in a switch statement
+    if (Number.isNaN(newValue)) {
+      this.innerHTML = "";
+      return;
+    }
+
     switch (newValue) {
-      case NaN:
       case undefined:
       case null:
         this.innerHTML = "";
