@@ -15,7 +15,7 @@ A lightweight, signal-based framework for building reactive web applications wit
 
 Signals are reactive state containers that automatically track dependencies and update subscribers:
 ```tsx
- import { signal, computed } from './async-framework';
+ import { signal, computed } from '@async/framework';
 
  // Create a basic signal
  const count = signal(0);
@@ -33,7 +33,7 @@ Signals are reactive state containers that automatically track dependencies and 
 Create reactive web components using signals:
 ```tsx
  // counter-element.js
- import { signal } from 'async-framework';
+ import { signal } from '@async/framework';
 
  export class CounterElement extends HTMLElement {
    constructor() {
@@ -98,7 +98,7 @@ Handler files:
 Create components using JSX/TSX:
 ```tsx
  // Counter.tsx
- import { signal } from 'async-framework';
+ import { signal } from '@async/framework';
 
  export function Counter() {
    const count = signal(0);
@@ -142,7 +142,7 @@ index.html:
 ```
 TodoApp.js:
 ```tsx
- import { signal } from './async-framework';
+ import { signal } from '@async/framework';
 
  export class TodoApp extends HTMLElement {
    constructor() {
@@ -254,7 +254,7 @@ BASIC SETUP:
   <div id="app"></div>
 
   <script type="module">
-    import { render } from 'async-framework';
+    import { render } from '@async/framework';
     import { App } from './App.tsx';
     
     // Bootstrap the application
@@ -270,7 +270,7 @@ JSX COMPONENTS (Preferred Method):
 
 Example App.tsx:
 ```tsx
-import { signal } from './async-framework';
+import { signal } from '@async/framework';
 
 export function App() {
   const count = signal(0);
