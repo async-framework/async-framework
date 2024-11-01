@@ -1,16 +1,20 @@
 // deno-lint-ignore no-unused-vars
-import { jsx, createSignal, AsyncLoaderContext } from "async-framework";
+import { jsx, AsyncLoaderContext, createSignal } from "async-framework";
 import { Counter } from "./Counter.tsx";
 
-export function onUpdate(context: AsyncLoaderContext) {
-  console.log("onUpdate", context);
+export function onUpdate(context: AsyncLoaderContext<string>) {
+  // console.log("App.module", context.module);
+  console.log("App.onUpdate", context.value);
 }
 
 export function App() {
   const [name, setName, nameSig] = createSignal("World");
 
   return (
-    <div class="min-h-screen bg-gray-100 py-8 px-4" on:update="App.tsx">
+    <div
+      class="min-h-screen bg-gray-100 py-8 px-4"
+      on:update="App.tsx, Counter.tsx"
+    >
       <div class="max-w-3xl mx-auto space-y-8">
         <div class="bg-white rounded-lg shadow-md p-6">
           <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {nameSig}</h1>

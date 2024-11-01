@@ -1,9 +1,12 @@
 // logger.js
 
-export default function logger({ element, event, value }) {
-  console.log("logger:", {
-    element: element.tagName,
-    event: event.type,
-    value,
-  });
+export default function logger({ element, event, value, stringify }) {
+  console.log(
+    "logger:",
+    stringify({
+      element: element.tagName,
+      event: event.type,
+      value,
+    }),
+  );
 }

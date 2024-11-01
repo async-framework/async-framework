@@ -1,20 +1,32 @@
 // deno-lint-ignore-file no-explicit-any
 import { escapeSelector, isPromise } from "./utils.ts";
 
-export interface AsyncLoaderContext {
-  value: any;
+export interface AsyncLoaderContext<T = any, M = any> {
+  value: T | undefined | null | Promise<T>;
   attrValue: string;
-  dispatch: (eventName: string, detail?: any) => void;
+  dispatch: (eventName: string, detail?: T) => void;
   element: Element;
-  event: Event;
+  event: Event & { detail?: T };
   eventName: string;
-  handlers: { handler: (context: AsyncLoaderContext) => Promise<any> | any };
+  handlers: {
+    handler: <R = any>(
+      this: M,
+      context: AsyncLoaderContext<T, M>
+    ) => Promise<R> | R;
+  };
   container: Element;
-  stop: () => void;
+  module: M;
+  break: () => void;
+  // mimic Event
+  preventDefault: () => void;
+  stopPropagation: () => void;
+  target: Event["target"];
 }
 
 export interface AsyncLoaderConfig {
-  handlerRegistry: { handler: (context: AsyncLoaderContext) => Promise<any> | any };
+  handlerRegistry: {
+    handler: (context: AsyncLoaderContext<any>) => Promise<any> | any;
+  };
   containerAttribute?: string;
   eventPrefix?: string;
   containers?: Map<Element, Map<string, Map<Element, string>>>;
@@ -162,12 +174,17 @@ export class AsyncLoader {
   // 4. Supporting both initial load and dynamically added containers
   // This ensures consistent event handling setup across the application.
   parseDOM(containerElement: undefined | any[] | any) {
+    const self = this;
     if (!containerElement) {
       const containerEls = this.getContainers();
-      containerEls.forEach((el) => this.handleNewContainer(el));
+      containerEls.forEach(function newHandleForEachContainer(el){
+        self.handleNewContainer(el);
+      });
     }
     if (Array.isArray(containerElement)) {
-      containerElement.forEach((el) => this.handleNewContainer(el));
+      containerElement.forEach(function newHandleForEachContainer(el){
+        self.handleNewContainer(el);
+      });
     } else if (containerElement?.hasAttribute?.(this.containerAttribute)) {
       this.handleNewContainer(containerElement);
     } else {
@@ -229,41 +246,39 @@ export class AsyncLoader {
   // 4. Maintaining a map of event listeners for proper cleanup
   // This reduces memory usage and improves performance compared to individual element listeners.
   setupContainerListeners(containerElement): boolean {
+    let success = false;
     if (!containerElement.isConnected) {
-      return false;
+      return success;
     }
     // avoid re-setting up listeners for the same container
     if (this.containers.has(containerElement)) {
-      return false;
+      return success;
     }
     const listeners = new Map();
     this.containers.set(containerElement, listeners);
+    const self = this;
 
     // TODO: We still need to parse the container for the event type
     // even when doing lazy event registration
-    this.events.forEach((eventName) => {
+    this.events.forEach(function newAddEventListener(eventName) {
       // console.log('setupContainerListeners: adding event listener for', eventName);
       containerElement.addEventListener(
         eventName,
-        (event) => {
+        function newHandleContainerEvent(event) {
           // TODO: we may not need to parse the container anymore for the event type
           // when doing lazy event registration
 
           // Lazy parse the element for the event type before handling the event
-          this.parseContainerElement(containerElement, eventName);
+          self.parseContainerElement(containerElement, eventName);
           // Handle the event when it occurs
-          this.handleContainerEvent(containerElement, event);
+          self.handleContainerEvent(containerElement, event);
           // console.log('setupContainerListeners: event handled', res);
         },
         true, // Use capturing phase to ensure the handler runs before other listeners
       );
     });
-
-    // eager parse all events for the container
-    // this.events.map((evt) => {
-    //   this.parseContainerElement(containerElement, evt);
-    // });
-    return true;
+    success = true;
+    return success;
   }
 
   // Parses elements within a container to identify and register event handlers
@@ -273,18 +288,19 @@ export class AsyncLoader {
   // 3. Supporting lazy parsing for better performance
   // This enables dynamic handler registration without requiring immediate processing of all elements.
   parseContainerElement(containerElement, eventName) {
+    const self = this;
     // Select elements with 'on:{event}' attributes for example 'on:click'
-    const eventAttr = `${this.eventPrefix}${eventName}`;
-    const elements = this.query(
+    const eventAttr = `${self.eventPrefix}${eventName}`;
+    const elements = self.query(
       containerElement,
       `[${escapeSelector(eventAttr)}]`,
     );
     // console.log('parseContainerElement: parsing container elements', elements, eventName);
-    elements.forEach((element: Element) => {
+    elements.forEach(function newParseContainerElement(element: Element) {
       const eventAttrValue = element.getAttribute(eventAttr);
       if (eventAttrValue) {
         // console.log('parseContainerElement: one attribute value', eventAttrValue);
-        this.addEventData(containerElement, eventName, element, eventAttrValue);
+        self.addEventData(containerElement, eventName, element, eventAttrValue);
       }
     });
 
@@ -362,7 +378,7 @@ export class AsyncLoader {
   dispatch(eventName: string | CustomEvent, detail?: any) {
     // create the custom event
     let customEvent;
-    let result = false;
+    let success = false;
     if (eventName instanceof CustomEvent) {
       customEvent = eventName;
       detail = eventName.detail;
@@ -370,23 +386,24 @@ export class AsyncLoader {
     } else {
       customEvent = this.createEvent(eventName, detail);
     }
+    const self = this;
     // grab all listeners for the event and emit the event to all elements that have registered handlers for the event
-    this.containers.forEach((listeners, containerElement) => {
+    this.containers.forEach(function newAddEventListener(listeners, containerElement) {
       // TODO: refactor code to avoid adding the same event listener multiple times
       // this is now lazy registering
-      if (!this.events.includes(eventName)) {
-        this.events.push(eventName);
+      if (!self.events.includes(eventName)) {
+        self.events.push(eventName);
         // add the event listener to the container
         containerElement.addEventListener(
           eventName,
-          (event) => {
+          function newHandleContainerEvent(event) {
             // TODO: we don't need to parse the container for the event type
             // when doing lazy event registration
 
             // Lazy parse the element for the event type before handling the event
             // this.parseContainerElement(containerElement, eventName);
             // Handle the event when it occurs
-            this.handleContainerEvent(containerElement, event);
+            self.handleContainerEvent(containerElement, event);
             // console.log('setupContainerListeners: event handled', res);
           },
           true, // Use capturing phase to ensure the handler runs before other listeners
@@ -395,29 +412,32 @@ export class AsyncLoader {
       }
       // console.log('dispatch: parsing container elements for event', eventName);
       // lazy parse the container for the event type
-      this.parseContainerElement(containerElement, eventName);
+      self.parseContainerElement(containerElement, eventName);
       // if there are listeners for the event and rely on side effects
       if (listeners.has(eventName)) {
         // Parse the container for the event type before handling the event
         const eventListeners = listeners.get(eventName);
         if (eventListeners) {
           const cleanup: Element[] = [];
-          eventListeners.forEach((_attrValue, element) => {
+          eventListeners.forEach(function newHandleEventListeners(
+            _attrValue,
+            element,
+          ) {
             if (element.isConnected) {
               element.dispatchEvent(customEvent);
-              result = true;
+              success = true;
             } else {
               cleanup.push(element);
             }
           });
           // remove elements that are not connected
-          cleanup.forEach((element) => {
+          cleanup.forEach(function newHandleCleanup(element) {
             eventListeners.delete(element);
           });
         }
       }
     });
-    return result;
+    return success;
   }
 
   // Handles an event occurring within a container
@@ -432,7 +452,7 @@ export class AsyncLoader {
     // deno-lint-ignore no-this-alias
     const self = this;
     // console.log('handleContainerEvent: handling container event', event);
-    const listeners = this.containers.get(containerElement);
+    const listeners = self.containers.get(containerElement);
     if (!listeners) {
       // console.error(
       //   "handleContainerEvent: no listeners found for container",
@@ -459,8 +479,14 @@ export class AsyncLoader {
       // console.log('handleContainerEvent: handling event for element', element.tagName, event.type, eventListeners);
       if (eventListeners.has(element)) {
         // Define the context with getters for accessing current state and elements
-        let value = undefined;
+        // Set the value to the event value
+        let value = domEvent instanceof CustomEvent
+          ? domEvent.detail
+          : undefined;
+        let module = undefined;
+
         const attrValue = eventListeners.get(element); // || element.getAttribute(this.eventPrefix + domEvent.type);
+        // Define the context with getters for accessing current state and elements
         const context = {
           get event() {
             return domEvent;
@@ -492,11 +518,32 @@ export class AsyncLoader {
           get container() {
             return containerElement;
           },
+          get module() {
+            return module;
+          },
+          set module(m) {
+            module = m;
+          },
           get canceled() {
             return stop;
           },
+          stringify(value, replacer = null, space = 2) {
+            return JSON.stringify(value, replacer, space);
+          },
+
+          // Mimic the event object
+          get target() {
+            return domEvent.target;
+          },
+          preventDefault() {
+            return domEvent.preventDefault();
+          },
+          stopPropagation() {
+            return domEvent.stopPropagation();
+          },
+
           // If the handler sets break to true, stop processing further handlers for this event
-          stop() {
+          break() {
             stop = true;
             return stop;
           },
@@ -525,6 +572,7 @@ export class AsyncLoader {
         }
         // clear and references to avoid memory leak
         value = undefined;
+        module = undefined;
 
         // If the event doesn't bubble, stop after handling the first matching element
         if (stop) {

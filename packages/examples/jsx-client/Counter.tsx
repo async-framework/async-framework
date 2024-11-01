@@ -1,5 +1,16 @@
-// deno-lint-ignore no-unused-vars
-import { jsx, cls, computed, signal } from "async-framework";
+import {
+  // deno-lint-ignore no-unused-vars
+  jsx,
+  cls,
+  computed,
+  signal,
+  AsyncLoaderContext,
+} from "async-framework";
+
+export function onUpdate(context: AsyncLoaderContext<string>) {
+  // console.log("Counter.module", context.module);
+  console.log("Counter.onUpdate", context.value);
+}
 
 export function Counter() {
   const count = signal(0);

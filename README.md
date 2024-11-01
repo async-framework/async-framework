@@ -312,7 +312,7 @@ Handler Patterns:
     export function onDragstart(context) {}
     export function onDragend(context) {}
     
-    <!-- Use hash to target specific export -->
+    // Use hash to target specific export
     <div on:drag="./handlers/drag.js#onDragstart">
 ```
 1. Direct Handler Function:
@@ -348,16 +348,24 @@ Examples:
 Handler Context:
 ```jsonc
 {
-   event,        // Original DOM event
-   element,      // Target element
-   dispatch(),   // Dispatch custom events
-   value,        // Passed between chained handlers
-   attrValue,    // Original attribute value
-   eventName,    // Name of the event
-   handlers,     // Handler registry
-   container,    // Container element
-   canceled,     // is we canceled the chained handlers
-   stop()        // break out of chained handlers
+   event,           // Original DOM event
+   element,         // Target element
+   dispatch(),      // Dispatch custom events
+   value,           // Passed between chained handlers
+
+   // helpers
+   eventName,       // Name of the event
+   attrValue,       // Original attribute value
+   handlers,        // Handler registry
+   container,       // Container element
+   module,          // Module file instance of the handler
+   canceled,        // If we canceled the chained handlers
+   break(),         // break out of chained handlers
+
+//  mimic Event
+   preventDefault(),
+   stopPropagation(),
+   target,
 }
 ```
 Control Flow:

@@ -39,6 +39,7 @@ export function createBundler(rootDir: string) {
         bundle: shouldBundle,
         treeShaking: false,
         minify: false,
+        // minify: true,
         ...options,
         define: {
           ...options.define,

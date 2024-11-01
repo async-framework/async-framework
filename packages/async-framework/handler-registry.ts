@@ -132,6 +132,7 @@ export class HandlerRegistry {
       try {
         // Retrieve the handler from the registry
         //                                        context.eventName
+        // context.module is set. then it's to undefined after each handler call
         let handler = this.getHandler(scriptPath, context);
         // If we need to grab an async handler, wait for it to resolve
         if (isPromise(handler)) {
@@ -141,13 +142,15 @@ export class HandlerRegistry {
         if (typeof handler === "function") {
           type handlerType = (context: any) => Promise<any> | any;
           // returnedValue = handler(context);
-          let returnedValue = (handler as handlerType)(context);
+          let returnedValue = (handler as handlerType).call(context, context);
           // if the handler returns a promise, wait for it to resolve
           if (isPromise(returnedValue)) {
             // console.log('HandlerRegistry.handler: waiting for handler to resolve', scriptPath);
             // Execute the handler asynchronously
             returnedValue = await (returnedValue as Promise<any>);
           }
+          // clear the module reference
+          context.module = undefined;
           // If the handler returns a value, store it
           if (returnedValue !== undefined) {
             // pass the returned value to the next handler
@@ -183,6 +186,7 @@ export class HandlerRegistry {
    */
   async getHandler(
     scriptPath,
+    // SET: context.module, GET: context.eventName
     context,
   ): Promise<((context: any) => Promise<any>) | ((context: any) => any)> {
     // Split the path and hash consistently at the start
@@ -197,6 +201,8 @@ export class HandlerRegistry {
         (eventName
           ? this.eventPrefix + convertToEventName(eventName)
           : this.defaultHandler);
+      // set the module reference
+      context.module = module;
       const handler = grabHandler(module, eventName, handlerName);
       return handler;
     }
@@ -216,6 +222,7 @@ export class HandlerRegistry {
       if (typeof handler === "function") {
         // Cache using the consistent key
         this.registry.set(cacheKey, module);
+        context.module = module;
         return handler;
       } else {
         console.error(
