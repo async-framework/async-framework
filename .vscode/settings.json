@@ -4,7 +4,7 @@
   "deno.enablePaths": [
     "./packages/examples",
     "./packages/example-apps",
-    "./packages/async-loader",
+    "./packages/async-framework",
     "./packages/custom-signals",
     "./packages/dev"
   ],

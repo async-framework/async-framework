@@ -96,6 +96,7 @@ export function readSignal<T>(
 
 // Why: Creates a computed signal that tracks its dependencies and returns a getter and read-only signal
 export function createComputed<T>(
+  this: any,
   computation: () => T,
 ): [() => T, ReadSignal<T>] {
   const self = this;
@@ -111,7 +112,7 @@ export function createComputed<T>(
 }
 
 // Why: Creates a computed signal that tracks its dependencies
-export function computed<T>(computation: () => T): ReadSignal<T> {
+export function computed<T>(this: any, computation: () => T): ReadSignal<T> {
   const self = this;
   // console.log("computed.self", self);
   const sig = signal<T>(computation());

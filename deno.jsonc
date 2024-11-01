@@ -1,8 +1,8 @@
 {
   "lock": true,
   "tasks": {
-    "lint": "deno lint packages/examples/ packages/async-framework/ --ignore=packages/custom-element-signals/ --ignore=packages/examples/qwik-hello-world/",
-    "fmt": "deno fmt packages/examples/ packages/async-framework/ --ignore=packages/custom-element-signals/ --ignore=packages/examples/qwik-hello-world/",
+    "lint": "deno lint packages/examples/ packages/async-framework/",
+    "fmt": "deno fmt packages/examples/ packages/async-framework/",
     "test": "deno test -RWN --allow-run=deno,bun,node,npx --clean --trace-leaks",
     "start": "deno run -A packages/dev/server.ts",
     "start:app": "deno run -A packages/example-apps/hello-world/server.tsx",
@@ -41,5 +41,16 @@
     // "jsxFactory": "Async.createElement",
     // "jsxFragmentFactory": "Async.Fragment",
     "jsxImportSource": "hono/jsx"
+  },
+  "fmt": {
+    "exclude": [
+      "packages/examples/qwik-hello-world/",
+      "packages/custom-element-signals/"
+    ]
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-this-alias", "no-explicit-any"]
+    }
   }
 }

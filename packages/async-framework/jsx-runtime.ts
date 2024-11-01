@@ -17,6 +17,7 @@ type Component = (props: any) => JSXElement | Signal<any>;
 
 // Why: Provides JSX runtime support for client-side rendering with proper typing
 export function jsx(
+  this: any,
   type: string | Component,
   props: Record<string, any> | null,
   ...children: JSXChild[]
