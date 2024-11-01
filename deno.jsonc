@@ -30,7 +30,7 @@
     "rollup": "npm:rollup@^3.25.1",
     "@rollup/plugin-typescript": "npm:@rollup/plugin-typescript@^11.1.6",
     "tslib": "npm:tslib@^2.3.0",
-    "#/": "./"
+    "#/": "./packages/"
   },
   "compilerOptions": {
     "noImplicitAny": false,

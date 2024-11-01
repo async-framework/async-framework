@@ -4,13 +4,13 @@ import { serveStatic } from "hono/deno";
 import { appendTrailingSlash } from "hono/trailing-slash";
 import { dirname, fromFileUrl, join, relative } from "@std/path";
 
-import { findAvailablePort } from "./server-utils/findAvailablePort.ts";
 import {
+  findAvailablePort,
   getDirectoryContents,
   renderDirectoryListing,
-} from "./server-utils/renderDirectoryListing.ts";
-import { createBundler } from "./server-utils/bundler.ts";
-// import { createCache } from "./server-utils/request-cache.ts";
+  createBundler,
+  // createCache
+} from "./server-utils/index.ts";
 
 const rootRepoDir = Deno.cwd();
 const serverDirectory = dirname(fromFileUrl(import.meta.url));

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
-import { findAvailablePort } from "../../dev/server-utils/findAvailablePort.ts";
+import { findAvailablePort } from "#/dev/server-utils/index.ts";
 
 const app = new Hono();
 
