@@ -23,7 +23,7 @@ export function jsx(
 ): JSXElement {
   // Handle function components
   if (typeof type === "function") {
-    const result = type(props);
+    const result = type.call(this, props);
     // Handle case where component returns a signal
     if ((result as Signal<any>)?.subscribe) {
       const signal = result as Signal<any>;

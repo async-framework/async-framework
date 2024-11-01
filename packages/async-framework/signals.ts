@@ -1,6 +1,8 @@
 // Why: Tracks the current computation context for signal dependencies
 let currentTracker: (() => void) | null = null;
 
+export const signalSymbol = Symbol("signal");
+
 // Why: Creates a signal with tracking capabilities
 export function signal<T>(initialValue: T) {
   const subscribers = new Set<(value: T, oldValue: T) => void>();
@@ -8,6 +10,7 @@ export function signal<T>(initialValue: T) {
 
   // Why: To get the value of the signal
   function get() {
+    // console.log("signal.get", currentTracker, this);
     // Track when the signal is read
     if (currentTracker) {
       subscribers.add(currentTracker);
@@ -16,25 +19,21 @@ export function signal<T>(initialValue: T) {
   }
   // Why: To set the value of the signal
   function set(newValue: T) {
+    // console.log("signal.set", currentTracker, this);
     const oldValue = value;
     value = newValue;
     // Notify all subscribers of the change
-    subscribers.forEach((subscriber) => subscriber(value, oldValue));
+    subscribers.forEach(function signalSet(subscriber) {
+      subscriber(value, oldValue);
+    });
   }
 
   return {
     get value() {
-      // Track when the signal is read
-      if (currentTracker) {
-        subscribers.add(currentTracker);
-      }
-      return value;
+      return get.call(this);
     },
     set value(newValue: T) {
-      const oldValue = value;
-      value = newValue;
-      // Notify all subscribers of the change
-      subscribers.forEach((subscriber) => subscriber(value, oldValue));
+      set.call(this, newValue);
     },
     get,
     set,
@@ -46,9 +45,13 @@ export function signal<T>(initialValue: T) {
     // Why: Allows tracking signal reads within a computation
     track<R>(computation: () => R): R {
       const prevTracker = currentTracker;
-      currentTracker = () => computation();
+      // console.log("signal.track", prevTracker, this);
+      const self = this;
+      currentTracker = function signalComputed() {
+        return computation.call(self);
+      };
       try {
-        return computation();
+        return computation.call(self);
       } finally {
         currentTracker = prevTracker;
       }
@@ -65,16 +68,19 @@ export function createSignal<T>(
 ): [() => T, (newValue: T) => void, ReturnType<typeof signal<T>>] {
   const sig = signal<T>(initialValue);
   // Why: To return the getter, setter, and signal object
+  // (returned as any)[signalSymbol] = sig;
   return [sig.get, sig.set, sig];
 }
 
 // Why: Creates a computed signal that tracks its dependencies
 export function computed<T>(computation: () => T) {
+  const self = this;
+  // console.log("computed.self", self);
   const sig = signal<T>(computation());
 
   // Why: To initial computation with tracking
-  sig.track(() => {
-    sig.value = computation();
+  sig.track(function signalComputed() {
+    sig.value = computation.call(self);
   });
 
   return sig;
