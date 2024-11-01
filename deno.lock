@@ -15,6 +15,8 @@
     "jsr:@std/fmt@^1.0.2": "1.0.2",
     "jsr:@std/http@1": "1.0.8",
     "jsr:@std/internal@^1.0.4": "1.0.4",
+    "jsr:@std/json@1": "1.0.1",
+    "jsr:@std/jsonc@1": "1.0.1",
     "jsr:@std/media-types@^1.0.3": "1.0.3",
     "jsr:@std/net@^1.0.4": "1.0.4",
     "jsr:@std/path@1": "1.0.6",
@@ -100,6 +102,15 @@
     },
     "@std/internal@1.0.4": {
       "integrity": "62e8e4911527e5e4f307741a795c0b0a9e6958d0b3790716ae71ce085f755422"
+    },
+    "@std/json@1.0.1": {
+      "integrity": "1f0f70737e8827f9acca086282e903677bc1bb0c8ffcd1f21bca60039563049f"
+    },
+    "@std/jsonc@1.0.1": {
+      "integrity": "6b36956e2a7cbb08ca5ad7fbec72e661e6217c202f348496ea88747636710dda",
+      "dependencies": [
+        "jsr:@std/json"
+      ]
     },
     "@std/media-types@1.0.3": {
       "integrity": "b12d30a7852f7578f4d210622df713bbfd1cbdd9b4ec2eaf5c1845ab70bab159"
@@ -312,6 +323,7 @@
       "jsr:@std/async@1",
       "jsr:@std/expect@1",
       "jsr:@std/http@1",
+      "jsr:@std/jsonc@1",
       "jsr:@std/path@1",
       "npm:@hono/zod-validator@*",
       "npm:@rollup/plugin-typescript@^11.1.6",

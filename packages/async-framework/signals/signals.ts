@@ -10,6 +10,8 @@ export type ReadSignal<T> =
     readonly value: T;
   };
 
+
+export type Signal<T> = ReturnType<typeof signal<T>>;
 // Why: Creates a signal with tracking capabilities
 export function signal<T>(initialValue: T) {
   const subscribers = new Set<(value: T, oldValue: T) => void>();
@@ -160,3 +162,4 @@ export function debugSignal<T>(
     },
   };
 }
+

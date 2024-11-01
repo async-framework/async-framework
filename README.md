@@ -299,6 +299,8 @@ EVENT HANDLING:
   eventName,       // Name of the event
   attrValue,       // Original attribute value
   handlers,        // Handler registry
+  signals,         // Signal registry
+  templates,       // Tenplate registry
   container,       // Container element
   // TODO: component,       // Component ref
   module,          // Module file instance of the handler
@@ -386,6 +388,8 @@ Handler Context:
   eventName,       // Name of the event
   attrValue,       // Original attribute value
   handlers,        // Handler registry
+  signals,         // Signal registry
+  templates,       // Tenplate registry
   container,       // Container element
   // TODO: component,       // Component ref
   module,          // Module file instance of the handler

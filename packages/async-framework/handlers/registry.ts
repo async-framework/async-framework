@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 // handlerRegistry.ts
-import { isPromise } from "./utils.ts";
+import { isPromise } from "../utils.ts";
 import {
   preventAndStop,
   preventDefault,

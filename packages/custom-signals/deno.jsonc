@@ -1,1 +1,6 @@
-{}
+{
+  "name": "@async/signals",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

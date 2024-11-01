@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { escapeSelector, isPromise } from "./utils.ts";
+import { escapeSelector, isPromise } from "../utils.ts";
+import type { Signal } from "../signals/signals.ts";
 
 export interface AsyncLoaderContext<T = any, M = any> {
   value: T | undefined | null | Promise<T>;
@@ -14,6 +15,10 @@ export interface AsyncLoaderContext<T = any, M = any> {
       context: AsyncLoaderContext<T, M>,
     ) => Promise<R> | R;
   };
+  signals: {
+    get: (id: string) => Signal<any> | undefined;
+    set: (id: string, signal: Signal<any>) => void;
+  };
   container: Element;
   module: M;
   break: () => void;
@@ -26,6 +31,14 @@ export interface AsyncLoaderContext<T = any, M = any> {
 export interface AsyncLoaderConfig {
   handlerRegistry: {
     handler: (context: AsyncLoaderContext<any>) => Promise<any> | any;
+  };
+  signalRegistry: {
+    get: (id: string) => Signal<any> | undefined;
+    set: (id: string, signal: Signal<any>) => void;
+  };
+  templateRegistry: {
+    get: (id: string) => string | undefined;
+    set: (id: string, template: string) => void;
   };
   containerAttribute?: string;
   eventPrefix?: string;
@@ -79,6 +92,14 @@ export class AsyncLoader {
    */
   private containers: Map<Element, Map<string, Map<Element, string>>>;
   private handlerRegistry: { handler: (context: any) => Promise<any> | any };
+  private signalRegistry: {
+    get: (id: string) => Signal<any> | undefined;
+    set: (id: string, signal: Signal<any>) => void;
+  };
+  private templateRegistry: {
+    get: (id: string) => string | undefined;
+    set: (id: string, template: string) => void;
+  };
   private events: string[];
   private eventPrefix: string;
   private containerAttribute: string;
@@ -90,6 +111,8 @@ export class AsyncLoader {
     this.config = config;
     this.context = config.context || {};
     this.handlerRegistry = config.handlerRegistry;
+    this.signalRegistry = config.signalRegistry;
+    this.templateRegistry = config.templateRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containerAttribute = config.containerAttribute || "data-container";
     this.containers = config.containers || new Map();
@@ -516,6 +539,12 @@ export class AsyncLoader {
           },
           get handlers() {
             return self.handlerRegistry;
+          },
+          get signals() {
+            return self.signalRegistry;
+          },
+          get templates() {
+            return self.templateRegistry;
           },
           get container() {
             return containerElement;

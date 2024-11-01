@@ -1,5 +1,8 @@
-import { HandlerRegistry } from "./handler-registry.ts";
-import { AsyncLoader } from "./async-loader.ts";
+// create global signalRegistry
+import { signalRegistry } from "../signals/instance.ts";
+import { templateRegistry } from "../templates/instance.ts";
+import { HandlerRegistry } from "../handlers/index.ts";
+import { AsyncLoader } from "../loader/loader.ts";
 
 export interface RenderConfig {
   root?: HTMLElement;
@@ -53,6 +56,8 @@ export function render(
   const loader = new AsyncLoader({
     events,
     handlerRegistry: registry,
+    signalRegistry,
+    templateRegistry,
     containerAttribute,
     eventPrefix,
     domRoot,

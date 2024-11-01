@@ -1,4 +1,4 @@
-import { AsyncLoaderContext, cls, computed, signal } from "async-framework";
+import { AsyncLoaderContext, cls, computed, signal } from "@async/framework";
 
 export function onUpdate(context: AsyncLoaderContext<string>) {
   // console.log("Counter.module", context.module);

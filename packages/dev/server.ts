@@ -31,25 +31,55 @@ app.get(async (c, next) => {
     console.log("GET: *.tsx", c.req.path);
     const path = c.req.path;
     try {
-    const fullPath = join(packagesDirectory, path);
-    const bundleContent = await bundle(fullPath);
-    return c.body(bundleContent, 200, {
-      "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
-    });
-  } catch (error: unknown | Error) {
-    console.error("Bundling error for tsx file:", error);
-    return c.text(
-      `Error creating bundle: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      500,
+      const fullPath = join(packagesDirectory, path);
+      const bundleContent = await bundle(fullPath);
+      return c.body(bundleContent, 200, {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "max-age=3600",
+      });
+    } catch (error: unknown | Error) {
+      console.error("Bundling error for tsx file:", error);
+      return c.text(
+        `Error creating bundle: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        500,
       );
     }
   } else {
     return next();
   }
 });
+
+// Get the directory of the current file
+const bundle = createBundler(rootRepoDir);
+// bundle framework code
+const createPackageBundle = (entryPath: string) => {
+  return async (c) => {
+    try {
+      // console.log("GET BUNDLE: ", entryPath);
+      const bundleContent = await bundle(
+        join(packagesDirectory, entryPath),
+      );
+      return c.body(bundleContent, 200, {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "max-age=3600",
+      });
+    } catch (error: unknown | Error) {
+      console.error("Bundling error for async-framework:", error);
+      return c.text(
+        `Error creating bundle: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        500,
+      );
+    }
+  }
+}
+app.get("/async-framework.js", createPackageBundle("async-framework/index.ts"));
+app.get("/async-framework.ts", createPackageBundle("async-framework/index.ts"));
+app.get("/async-framework/jsx-runtime.ts", createPackageBundle("async-framework/jsx-runtime.ts"));
+
 
 // Handle both root and /examples routes
 const renderDirectoryListingMiddleware = renderDirectoryListing(
@@ -109,31 +139,6 @@ app.get("/tailwind.css", async (c) => {
     return c.text("/* Error reading tailwind.css */", 500);
   }
 });
-
-// Get the directory of the current file
-const bundle = createBundler(rootRepoDir);
-// bundle framework code
-const asyncFramework = async (c) => {
-  try {
-    const bundleContent = await bundle(
-      join(packagesDirectory, "async-framework/index.ts"),
-    );
-    return c.body(bundleContent, 200, {
-      "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
-    });
-  } catch (error: unknown | Error) {
-    console.error("Bundling error for async-framework:", error);
-    return c.text(
-      `Error creating bundle: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      500,
-    );
-  }
-}
-app.get("/async-framework.js", asyncFramework);
-app.get("/async-framework.ts", asyncFramework);
 
 // custom-signals
 app.get("/custom-signals.js", async (c) => {
@@ -295,7 +300,12 @@ if (Deno.args.includes("--livereload")) {
                 }
               });
             }
-            client.send("reload");
+            // Add a delay before sending the reload message
+            setTimeout(() => {
+              if (client) {
+                client.send("reload");
+              }
+            }, 1000); // 1 second delay
           }
         });
       }

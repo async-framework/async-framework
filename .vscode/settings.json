@@ -18,6 +18,7 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "files.exclude": {
+    ".prettierignore": true,
     ".gitignore": true,
     "LICENSE": true,
     ".github/codeql": true,

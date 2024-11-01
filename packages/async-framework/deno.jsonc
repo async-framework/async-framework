@@ -1,1 +1,11 @@
-{}
+{
+  "name": "@async/framework",
+  "version": "0.0.1",
+  "imports": {
+    "#/": "./"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./jsx-runtime": "./jsx-runtime.ts"
+  }
+}
