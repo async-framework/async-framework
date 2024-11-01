@@ -38,8 +38,8 @@
     "lib": ["deno.window", "deno.unstable", "deno.ns", "dom"],
     "strict": true,
     "jsx": "react-jsx",
-    // "jsxFactory": "Async.createElement",
-    // "jsxFragmentFactory": "Async.Fragment",
+    // "jsxFactory": "jsx",
+    // "jsxFragmentFactory": "Fragment",
     "jsxImportSource": "hono/jsx"
   },
   "fmt": {

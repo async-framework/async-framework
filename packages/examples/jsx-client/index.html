@@ -10,6 +10,7 @@
         "imports": {
           "async-framework": "/async-framework.js",
           "async-framework": "/async-framework.ts",
+          "async-framework/jsx-runtime": "/async-framework.ts",
           "custom-signals": "/custom-signals.js",
           "custom-element-signals": "/custom-element-signals.js"
         }
@@ -20,6 +21,7 @@
       import { App } from "./App.tsx";
 
       const framework = render(App.call(globalThis), {
+        // not required anymore
         // events: ["update"],
       });
       window.framework = framework;

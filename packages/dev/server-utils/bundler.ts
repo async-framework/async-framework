@@ -48,6 +48,7 @@ export function createBundler(rootDir: string) {
         write: false,
         jsxFactory: "jsx",
         jsxFragment: "Fragment",
+        jsx: "automatic",
         jsxImportSource: "async-framework",
         entryPoints: [absolutePath],
         // format: "iife",
