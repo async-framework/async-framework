@@ -107,6 +107,13 @@ export class AsyncLoader {
   private context: any;
   private domRoot: Element | HTMLElement;
   private config: AsyncLoaderConfig;
+
+  // TODO: Add new property to track global event handlers
+  private globalHandlers: Map<
+    string,
+    Set<{ element: Element; attrValue: string }>
+  > = new Map();
+
   constructor(config: AsyncLoaderConfig) {
     this.config = config;
     this.context = config.context || {};
@@ -308,6 +315,36 @@ export class AsyncLoader {
         },
         true, // Use capturing phase to ensure the handler runs before other listeners
       );
+      // TODO: figure out if we need to add document event listeners
+      // document.addEventListener(
+      //   eventName,
+      //   function newHandleContainerEvent(event) {
+      //     // TODO: we may not need to parse the container anymore for the event type
+      //     // when doing lazy event registration
+
+      //     // Lazy parse the element for the event type before handling the event
+      //     self.parseDocumentEvent(containerElement, eventName);
+      //     // Handle the event when it occurs
+      //     self.handleContainerEvent(containerElement, event);
+      //     // console.log('setupContainerListeners: event handled', res);
+      //   },
+      //   true, // Use capturing phase to ensure the handler runs before other listeners
+      // );
+      window.addEventListener(
+        eventName,
+        function newHandleContainerEvent(event) {
+          // TODO: we may not need to parse the container anymore for the event type
+          // when doing lazy event registration
+
+          // Lazy parse the element for the event type before handling the event
+          self.parseWindowEvent(containerElement, eventName);
+          // Handle the event when it occurs
+          self.handleContainerEvent(containerElement, event);
+          // console.log('setupContainerListeners: event handled', res);
+        },
+        true, // Use capturing phase to ensure the handler runs before other listeners
+      );
+
     });
     success = true;
     return success;
@@ -319,9 +356,10 @@ export class AsyncLoader {
   // 2. Registering handler associations in the event map
   // 3. Supporting lazy parsing for better performance
   // This enables dynamic handler registration without requiring immediate processing of all elements.
-  parseContainerElement(containerElement, eventName) {
+  parseContainerElement(containerElement: Element, eventName: string) {
     const self = this;
-    // Select elements with 'on:{event}' attributes for example 'on:click'
+
+    // Handle regular events (existing code)
     const eventAttr = `${self.eventPrefix}${eventName}`;
     const elements = self.query(
       containerElement,
@@ -335,9 +373,35 @@ export class AsyncLoader {
         self.addEventData(containerElement, eventName, element, eventAttrValue);
       }
     });
-
-    // Mark this event as processed for this container
-    // processedEvents.add(eventName);
+  }
+  parseWindowEvent(containerElement: Element, eventName: string) {
+    const self = this;
+    // Handle window events
+    const windowEventAttr = `on-window:${eventName}`;
+    const windowElements = self.query(
+      containerElement,
+      `[${escapeSelector(windowEventAttr)}]`,
+    );
+    windowElements.forEach(function (element: Element) {
+      const attrValue = element.getAttribute(windowEventAttr);
+      if (attrValue) {
+        self.setupGlobalEventHandler("window", eventName, element, attrValue);
+      }
+    });
+  }
+  parseDocumentEvent(containerElement: Element, eventName: string) {
+    const self = this;
+    const documentEventAttr = `on-document:${eventName}`;
+    const documentElements = self.query(
+      containerElement,
+      `[${escapeSelector(documentEventAttr)}]`,
+    );
+    documentElements.forEach(function (element: Element) {
+      const attrValue = element.getAttribute(documentEventAttr);
+      if (attrValue) {
+        self.setupGlobalEventHandler("document", eventName, element, attrValue);
+      }
+    });
   }
 
   // Registers event listeners for specific elements within a container
@@ -408,6 +472,7 @@ export class AsyncLoader {
   // 4. Ensuring events reach all registered handlers
   // This provides a reliable system for cross-component communication.
   dispatch(eventName: string | CustomEvent, detail?: any) {
+    console.log('dispatch: dispatching event', eventName);
     // create the custom event
     let customEvent;
     let success = false;
@@ -440,6 +505,14 @@ export class AsyncLoader {
               // console.log('setupContainerListeners: event handled', res);
             },
             true, // Use capturing phase to ensure the handler runs before other listeners
+          );
+          window.addEventListener(
+            eventName,
+            function newHandleContainerWindowEvent(event) {
+              console.log('dispatch: handling window event', eventName);
+              self.handleContainerEvent(containerElement, event);
+            },
+            true,
           );
           // add the event to the events array
         }
@@ -646,5 +719,87 @@ export class AsyncLoader {
       // Traverse up the DOM tree for event delegation
       element = element.parentElement;
     }
+  }
+
+  // Add new method to set up global event handlers
+  private setupGlobalEventHandler(
+    target: "window" | "document",
+    eventName: string,
+    element: Element,
+    attrValue: string,
+  ) {
+    const key = `${target}:${eventName}`;
+    let handlers = this.globalHandlers.get(key);
+
+    if (!handlers) {
+      handlers = new Set();
+      this.globalHandlers.set(key, handlers);
+
+      // Add the actual event listener to window/document
+      const targetObj = target === "window" ? window : document;
+      targetObj.addEventListener(eventName, async (event) => {
+        // Get current handlers for this event
+        const currentHandlers = this.globalHandlers.get(key);
+        if (!currentHandlers) return;
+
+        // Execute all handlers
+        for (const handler of currentHandlers) {
+          if (!handler.element.isConnected) {
+            // Clean up disconnected elements
+            currentHandlers.delete(handler);
+            continue;
+          }
+
+          try {
+            const context = {
+              value: event instanceof CustomEvent ? event.detail : undefined,
+              attrValue: handler.attrValue,
+              dispatch: this.dispatch.bind(this),
+              element: handler.element,
+              event,
+              eventName,
+              handlers: this.handlerRegistry,
+              signals: this.signalRegistry,
+              container:
+                handler.element.closest(`[${this.containerAttribute}]`) ||
+                document.body,
+              module: undefined,
+              break: () => false,
+              preventDefault: () => event.preventDefault(),
+              stopPropagation: () => event.stopPropagation(),
+              target: event.target,
+            };
+
+            const res = this.handlerRegistry.handler(context);
+            if (isPromise(res)) {
+              await res;
+            }
+          } catch (error) {
+            console.error(
+              `Error in ${target} handler for ${eventName}:`,
+              error,
+            );
+          }
+        }
+      }, true);
+    }
+
+    // Add this element's handler to the set
+    handlers.add({ element, attrValue });
+  }
+
+  // Add cleanup method for global handlers
+  cleanup() {
+    // Clean up global event listeners
+    this.globalHandlers.forEach((handlers, key) => {
+      const [target, eventName] = key.split(":");
+      const targetObj = target === "window" ? window : document;
+      targetObj.removeEventListener(eventName, handlers as any);
+    });
+    this.globalHandlers.clear();
+
+    // Clean up container event listeners
+    this.containers.clear();
+    this.processedContainers = new WeakSet();
   }
 }
