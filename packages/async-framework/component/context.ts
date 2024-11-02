@@ -1,5 +1,7 @@
 import type { Signal } from "../signals/signals.ts";
 import { signalRegistry } from "../signals/registry.ts";
+import { contextRegistry } from "./context-registry.ts";
+
 // Why: Manages component context and hook state
 export interface ComponentContext {
   id: string;
@@ -15,20 +17,9 @@ export interface ComponentContext {
 const contextStack: ComponentContext[] = [];
 let currentContext: ComponentContext | null = null;
 
-// Why: Creates unique IDs for components
-let nextComponentId = 0;
-let nextSignalId = 0;
-
 // Why: Generates unique IDs for components and signals
-export function generateId(
-  type: "component" | "signal",
-  parentId?: string,
-): string {
-  const id = type === "component"
-    ? `component-${nextComponentId++}`
-    : `signal-${nextSignalId++}`;
-
-  return parentId ? `${parentId}.${id}` : id;
+export function generateId(type: string, parentId?: string): string {
+  return contextRegistry.generateId(type, parentId);
 }
 
 // Why: Manages the current component context
