@@ -40,7 +40,8 @@ export function Navigation({
               class={computed(
                 () =>
                   `px-3 py-2 rounded-md text-sm font-medium ${
-                    currentPath.value.startsWith("/resources/")
+                    currentPath.value.startsWith("/resources/") ||
+                      currentPath.value === "/"
                       ? "bg-blue-500 text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`,

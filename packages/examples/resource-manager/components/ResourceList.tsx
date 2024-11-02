@@ -48,7 +48,7 @@ export function ResourceList({
 
   // Cleanup when component is disconnected
   const subscription = router.current.subscribe(({ path }) => {
-    if (path !== "/resources/") {
+    if (path !== "/resources/" && path !== "/") {
       console.warn("ResourceList: dispose");
       dispose();
       subscription();
