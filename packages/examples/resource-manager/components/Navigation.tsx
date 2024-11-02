@@ -22,7 +22,7 @@ export function Navigation({
               class={computed(
                 () =>
                   `px-3 py-2 rounded-md text-sm font-medium ${
-                    currentPath.value === "/dashboard"
+                    currentPath.value.startsWith("/dashboard/")
                       ? "bg-blue-500 text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`,
@@ -39,7 +39,7 @@ export function Navigation({
               class={computed(
                 () =>
                   `px-3 py-2 rounded-md text-sm font-medium ${
-                    currentPath.value === "/resources"
+                    currentPath.value.startsWith("/resources/")
                       ? "bg-blue-500 text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`,
