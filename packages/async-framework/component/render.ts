@@ -1,5 +1,10 @@
 import { Signal } from "../signals/signals.ts";
-import { ComponentContext, popContext, pushContext } from "./context.ts";
+import {
+  ComponentContext,
+  getCurrentContext,
+  popContext,
+  pushContext,
+} from "./context.ts";
 import { AsyncComponentElement, AsyncSignalElement } from "./elements.ts";
 
 // Update appendChild to use AsyncSignalElement
@@ -101,9 +106,10 @@ export function renderSignalToElement(
 
   updateContent(signal.value);
 
+  // Subscribe using the hierarchical context ID
   const unsubscribe = signal.subscribe((newValue) => {
     updateContent(newValue);
-  }, context.id);
+  }, context.id); // Use context.id directly since it's already hierarchical
 
   context.cleanup.add(unsubscribe);
   context.signals.add(signal);
@@ -255,12 +261,13 @@ export type JSXChild =
 
 // Update the jsx function's component handling
 export function renderComponent(
-  type: /* Component */ Function,
+  type: Function,
   props: Record<string, any> | null,
   children: JSXChild[],
 ): Element {
   const wrapper = new AsyncComponentElement();
-  const context = pushContext(wrapper);
+  const parentContext = getCurrentContext();
+  const context = pushContext(wrapper, parentContext);
 
   try {
     wrapper.context = context;

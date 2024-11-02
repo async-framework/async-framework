@@ -1,4 +1,5 @@
 import { signalRegistry } from "./registry.ts";
+import { generateId, getCurrentContext } from "../component/context.ts";
 
 // Why: Tracks the current computation context for signal dependencies
 let currentTracker: (() => void) | null = null;
@@ -26,8 +27,8 @@ export interface SignalOptions {
 
 // Why: Creates a signal with tracking capabilities
 export function signal<T>(initialValue: T, options: SignalOptions = {}) {
-  const id = options.id || `signal-${nextSignalId++}`;
-  const contextId = options.context;
+  const context = getCurrentContext();
+  const id = options.id || generateId("signal", context?.id);
   let value = initialValue;
 
   // Create the signal object first so we can pass it to the registry
@@ -49,7 +50,7 @@ export function signal<T>(initialValue: T, options: SignalOptions = {}) {
       return signalRegistry.subscribe(
         signalObj,
         callback,
-        subContextId || contextId,
+        subContextId || context?.id,
       );
     },
     track<R>(computation: () => R): R {
@@ -68,7 +69,7 @@ export function signal<T>(initialValue: T, options: SignalOptions = {}) {
 
   function get() {
     if (currentTracker) {
-      signalRegistry.subscribe(signalObj, currentTracker, contextId);
+      signalRegistry.subscribe(signalObj, currentTracker, context?.id);
     }
     return value;
   }
