@@ -9,13 +9,15 @@ export function App({ router }: { router: ReturnType<typeof createRouter> }) {
 
   // Simple router logic
   router.current.subscribe(({ path, params }) => {
-    if (path === "/" || path === "/resources") {
+    console.log("App.router.current", path);
+    if (path === "/" || path === "/resources/") {
       currentView.value = <ResourceList router={router} />;
     } else if (path.startsWith("/resources/")) {
       const id = path.split("/")[2];
       currentView.value = <ResourceDetails id={id} router={router} />;
-    } else if (path === "/dashboard") {
-      currentView.value = <Dashboard router={router} />;
+    } else if (path === "/dashboard/") {
+      const dashboard = <Dashboard router={router} />;
+      currentView.value = dashboard;
     } else {
       currentView.value = <div>404 - Not Found</div>;
     }

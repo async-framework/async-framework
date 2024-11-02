@@ -1,6 +1,6 @@
 // Define types for JSX elements and children
 type Signal<T> = {
-  subscribe: (callback: (value: T) => void) => void;
+  subscribe: (callback: (newValue: T, oldValue: T) => void) => void;
   value: T;
 };
 type JSXChild =
@@ -18,17 +18,55 @@ type Component = (props: any) => JSXElement | Signal<any>;
 function renderValueBasedOnType(
   parent: HTMLElement | DocumentFragment,
   type: string,
-  value: any,
+  newValue: any,
+  oldValue: any,
 ) {
   // TODO: render based on value type being a DOM element
   switch (type) {
     case "number":
     case "string":
     case "boolean":
-      parent.appendChild(document.createTextNode(String(value)));
+      const oldValueString = String(oldValue);
+      const newValueString = String(newValue);
+      const textNode = document.createTextNode(newValueString);
+      if (parent && !parent.firstChild) {
+        parent.appendChild(textNode);
+        return;
+      }
+      let replaced = false;
+      Array.from(parent.childNodes).forEach((child) => {
+        if (child.textContent === oldValueString) {
+          // console.log("replaced", oldValueString, newValueString);
+          parent.replaceChild(textNode, child);
+          replaced = true;
+        }
+      });
+      if (!replaced) {
+        // console.log("appendChild", newValueString);
+        parent.appendChild(textNode);
+      }
       break;
+    case "function":
+      // handle iif
+      console.log("renderValueBasedOnType function", newValue);
+      const result = newValue();
+      return renderValueBasedOnType(parent, typeof result, result, oldValue);
     default:
-      parent.appendChild(value);
+      if (parent.firstElementChild === oldValue && parent.firstElementChild) {
+        console.log("replace child", newValue, oldValue);
+        parent.replaceChild(newValue, parent.firstElementChild);
+      } else if (parent.firstChild === oldValue && parent.firstChild) {
+        console.log("replace child", newValue, oldValue);
+        parent.replaceChild(newValue, parent.firstChild);
+      } else if (Array.isArray(newValue)) {
+        console.log("appendChild array", newValue);
+        for (const child of newValue) {
+          appendChild(parent, child);
+        }
+      } else {
+        console.log("appendChild", newValue);
+        parent.appendChild(newValue);
+      }
   }
 }
 
@@ -49,11 +87,15 @@ export function jsx(
     // Handle case where component returns a signal
     if ((result as Signal<any>)?.subscribe) {
       const signal = result as Signal<any>;
-      const placeholder = document.createTextNode(String(signal.value));
+      const value = signal.value;
+      // const innerParent = document.createDocumentFragment();
+      const parent = document.createElement("div");
+      renderValueBasedOnType(parent, typeof value, value, null);
       signal.subscribe((newValue: any) => {
-        placeholder.textContent = String(newValue);
+        console.log("jsx.signal.subscribe", newValue);
+        renderValueBasedOnType(parent, typeof newValue, newValue, value);
       });
-      return placeholder as unknown as JSXElement;
+      return parent as unknown as JSXElement;
     }
     return result as JSXElement;
   }
@@ -114,10 +156,10 @@ function appendChild(
     if (value === undefined || value === null) {
       value = "";
     }
-    signal.subscribe((newValue: any) => {
-      renderValueBasedOnType(parent, typeof newValue, newValue);
+    signal.subscribe((newValue: any, oldValue: any) => {
+      renderValueBasedOnType(parent, typeof newValue, newValue, oldValue);
     });
-    renderValueBasedOnType(parent, typeof value, value);
+    renderValueBasedOnType(parent, typeof value, value, null);
     return;
   }
 

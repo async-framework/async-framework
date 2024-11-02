@@ -17,7 +17,7 @@ export function Navigation({
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                router.navigate("/dashboard");
+                router.navigate("/dashboard/");
               }}
               class={computed(
                 () =>
@@ -34,7 +34,7 @@ export function Navigation({
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                router.navigate("/resources");
+                router.navigate("/resources/");
               }}
               class={computed(
                 () =>
