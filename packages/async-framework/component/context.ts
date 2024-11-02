@@ -9,15 +9,26 @@ export interface ComponentContext {
   cleanup: Set<() => void>;
   mounted: boolean;
   element: HTMLElement | null;
+  parent?: ComponentContext | null;
 }
 
 const contextStack: ComponentContext[] = [];
 let currentContext: ComponentContext | null = null;
 
 // Why: Creates unique IDs for components
-let nextId = 0;
-function generateId(): string {
-  return `component-${nextId++}`;
+let nextComponentId = 0;
+let nextSignalId = 0;
+
+// Why: Generates unique IDs for components and signals
+export function generateId(
+  type: "component" | "signal",
+  parentId?: string,
+): string {
+  const id = type === "component"
+    ? `component-${nextComponentId++}`
+    : `signal-${nextSignalId++}`;
+
+  return parentId ? `${parentId}.${id}` : id;
 }
 
 // Why: Manages the current component context
@@ -28,15 +39,17 @@ export function getCurrentContext(): ComponentContext | null {
 // Why: Creates and pushes a new component context
 export function pushContext(
   element: HTMLElement | null = null,
+  parentContext?: ComponentContext,
 ): ComponentContext {
   const context: ComponentContext = {
-    id: generateId(),
+    id: generateId("component", parentContext?.id),
     hooks: [],
     hookIndex: 0,
     signals: new Set(),
     cleanup: new Set(),
     mounted: false,
     element,
+    parent: parentContext || null,
   };
 
   contextStack.push(context);
