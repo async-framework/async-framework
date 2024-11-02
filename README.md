@@ -47,8 +47,9 @@ Create reactive web components using signals:
      `;
      
      // Auto-update view when signal changes
+     const buttonEl = this.querySelector('button');
      this.count.subscribe(newValue => {
-       this.querySelector('button').textContent = Count: ${newValue};
+       buttonEl.textContent = `Count: ${newValue}`;
      });
    }
  }
