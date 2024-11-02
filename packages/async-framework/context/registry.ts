@@ -32,7 +32,7 @@ export class ContextRegistry {
     }
   }
 
-  // Why: Generate a unique ID for a given context type
+  // Why: Generate a unique ID for a given context type with full parent chain
   generateId(type: string, parentId?: string): string {
     if (!this.contextTypes.has(type)) {
       throw new Error(`Unknown context type: ${type}`);
@@ -40,9 +40,20 @@ export class ContextRegistry {
 
     const count = this.counters.get(type) || 0;
     this.counters.set(type, count + 1);
-    const id = `${type}-${count}`;
 
-    return parentId ? `${parentId}.${id}` : id;
+    // Build the full context path
+    const parts: string[] = [];
+    
+    // Add parent path if it exists
+    if (parentId) {
+      parts.push(parentId);
+    }
+    
+    // Add this context's ID
+    parts.push(`${type}-${count}`);
+
+    // Join with dots to create hierarchical ID
+    return parts.join('.');
   }
 
   // Why: Store and retrieve contexts
