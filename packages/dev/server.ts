@@ -93,14 +93,30 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
     // Add this function to provide descriptions for each example
     function getExampleDescription(dir: string): string {
       const descriptions: Record<string, string> = {
-        "1-hello-world":
+        "hello-world":
           "A simple hello world example demonstrating the basics of Async Framework.",
-        "2-todo-app":
+        "todo-app":
           "A simple todo list application demonstrating state management and user interactions.",
-        "3-note-app":
+        "note-app":
           "A note-taking app showcasing dynamic content creation and local storage.",
-        "4-tic-tac-toe":
+        "tic-tac-toe":
           "The classic Tic-Tac-Toe game implemented with Async Framework.",
+        "resource-management":
+          "An example demonstrating resource management and state management.",
+        "drag-and-drop":
+          "An example demonstrating drag and drop functionality.",
+        "kanban-board":
+          "A kanban board example demonstrating state management and user interactions.",
+        "jsx-client":
+          "An example demonstrating how to use JSX for client rendering with Async Framework.",
+        "custom-elements-signals-app":
+          "An example demonstrating how to use Custom Elements with Async Framework.",
+        "custom-signals-demo":
+          "An example demonstrating how to use Signals with Async Framework.",
+        "qwik-hello-world": /*html*/ `
+        <span class='text-red-500'>WIP:</span>
+        A simple hello world example demonstrating the basics of Qwik and Async Framework.
+        `,
       };
 
       return descriptions[dir] ||
@@ -111,8 +127,12 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
     const description = getExampleDescription(dir);
     return /*html*/ `
   <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-2">${dirName}</h2>
-    <p class="text-gray-600 mb-4">${description}</p>
+    <h2 class="text-2xl font-semibold text-gray-800 mb-2">
+      ${dirName}
+    </h2>
+    <p class="text-gray-600 mb-4">
+      ${description}
+    </p>
     <a href="/examples/${dir}/" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors duration-300">
       View Example
     </a>
