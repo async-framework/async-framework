@@ -29,7 +29,10 @@ interface QwikInvocationContext {
 
 export class QwikHandlerRegistry extends HandlerRegistry {
   private qwikContainers: WeakMap<Element, any>;
-  private visibilityObservers: WeakMap<Element, IntersectionObserver>;
+  private visibilityObservers: WeakMap<
+    Element | ShadowRoot,
+    IntersectionObserver
+  >;
 
   constructor(config: any = {}) {
     super(config);
@@ -224,12 +227,14 @@ export class QwikHandlerRegistry extends HandlerRegistry {
         let lexicalIndices: number[] = [];
 
         // Check for lexical scope indices (e.g., s_gRRz00JItKA[0,1])
-        const lexicalMatch = symbol.match(/^(.+?)\[([\d,]+)\]$/);
+        const lexicalMatch = symbol.match(/^(.+?)\[([^\]]+)\]$/);
         if (lexicalMatch) {
           symbol = lexicalMatch[1];
-          lexicalIndices = lexicalMatch[2].split(",").map((i) =>
-            parseInt(i, 10)
-          );
+          // Ensure indices are properly comma-separated
+          lexicalIndices = lexicalMatch[2]
+            .split(/[\s,]+/) // Split on commas or whitespace
+            .filter(Boolean) // Remove empty strings
+            .map((i) => parseInt(i, 10));
         }
 
         const eventData: QwikHandlerContext = {
@@ -355,14 +360,16 @@ export class QwikHandlerRegistry extends HandlerRegistry {
   }
 
   // Add to QwikHandlerRegistry
-  private findShadowRoots(element: Element) {
+  private findShadowRoots(root: Element | ShadowRoot) {
     // Process the current element's shadow root if it exists
-    if ("shadowRoot" in element && element.shadowRoot) {
-      this.handleShadowRoot(element.shadowRoot);
+    if (root instanceof Element && "shadowRoot" in root && root.shadowRoot) {
+      this.handleShadowRoot(root.shadowRoot);
     }
 
-    // Find all shadow root hosts
-    element.querySelectorAll("[q\\:shadowroot]").forEach((host) => {
+    // Find all shadow root hosts - simplified
+    const hosts = root.querySelectorAll("[q\\:shadowroot]");
+
+    hosts.forEach((host) => {
       if ("shadowRoot" in host && host.shadowRoot) {
         this.handleShadowRoot(host.shadowRoot);
       }
@@ -377,7 +384,8 @@ export class QwikHandlerRegistry extends HandlerRegistry {
     this.findShadowRoots(shadowRoot);
 
     // Set up event delegation for the shadow root
-    const container = (shadowRoot.host as Element).closest("[q\\:container]");
+    const host = shadowRoot.host;
+    const container = host.closest("[q\\:container]");
     if (container) {
       // Add shadow root to container's tracked roots
       const data = this.qwikContainers.get(container) || {};
