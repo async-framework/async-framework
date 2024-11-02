@@ -10,7 +10,6 @@ export type ReadSignal<T> =
     readonly value: T;
   };
 
-
 export type Signal<T> = ReturnType<typeof signal<T>>;
 // Why: Creates a signal with tracking capabilities
 export function signal<T>(initialValue: T) {
@@ -30,14 +29,25 @@ export function signal<T>(initialValue: T) {
   function set(newValue: T) {
     // console.log("signal.set", currentTracker, this);
     const oldValue = value;
+    if (newValue === oldValue) {
+      // console.log(
+      //   "signal.set: value is the same, skipping",
+      //   newValue,
+      //   oldValue,
+      // );
+      return;
+    } else {
+      // console.log("signal.set: value changed", newValue, oldValue);
+    }
     value = newValue;
     // Notify all subscribers of the change
     subscribers.forEach(function signalSet(subscriber) {
-      subscriber(value, oldValue);
+      subscriber(newValue, oldValue);
     });
   }
 
   return {
+    type: "signal",
     get value() {
       return get.call(this);
     },
@@ -86,6 +96,7 @@ export function readSignal<T>(
   sig: ReturnType<typeof signal<T>>,
 ): ReadSignal<T> {
   return {
+    type: "read-signal",
     get: sig.get,
     subscribe: sig.subscribe,
     track: sig.track,
@@ -134,32 +145,68 @@ export function debugSignal<T>(
   sig: ReturnType<typeof signal<T>>,
   name: string,
 ) {
-  console.log(`Creating debug signal "${name}"`);
-  return {
-    subscribe: (callback: (value: T, oldValue: T) => void) => {
-      console.log(`Subscribing to signal "${name}"`);
-      return sig.subscribe(callback);
-    },
-    track: (computation: () => void) => {
-      console.log(`Tracking signal "${name}"`);
-      return sig.track(computation);
-    },
-    get: () => {
-      console.log(`Reading signal "${name}"`);
-      return sig.get();
-    },
-    set: (newValue: T) => {
-      console.log(`Setting signal "${name}" to:`, newValue);
-      sig.set(newValue);
-    },
-    get value() {
-      console.log(`Reading signal "${name}"`);
-      return sig.value;
-    },
-    set value(newValue: T) {
-      console.log(`Setting signal "${name}" to:`, newValue);
-      sig.value = newValue;
-    },
-  };
+  let isReadOnlySignal = sig.type === "read-signal";
+  let isCreatedSignal = false;
+  if (Array.isArray(sig)) {
+    // destructure the signal from the array
+    [, , sig] = sig;
+    isCreatedSignal = true;
+  }
+  console.log(`Creating debug signal "${name}" type: ${sig.type}`);
+  const _signal = isReadOnlySignal
+    ? {
+      type: "debug-read-signal",
+      subscribe: (callback: (value: T, oldValue: T) => void) => {
+        console.log(`Subscribing to signal "${name}"`);
+        return sig.subscribe(callback);
+      },
+      track: (computation: () => void) => {
+        console.log(`Tracking signal "${name}"`);
+        return sig.track(computation);
+      },
+      get: () => {
+        console.log(`Reading signal "${name}"`);
+        return sig.get();
+      },
+      get value() {
+        console.log(`Reading signal "${name}"`);
+        return sig.value;
+      },
+      valueOf: sig.valueOf,
+    }
+    : {
+      type: "debug-signal",
+      subscribe: (callback: (value: T, oldValue: T) => void) => {
+        console.log(`Subscribing to signal "${name}"`);
+        return sig.subscribe(callback);
+      },
+      track: (computation: () => void) => {
+        console.log(`Tracking signal "${name}"`);
+        return sig.track(computation);
+      },
+      get: () => {
+        console.log(`Reading signal "${name}"`);
+        return sig.get();
+      },
+      set: (newValue: T) => {
+        console.log(`Setting signal "${name}" to:`, newValue);
+        sig.set(newValue);
+      },
+      get value() {
+        console.log(`Reading signal "${name}"`);
+        return sig.value;
+      },
+      set value(newValue: T) {
+        console.log(`Setting signal "${name}" to:`, newValue);
+        sig.value = newValue;
+      },
+      valueOf: () => sig.valueOf(),
+    };
+  if (isCreatedSignal) {
+    if (isReadOnlySignal) {
+      return [_signal.get, _signal as ReadSignal<T>];
+    }
+    return [_signal.get, _signal.set, _signal as ReturnType<typeof signal<T>>];
+  }
+  return _signal;
 }
-

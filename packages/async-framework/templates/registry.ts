@@ -1,6 +1,5 @@
 import { templateRegistry } from "./instance.ts";
 
-
 export function getTemplate(templateId: string): string | null {
   return templateRegistry.get(templateId) || null;
 }
@@ -10,7 +9,7 @@ export function setTemplate(templateId: string, template: string): void {
 }
 
 export function getOrCreateTemplate(
-  templateId: string | null
+  templateId: string | null,
 ): string | null {
   // If no templateId, return null to let component handle fallback logic
   if (!templateId) return null;

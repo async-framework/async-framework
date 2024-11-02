@@ -1,7 +1,4 @@
-import {
-  signal as createSignal,
-  type Signal
-} from "./signals.ts";
+import { type Signal, signal as createSignal } from "./signals.ts";
 
 export class SignalRegistry {
   private registry: Map<string, Signal<any>> | {
@@ -40,13 +37,15 @@ export class SignalRegistry {
   // Why: To get or create a signal by its ID
   getOrCreate<T>(id: string, initialValue: T): Signal<T> {
     if (this.registry.has(id)) {
+      // console.log("SignalRegistry.getOrCreate: signal already exists", id);
       return this.registry.get(id) as Signal<T>;
     }
-    if (typeof (initialValue as any).subscribe === 'function') {
+    if (typeof (initialValue as any).subscribe === "function") {
       throw new Error("Signal initial value cannot be a Signal");
     }
     const signal = createSignal<T>(initialValue);
     this.registry.set(id, signal);
+    // console.log("SignalRegistry.getOrCreate: signal created", id);
     return signal;
   }
   updateOrCreate<T>(id: string, initialValue: T): Signal<T> {
@@ -55,7 +54,7 @@ export class SignalRegistry {
       signal.set(initialValue);
       return signal;
     }
-    if (typeof (initialValue as any).subscribe === 'function') {
+    if (typeof (initialValue as any).subscribe === "function") {
       throw new Error("Signal initial value cannot be a Signal");
     }
     const signal = createSignal<T>(initialValue);
@@ -63,8 +62,8 @@ export class SignalRegistry {
     return signal;
   }
   get size(): number {
-    return typeof this.registry.size === 'function' 
-      ? this.registry.size()
+    return typeof this.registry.size === "function"
+      ? (this.registry as any).size()
       : this.registry.size;
   }
 

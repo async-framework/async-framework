@@ -9,11 +9,9 @@
     "start:app": "deno run -A packages/example-apps/hello-world/server.tsx",
     "dev": "deno run -A --watch packages/dev/server.ts --livereload"
   },
-  "workspace": ["./packages/async-framework/", "./packages/custom-signals/"],
+  "workspace": ["./packages/async-framework/"],
   "imports": {
     // packages
-    // "custom-signals": "./packages/custom-signals/index.ts",
-    // "custom-signals/": "./packages/custom-signals/",
     // "async-framework": "./packages/async-framework/index.ts",
     // "async-framework/": "./packages/async-framework/",
     // "custom-element-signals": "./packages/custom-element-signals/index.ts",

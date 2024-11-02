@@ -19,13 +19,13 @@ export function escapeSelector(selector: string) {
  */
 export function escapeValue(value: unknown, escapeHtml = true): string {
   // Handle null or undefined
-  if (value == null) return '';
-  
+  if (value == null) return "";
+
   // Convert to string if not already
   const str = String(value);
-  
+
   if (!escapeHtml) return str;
-  
+
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -41,24 +41,26 @@ export function escapeValue(value: unknown, escapeHtml = true): string {
  * @param options - Configuration options
  */
 export function interpolateTemplate(
-  template: string, 
+  template: string,
   context: Record<string, unknown>,
-  options: { escapeHtml?: boolean } = {}
+  options: { escapeHtml?: boolean } = {},
 ): string {
   const { escapeHtml = true } = options;
-  
+
   return template.replace(/\${([^}]+)}/g, (match, expr) => {
     try {
       // Handle JSON.stringify specifically
       const contextKeys = Object.keys(context);
       const contextValues = Object.values(context);
-      
+
       // Regular expression evaluation
-      const value = new Function(...contextKeys, `return ${expr}`)(...contextValues);
+      const value = new Function(...contextKeys, `return ${expr}`)(
+        ...contextValues,
+      );
       return escapeValue(value, escapeHtml);
     } catch (error) {
-      console.error('Error interpolating template:', error);
-      return '';
+      console.error("Error interpolating template:", error);
+      return "";
     }
   });
 }
@@ -70,7 +72,7 @@ export function interpolateTemplate(
  */
 export function transformTemplate(template: string): string {
   return template.replace(/\${(.*?)}/g, (match, expr) => {
-    return '${' + expr.replace(/this\./g, '$this.') + '}';
+    return "${" + expr.replace(/this\./g, "$this.") + "}";
   });
 }
 
@@ -100,6 +102,7 @@ export function getAttributeKey(element: Element, attrName: string): string {
  */
 export function generateTemplateId(element: Element): string {
   const path = getElementPath(element);
-  const hash = path.split('>').map(p => p.split(':')[0]).join('-').toLowerCase();
+  const hash = path.split(">").map((p) => p.split(":")[0]).join("-")
+    .toLowerCase();
   return `template-id-${hash}`;
 }

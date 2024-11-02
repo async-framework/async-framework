@@ -1,10 +1,10 @@
-import { getTemplate, getOrCreateTemplate, setTemplate } from "./registry.ts";
+import { getOrCreateTemplate, getTemplate, setTemplate } from "./registry.ts";
 
 // Why: Provides consistent template handling and warning messages across components
 export function getTemplateContent(
   element: HTMLElement,
   templateId: string | null,
-  componentName: string
+  componentName: string,
 ): string | null {
   // Try template registry first if templateId exists
   let registryTemplate = templateId ? getTemplate(templateId) : null;
@@ -12,8 +12,7 @@ export function getTemplateContent(
     // console.log(`Using template from registry: ${templateId}`);
     return registryTemplate;
   }
-  
-  
+
   registryTemplate = getOrCreateTemplate(templateId);
   if (registryTemplate) {
     return registryTemplate;
@@ -32,7 +31,6 @@ export function getTemplateContent(
       }
     }
   }
-
 
   if (!registryTemplate) {
     const templateElement = element.querySelector("template");

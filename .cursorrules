@@ -15,7 +15,6 @@ Maintain the following package structure:
   - packages/
     - examples/
     - async-framework/
-    - custom-signals/
     - dev/
     - custom-element-signals/
 Add new packages under the 'packages/' directory
@@ -28,7 +27,6 @@ Example:
   "deno.enablePaths": [
     "./packages/examples",
     "./packages/async-framework",
-    "./packages/custom-signals",
     "./packages/dev",
     // Add new package paths here
   ]
@@ -84,7 +82,7 @@ For Hono, always use the npm version via the import alias
 Examples of correct imports:
   import { Hono } from "hono";
   import { assertEquals } from "@std/assert";
-  import { signal } from "custom-signals";
+  import { signal } from "custom-element-signals";
 Examples of incorrect imports:
   import { Hono } from "https://deno.land/x/hono@v3.x/mod.ts";
   import { assertEquals } from "https://deno.land/std/assert/mod.ts";

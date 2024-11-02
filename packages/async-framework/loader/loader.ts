@@ -117,9 +117,13 @@ export class AsyncLoader {
     this.containerAttribute = config.containerAttribute || "data-container";
     this.containers = config.containers || new Map();
     this.domRoot = config.domRoot || document.body;
-    this.events = this.dedupeEvents(
-      config.events || this.discoverCustomEvents(this.domRoot),
-    );
+
+    // Discover custom events if no events are provided
+    if (!config.events || config.events?.length === 0) {
+      this.events = this.discoverCustomEvents(this.domRoot);
+    } else {
+      this.events = this.dedupeEvents(config.events);
+    }
 
     // Set of processed containers
     this.processedContainers = config.processedContainers || new WeakSet();
@@ -138,7 +142,8 @@ export class AsyncLoader {
       const duplicates = events.filter((event, index) =>
         events.indexOf(event) !== index
       );
-      if (this.config.events) {
+      // if no events or empty array, don't log duplicates
+      if (this.config.events && this.config.events.length > 0) {
         console.warn(
           "AsyncLoader.dedupeEvents: Found duplicate events:",
           duplicates,
@@ -186,7 +191,7 @@ export class AsyncLoader {
       "AsyncLoader.discoverCustomEvents: discovered custom events:",
       this.dedupeEvents(customEventAttributes),
     );
-    return customEventAttributes;
+    return this.dedupeEvents(customEventAttributes);
   }
 
   // Parses a root element to identify and handle new containers
@@ -232,6 +237,10 @@ export class AsyncLoader {
       this.processedContainers.delete(el);
     }
     if (this.processedContainers.has(el)) {
+      console.warn(
+        "AsyncLoader.handleNewContainer: container was already processed",
+        el,
+      );
       return;
     }
 

@@ -8,19 +8,16 @@
     <script type="importmap">
       {
         "imports": {
-          "async-framework": "/async-framework.js",
-          "custom-element-signals": "/custom-element-signals.js",
-          "custom-signals": "/custom-signals.js"
+          "async-framework": "/async-framework.ts",
+          "@async/framework": "/async-framework.ts",
+          "custom-element-signals": "/custom-element-signals.js"
         }
       }
     </script>
     <script type="module" src="/livereload.js"></script>
     <link rel="modulepreload" href="/async-framework.js" />
-    <link rel="modulepreload" href="/custom-signals.js" />
     <!-- <link rel="modulepreload" href="/custom-element-signals.js" /> -->
     <!-- handlers -->
-    <link rel="modulepreload" href="prevent-stop-default.js" />
-    <link rel="modulepreload" href="prevent-default.js" />
     <!-- hide the let-signal element until it is defined -->
     <style>
       let-signal:not(:defined),
@@ -78,7 +75,7 @@
         <form
           id="createResourceForm"
           class="space-y-4"
-          on:submit="prevent-stop-default.js, createResource.js"
+          on:submit="prevent-and-stop.js, createResource.js"
         >
           <div class="grid grid-cols-1 gap-4">
             <div>
@@ -338,12 +335,14 @@
     </signal-modal>
 
     <script type="module">
-      import { AsyncLoader, HandlerRegistry } from "async-framework";
-      import { signalRegistry as signals } from "custom-signals";
+      // async-framework
+      import {
+        AsyncLoader,
+        HandlerRegistry,
+        signalRegistry as signals,
+      } from "async-framework";
 
       import * as customElementSignals from "custom-element-signals";
-      import preventStopDefault from "./prevent-stop-default.js";
-      import preventDefault from "./prevent-default.js";
       import toggleModal from "./toggleModal.js";
       import { cancelConfirmModal, confirmAction } from "./confirmModal.js";
       import deleteResource from "./deleteResource.js";
@@ -373,8 +372,7 @@
       const handlers = new HandlerRegistry({
         basePath: location.pathname,
         registry: new Map([
-          ["prevent-default.js", preventDefault],
-          ["prevent-stop-default.js", preventStopDefault],
+          ...Object.entries(HandlerRegistry.defaultHandlers),
           ["toggleModal.js", toggleModal],
           ["deleteResource.js", deleteResource],
           ["cancelConfirmModal.js", cancelConfirmModal],
@@ -385,9 +383,7 @@
       const asyncLoader = new AsyncLoader({
         events: ["submit", "click"],
         handlerRegistry: handlers,
-        context: {
-          signals,
-        },
+        signalRegistry: signals,
       });
 
       const rootContainer = document.querySelector('[data-container="root"]');

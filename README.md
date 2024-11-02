@@ -216,7 +216,6 @@ Handlers:
 packages/
   examples/                # Example applications
   async-loader/            # Core async loading functionality
-  custom-signals/          # Signal implementation
   dev/                     # Development server
   custom-element-signals/  # Custom element integration
 ```

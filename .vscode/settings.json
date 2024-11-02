@@ -5,7 +5,6 @@
     "./packages/examples",
     "./packages/example-apps",
     "./packages/async-framework",
-    "./packages/custom-signals",
     "./packages/dev"
   ],
   "editor.formatOnSave": true,

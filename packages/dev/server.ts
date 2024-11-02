@@ -143,26 +143,6 @@ app.get("/tailwind.css", async (c) => {
   }
 });
 
-// custom-signals
-app.get("/custom-signals.js", async (c) => {
-  try {
-    const bundleContent = await bundle(
-      join(packagesDirectory, "custom-signals/index.ts"),
-    );
-    return c.body(bundleContent, 200, {
-      "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
-    });
-  } catch (error: unknown | Error) {
-    console.error("Bundling error for custom-signals:", error);
-    return c.text(
-      `Error creating bundle: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      500,
-    );
-  }
-});
 
 // custom-element signals
 app.get("/custom-element-signals.js", async (c) => {
@@ -305,7 +285,7 @@ if (Deno.args.includes("--livereload")) {
             }
             // Add a delay before sending the reload message
             setTimeout(() => {
-              if (client) {
+              if (client && client.readyState === WebSocket.OPEN) {
                 client.send("reload");
               }
             }, 1000); // 1 second delay

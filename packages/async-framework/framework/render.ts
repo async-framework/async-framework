@@ -4,6 +4,8 @@ import { templateRegistry } from "../templates/instance.ts";
 import { HandlerRegistry } from "../handlers/index.ts";
 import { AsyncLoader } from "../loader/loader.ts";
 
+// Export instances
+export { signalRegistry, templateRegistry };
 export interface RenderConfig {
   root?: HTMLElement;
   basePath?: string;
@@ -15,9 +17,14 @@ export interface RenderConfig {
 }
 
 export function render(
-  element: HTMLElement,
-  config: RenderConfig | HTMLElement,
+  element?: HTMLElement,
+  config?: RenderConfig | HTMLElement,
 ) {
+  if (element?.hasAttribute("data-container")) {
+    // only root was provided
+    config = element;
+    element = undefined;
+  }
   if (!config) {
     config = document.querySelector("[data-container='root']") as HTMLElement;
   }
@@ -46,7 +53,7 @@ export function render(
   }
 
   // Create HandlerRegistry with config
-  const registry = new HandlerRegistry({
+  const handlerRegistry = new HandlerRegistry({
     basePath,
     origin,
     eventPrefix,
@@ -54,10 +61,12 @@ export function render(
 
   // Create AsyncLoader with config and registry
   const loader = new AsyncLoader({
-    events,
-    handlerRegistry: registry,
+    // Pass in the registries
+    handlerRegistry,
     signalRegistry,
     templateRegistry,
+
+    events,
     containerAttribute,
     eventPrefix,
     domRoot,
@@ -65,17 +74,25 @@ export function render(
   });
 
   // Append element to root
-  domRoot.appendChild(element);
+  if (element) {
+    domRoot.appendChild(element);
+  } else {
+    console.warn("No element provided to render hooking up to root");
+  }
 
   // Initialize event handling
-  loader.init();
+  loader.init(domRoot);
 
   // Return utilities for cleanup and access to loader/registry
   const asyncFramework = {
     loader,
-    handlers: registry,
+    signals: signalRegistry,
+    handlers: handlerRegistry,
+    templates: templateRegistry,
     unmount: () => {
-      domRoot.removeChild(element);
+      if (element) {
+        domRoot.removeChild(element);
+      }
     },
   };
   return asyncFramework;
