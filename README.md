@@ -18,8 +18,11 @@ A lightweight, signal-based framework for building reactive web applications wit
 | Framework Core  | Unstable     | Core framework features and utilities                     |
 | JSX Runtime     | Unstable     | JSX/TSX support and rendering (under development)         |
 | Signals         | Experimental | Reactive state management (API may change)                |
+| Signal-List     | Experimental | A signal-list primitive to optimize rendering lists       |
+| Signal-Table    | Experimental | A signal-table primitive to optimize rendering tables     |
 | Custom Elements | Experimental | Web Components integration and lifecycle management       |
 | Templates       | Experimental | HTML template handling and instantiation                  |
+| QwikLoader      | WIP          | Replace QwikLoader with AsyncLoader                       |
 
 ## Basic Usage
 
