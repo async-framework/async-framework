@@ -9,6 +9,18 @@ A lightweight, signal-based framework for building reactive web applications wit
 3. **Event Handlers**: Async event handling with dynamic imports
 4. **JSX Support**: Optional JSX/TSX support for component creation
 
+## Stability Status
+
+| Component       | Status       | Description                                               |
+| --------------- | ------------ | --------------------------------------------------------- |
+| AsyncLoader     | Stable-ish   | Core async loading functionality for handlers and modules |
+| HandlerRegistry | Stable-ish   | Event handler registration and management system          |
+| Framework Core  | Unstable     | Core framework features and utilities                     |
+| JSX Runtime     | Unstable     | JSX/TSX support and rendering (under development)         |
+| Signals         | Experimental | Reactive state management (API may change)                |
+| Custom Elements | Experimental | Web Components integration and lifecycle management       |
+| Templates       | Experimental | HTML template handling and instantiation                  |
+
 ## Basic Usage
 
 ### 1. Signals
