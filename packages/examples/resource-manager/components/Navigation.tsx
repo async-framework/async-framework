@@ -8,6 +8,7 @@ export function Navigation({
 }) {
   const currentPath = computed(() => router.current.value.path);
 
+  console.log("Navigation: currentPath", currentPath.value);
   return (
     <nav class="bg-white shadow-md">
       <div class="container mx-auto px-4">

@@ -215,11 +215,11 @@ export function debugSignal<T>(
   return _signal;
 }
 
-export function isSignal<T>(value: T): boolean {
+export function isSignal<T>(value: T & Signal<any>): boolean {
   return typeof value === "object" &&
     value !== null &&
     "type" in value &&
-    (value as any).type === "signal";
+    value.type.includes("signal");
 }
 
 // Why: Creates a resource signal that handles async data loading and updates with proper cleanup

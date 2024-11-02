@@ -1,13 +1,14 @@
 // Define types for JSX elements and children
 type Signal<T> = {
+  type: "signal";
   subscribe: (callback: (newValue: T, oldValue: T) => void) => void;
   value: T;
 };
-function isSignal<T>(value: T): boolean {
+function isSignal<T>(value: T & Signal<any>): boolean {
   return typeof value === "object" &&
     value !== null &&
     "type" in value &&
-    (value as any).type === "signal";
+    value.type.includes("signal");
 }
 type JSXChild =
   | string
