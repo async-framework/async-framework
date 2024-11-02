@@ -14,6 +14,8 @@ export function Counter() {
   const isPositive = computed(() => count.value > 0);
   const isNegative = computed(() => count.value < 0);
   const isZero = computed(() => count.value === 0);
+  const doubled = computed(() => count.value * 2);
+  const tripled = computed(() => count.value * 3);
 
   // Example of using track directly
   const classes = computed(() =>
@@ -34,7 +36,7 @@ export function Counter() {
             })
           )}
         >
-          Count: {count}
+          Count: {count} Doubled: {doubled} Tripled: {tripled}
         </h2>
         <button
           onClick={() => (theme.value = theme.value === "light"
