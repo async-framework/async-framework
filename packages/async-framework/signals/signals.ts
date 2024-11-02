@@ -1,5 +1,7 @@
 import { signalRegistry } from "./registry.ts";
 import { generateId, getCurrentContext } from "../component/context.ts";
+import { contextRegistry } from "../context/registry.ts";
+import { ComputedContext } from "../context/types.ts";
 
 // Why: Tracks the current computation context for signal dependencies
 let currentTracker: (() => void) | null = null;
@@ -132,12 +134,26 @@ export function computed<T>(
   computation: () => T,
   options: SignalOptions = {},
 ): ReadSignal<T> {
+  const context = getCurrentContext();
+  const id = options.id || contextRegistry.generateId("computed", context?.id);
+
   const sig = signal<T>(computation(), {
-    id: options.id || `computed-${nextSignalId++}`,
-    context: options.context,
+    id,
+    context: context?.id,
   });
 
-  // Why: To initial computation with tracking
+  // Create computed context
+  const computedContext: ComputedContext = {
+    type: "computed",
+    id,
+    cleanup: new Set(),
+    parent: context || null,
+    value: sig.value,
+    dependencies: new Set(),
+  };
+
+  contextRegistry.setContext(id, computedContext);
+
   sig.track(function signalComputed() {
     sig.value = computation();
   });
