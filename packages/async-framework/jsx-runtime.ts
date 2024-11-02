@@ -58,7 +58,8 @@ export function jsx(
         }
       } else if (key.startsWith("on") && typeof value === "function") {
         const eventName = key.toLowerCase().slice(2);
-        element.addEventListener(eventName, value as EventListener);
+        const handler = value as EventListener;
+        element.addEventListener(eventName, handler);
       } else if (value !== null && value !== undefined) {
         handleAttribute(element, key, value);
       }

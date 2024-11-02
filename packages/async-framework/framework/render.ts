@@ -20,7 +20,7 @@ export function render(
   element?: HTMLElement,
   config?: RenderConfig | HTMLElement,
 ) {
-  if (element?.hasAttribute("data-container")) {
+  if (element && element?.hasAttribute?.("data-container")) {
     // only root was provided
     config = element;
     element = undefined;
@@ -73,16 +73,6 @@ export function render(
     context,
   });
 
-  // Append element to root
-  if (element) {
-    domRoot.appendChild(element);
-  } else {
-    console.warn("No element provided to render hooking up to root");
-  }
-
-  // Initialize event handling
-  loader.init(domRoot);
-
   // Return utilities for cleanup and access to loader/registry
   const asyncFramework = {
     loader,
@@ -95,17 +85,37 @@ export function render(
       }
     },
   };
+  if (typeof element === "function") {
+    element = (element as Function).call(asyncFramework, renderConfig);
+  }
+
+  // Append element to root
+  if (element) {
+    domRoot.appendChild(element);
+  } else {
+    console.warn("No element provided to render hooking up to root");
+  }
+
+  // Initialize event handling
+  loader.init(domRoot);
   return asyncFramework;
 }
 
 // Example usage:
-// Simple:
-// render(<App />, document.getElementById('app'));
 
-// With config:
-// render(<App />, {
+// Simple: with defaults
+// render();
+
+// Container Only: with loader only no rendering
+// render(document.getElementById('[data-container="root"]'));
+
+// Client Rendering and Default Config:
+// render(App);
+
+// With Config:
+// render(App, {
 //   root: document.getElementById('app'),
-//   basePath: './handlers/',
+//   basePath: './',
 //   origin: '',
 //   eventPrefix: 'on:',
 //   context: { someSharedState: {} }
