@@ -22,7 +22,7 @@ A lightweight, signal-based framework for building reactive web applications wit
 | Signal-Table    | Experimental | A signal-table primitive to optimize rendering tables     |
 | Custom Elements | Experimental | Web Components integration and lifecycle management       |
 | Templates       | Experimental | HTML template handling and instantiation                  |
-| QwikLoader      | WIP          | Replace QwikLoader with AsyncLoader                       |
+| QwikLoader      | Experimental | Replace QwikLoader with AsyncLoader                       |
 
 ## Basic Usage
 

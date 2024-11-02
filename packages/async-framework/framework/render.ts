@@ -8,29 +8,44 @@ import { AsyncLoader } from "../loader/loader.ts";
 export { signalRegistry, templateRegistry };
 export interface RenderConfig {
   root?: HTMLElement;
+  element?: HTMLElement;
   basePath?: string;
   origin?: string;
   eventPrefix?: string;
   containerAttribute?: string;
   events?: string[];
   context?: Record<string, unknown>;
+  handlerRegistry?: HandlerRegistry;
 }
 
 export function render(
-  element?: HTMLElement,
-  config?: RenderConfig | HTMLElement,
+  element?: HTMLElement | RenderConfig,
+  config?: RenderConfig,
 ) {
-  if (element && element?.hasAttribute?.("data-container")) {
+  if (element && (element as HTMLElement)?.hasAttribute?.("data-container")) {
     // only root was provided
-    config = element;
+    config = {
+      root: element,
+    } as RenderConfig;
     element = undefined;
   }
   if (!config) {
-    config = document.querySelector("[data-container='root']") as HTMLElement;
+    if (typeof element === "object" && Object.keys(element).length > 0) {
+      config = element as RenderConfig;
+      element = config.element;
+    }
+    if (!element) {
+      element = document.querySelector(
+        "[data-container='root']",
+      ) as HTMLElement;
+    }
   }
   // Handle case where config is just the root element
-  let domRoot = config instanceof HTMLElement ? config : config.root;
-  const renderConfig = config instanceof HTMLElement ? {} : config;
+  let domRoot = config instanceof HTMLElement || config === undefined
+    ? config
+    : config.root;
+  const renderConfig: RenderConfig =
+    config instanceof HTMLElement || config === undefined ? {} : config;
   if (!domRoot) {
     domRoot = document.querySelector("[data-container='root']") as HTMLElement;
     if (!domRoot) {
@@ -53,7 +68,7 @@ export function render(
   }
 
   // Create HandlerRegistry with config
-  const handlerRegistry = new HandlerRegistry({
+  const handlerRegistry = renderConfig.handlerRegistry ?? new HandlerRegistry({
     basePath,
     origin,
     eventPrefix,
@@ -80,7 +95,7 @@ export function render(
     handlers: handlerRegistry,
     templates: templateRegistry,
     unmount: () => {
-      if (element) {
+      if (element && domRoot !== element && element instanceof HTMLElement) {
         domRoot.removeChild(element);
       }
     },
@@ -90,7 +105,7 @@ export function render(
   }
 
   // Append element to root
-  if (element) {
+  if (element && domRoot !== element && element instanceof HTMLElement) {
     domRoot.appendChild(element);
   } else {
     console.warn("No element provided to render hooking up to root");
