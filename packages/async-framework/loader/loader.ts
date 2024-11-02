@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { escapeSelector, isPromise } from "../utils.ts";
 import type { Signal } from "../signals/signals.ts";
+import { SignalRegistry } from "../signals/registry.ts";
 
 export interface AsyncLoaderContext<T = any, M = any> {
   value: T | undefined | null | Promise<T>;
@@ -111,7 +112,7 @@ export class AsyncLoader {
     this.config = config;
     this.context = config.context || {};
     this.handlerRegistry = config.handlerRegistry;
-    this.signalRegistry = config.signalRegistry;
+    this.signalRegistry = config.signalRegistry || SignalRegistry.getInstance();
     this.templateRegistry = config.templateRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containerAttribute = config.containerAttribute || "data-container";

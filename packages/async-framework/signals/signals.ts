@@ -1,12 +1,10 @@
-import { signalRegistry } from "./registry.ts";
-import { generateId, getCurrentContext } from "../component/context.ts";
-import { contextRegistry } from "../context/registry.ts";
-import { ComputedContext } from "../context/types.ts";
+import { getCurrentContext } from "../component/context.ts";
+import { contextRegistry } from "../context/instance.ts";
+import { ComponentContext, ComputedContext } from "../context/types.ts";
+import { SignalRegistry } from "./registry.ts";
 
 // Why: Tracks the current computation context for signal dependencies
 let currentTracker: (() => void) | null = null;
-
-let nextSignalId = 0;
 
 export interface Signal<T> {
   id: string;
@@ -27,10 +25,38 @@ export interface SignalOptions {
   context?: string;
 }
 
+// Add this interface to properly type the signal context
+interface SignalContext<T> {
+  type: string;
+  id: string;
+  cleanup: Set<() => void>;
+  parent: ComponentContext | null;
+  value: T;
+}
+
 // Why: Creates a signal with tracking capabilities
-export function signal<T>(initialValue: T, options: SignalOptions = {}) {
+export function signal<T>(
+  initialValue: T,
+  options: SignalOptions | string = {},
+) {
   const context = getCurrentContext();
-  const id = options.id || generateId("signal", context?.id);
+  if (typeof options === "string") {
+    options = { id: options };
+  }
+  const id = options.id || contextRegistry.generateId("signal", context?.id);
+
+  const signalRegistry = SignalRegistry.getInstance();
+  // Update the signal context with proper typing
+  const signalContext: SignalContext<T> = {
+    type: "signal",
+    id,
+    cleanup: new Set<() => void>(),
+    parent: context || null,
+    value: initialValue,
+  };
+
+  contextRegistry.setContext(id, signalContext);
+
   let value = initialValue;
 
   // Create the signal object first so we can pass it to the registry
@@ -88,6 +114,9 @@ export function signal<T>(initialValue: T, options: SignalOptions = {}) {
     signalRegistry.notify(signalObj, newValue, oldValue);
   }
 
+  // Register the signal
+  signalRegistry.register(signalObj);
+
   return signalObj;
 }
 
@@ -135,27 +164,26 @@ export function computed<T>(
   options: SignalOptions = {},
 ): ReadSignal<T> {
   const context = getCurrentContext();
-  const id = options.id || contextRegistry.generateId("computed", context?.id);
+  const id = contextRegistry.generateId("computed", context?.id);
 
-  const sig = signal<T>(computation(), {
-    id,
-    context: context?.id,
-  });
-
-  // Create computed context
   const computedContext: ComputedContext = {
     type: "computed",
     id,
     cleanup: new Set(),
     parent: context || null,
-    value: sig.value,
+    value: undefined,
     dependencies: new Set(),
   };
 
   contextRegistry.setContext(id, computedContext);
 
+  const sig = signal<T>(computation(), { id });
+
+  // Track dependencies
   sig.track(function signalComputed() {
-    sig.value = computation();
+    const newValue = computation();
+    computedContext.value = newValue;
+    sig.value = newValue;
   });
 
   return readSignal(sig);
@@ -166,10 +194,10 @@ export function createComputed<T>(
   computation: () => T,
   options: SignalOptions = {},
 ): [() => T, ReadSignal<T>] {
-  const sig = signal<T>(computation(), {
-    id: options.id || `computed-${nextSignalId++}`,
-    context: options.context,
-  });
+  const context = getCurrentContext();
+  const id = options.id || contextRegistry.generateId("computed", context?.id);
+
+  const sig = signal<T>(computation(), { id, context: options.context });
 
   sig.track(function signalComputed() {
     sig.value = computation();
@@ -190,20 +218,21 @@ export function createResource<T = any>(
   error: Signal<Error | undefined>;
   dispose: () => void;
 } {
-  const baseId = options.id || `resource-${nextSignalId++}`;
-  const context = options.context;
+  const context = getCurrentContext();
+  const baseId = options.id ||
+    contextRegistry.generateId("resource", context?.id);
 
   const data = signal<T | undefined>(undefined, {
-    id: `${baseId}-data`,
-    context,
+    id: `${baseId}.data`,
+    context: options.context,
   });
   const loading = signal(true, {
-    id: `${baseId}-loading`,
-    context,
+    id: `${baseId}.loading`,
+    context: options.context,
   });
   const error = signal<Error | undefined>(undefined, {
-    id: `${baseId}-error`,
-    context,
+    id: `${baseId}.error`,
+    context: options.context,
   });
 
   let isDisposed = false;
@@ -257,5 +286,3 @@ export function createResource<T = any>(
 
   return { data, loading, error, dispose };
 }
-
-// ... keep existing debugSignal function ...

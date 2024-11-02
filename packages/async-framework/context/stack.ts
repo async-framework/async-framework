@@ -28,5 +28,3 @@ export class ContextStack {
     this.stack = [];
   }
 }
-
-export const contextStack = ContextStack.getInstance();

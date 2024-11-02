@@ -43,17 +43,17 @@ export class ContextRegistry {
 
     // Build the full context path
     const parts: string[] = [];
-    
+
     // Add parent path if it exists
     if (parentId) {
       parts.push(parentId);
     }
-    
+
     // Add this context's ID
     parts.push(`${type}-${count}`);
 
     // Join with dots to create hierarchical ID
-    return parts.join('.');
+    return parts.join(".");
   }
 
   // Why: Store and retrieve contexts
@@ -72,5 +72,3 @@ export class ContextRegistry {
     this.contextTypes.forEach((type) => this.counters.set(type, 0));
   }
 }
-
-export const contextRegistry = ContextRegistry.getInstance();

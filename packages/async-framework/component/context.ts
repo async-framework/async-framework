@@ -1,21 +1,6 @@
-import type { Signal } from "../signals/signals.ts";
-import { signalRegistry } from "../signals/registry.ts";
-import { contextRegistry } from "./context-registry.ts";
-
-// Why: Manages component context and hook state
-export interface ComponentContext {
-  id: string;
-  hooks: any[];
-  hookIndex: number;
-  signals: Set<Signal<any>>;
-  cleanup: Set<() => void>;
-  mounted: boolean;
-  element: HTMLElement | null;
-  parent?: ComponentContext | null;
-}
-
-const contextStack: ComponentContext[] = [];
-let currentContext: ComponentContext | null = null;
+import { signalRegistry } from "../signals/instance.ts";
+import { contextRegistry, contextStack } from "../context/instance.ts";
+import type { ComponentContext } from "../context/types.ts";
 
 // Why: Generates unique IDs for components and signals
 export function generateId(type: string, parentId?: string): string {
@@ -24,7 +9,7 @@ export function generateId(type: string, parentId?: string): string {
 
 // Why: Manages the current component context
 export function getCurrentContext(): ComponentContext | null {
-  return currentContext;
+  return contextStack.peek() as ComponentContext | null;
 }
 
 // Why: Creates and pushes a new component context
@@ -33,6 +18,7 @@ export function pushContext(
   parentContext?: ComponentContext,
 ): ComponentContext {
   const context: ComponentContext = {
+    type: "component",
     id: generateId("component", parentContext?.id),
     hooks: [],
     hookIndex: 0,
@@ -44,16 +30,12 @@ export function pushContext(
   };
 
   contextStack.push(context);
-  currentContext = context;
   return context;
 }
 
 // Why: Pops and cleans up the current context
 export function popContext(): void {
-  if (currentContext) {
-    contextStack.pop();
-    currentContext = contextStack[contextStack.length - 1] || null;
-  }
+  contextStack.pop();
 }
 
 // Why: Runs cleanup functions for a context

@@ -14,12 +14,16 @@ export interface ComponentContext extends BaseContext {
   element: HTMLElement | null;
 }
 
-export interface SignalContext extends BaseContext {
-  type: "signal";
+// Create a base value context type
+export interface ValueContext extends BaseContext {
   value: any;
 }
 
-export interface ComputedContext extends SignalContext {
+export interface SignalContext extends ValueContext {
+  type: "signal";
+}
+
+export interface ComputedContext extends ValueContext {
   type: "computed";
   dependencies: Set<string>;
 }
