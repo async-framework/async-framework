@@ -1,96 +1,83 @@
-import { type Signal, signal as createSignal } from "./signals.ts";
+import type { Signal } from "./signals.ts";
 
 export class SignalRegistry {
-  private registry: Map<string, Signal<any>> | {
-    get: (id: string) => Signal<any> | undefined;
-    set: (id: string, signal: Signal<any>) => void;
-    has: (id: string) => boolean;
-    size: number;
-    delete: (id: string) => void;
-    clear: () => void;
-  };
+  private static instance: SignalRegistry;
+  private subscriptions = new Map<
+    string,
+    Map<string, Set<(value: any, oldValue: any) => void>>
+  >();
+  private globalId = "global";
 
-  constructor(signalRegistry = new Map<string, Signal<any>>()) {
-    // TODO: extend Map
-    this.registry = {
-      has: (id: string) => {
-        return signalRegistry.has(id);
-      },
-      get: (id: string) => {
-        return signalRegistry.get(id);
-      },
-      get size() {
-        return signalRegistry.size;
-      },
-      set: (id: string, signal: Signal<any>) => {
-        signalRegistry.set(id, signal);
-      },
-      delete: (id: string) => {
-        signalRegistry.delete(id);
-      },
-      clear: () => {
-        signalRegistry.clear();
-      },
-    };
-  }
+  private constructor() {}
 
-  // Why: To get or create a signal by its ID
-  getOrCreate<T>(id: string, initialValue: T): Signal<T> {
-    if (this.registry.has(id)) {
-      // console.log("SignalRegistry.getOrCreate: signal already exists", id);
-      return this.registry.get(id) as Signal<T>;
+  static getInstance(): SignalRegistry {
+    if (!SignalRegistry.instance) {
+      SignalRegistry.instance = new SignalRegistry();
     }
-    if (typeof (initialValue as any).subscribe === "function") {
-      throw new Error("Signal initial value cannot be a Signal");
+    return SignalRegistry.instance;
+  }
+
+  subscribe<T>(
+    signal: Signal<T>,
+    callback: (value: T, oldValue: T) => void,
+    contextId?: string,
+  ): () => void {
+    const signalId = signal.id;
+    const subId = contextId || this.globalId;
+
+    if (!this.subscriptions.has(signalId)) {
+      this.subscriptions.set(signalId, new Map());
     }
-    const signal = createSignal<T>(initialValue);
-    this.registry.set(id, signal);
-    // console.log("SignalRegistry.getOrCreate: signal created", id);
-    return signal;
-  }
-  updateOrCreate<T>(id: string, initialValue: T): Signal<T> {
-    if (this.registry.has(id)) {
-      const signal = this.registry.get(id) as Signal<T>;
-      signal.set(initialValue);
-      return signal;
+
+    const signalSubs = this.subscriptions.get(signalId)!;
+    if (!signalSubs.has(subId)) {
+      signalSubs.set(subId, new Set());
     }
-    if (typeof (initialValue as any).subscribe === "function") {
-      throw new Error("Signal initial value cannot be a Signal");
+
+    signalSubs.get(subId)!.add(callback);
+
+    return () => this.unsubscribe(signal, callback, contextId);
+  }
+
+  unsubscribe<T>(
+    signal: Signal<T>,
+    callback?: (value: T, oldValue: T) => void,
+    contextId?: string,
+  ): void {
+    const signalId = signal.id;
+    const subId = contextId || this.globalId;
+
+    const signalSubs = this.subscriptions.get(signalId);
+    if (!signalSubs) return;
+
+    if (callback) {
+      // Remove specific callback
+      const callbacks = signalSubs.get(subId);
+      if (callbacks) {
+        callbacks.delete(callback);
+        if (callbacks.size === 0) {
+          signalSubs.delete(subId);
+        }
+      }
+    } else {
+      // Remove all callbacks for context
+      signalSubs.delete(subId);
     }
-    const signal = createSignal<T>(initialValue);
-    this.registry.set(id, signal);
-    return signal;
-  }
-  get size(): number {
-    return typeof this.registry.size === "function"
-      ? (this.registry as any).size()
-      : this.registry.size;
+
+    if (signalSubs.size === 0) {
+      this.subscriptions.delete(signalId);
+    }
   }
 
-  set<T>(id: string, value: T): Signal<T> {
-    return this.updateOrCreate(id, value);
-  }
+  notify<T>(signal: Signal<T>, newValue: T, oldValue: T): void {
+    const signalId = signal.id;
+    const signalSubs = this.subscriptions.get(signalId);
+    if (!signalSubs) return;
 
-  // Why: To get a signal by its ID
-  get<T>(id: string): Signal<T> | undefined {
-    return this.registry.get(id) as Signal<T> | undefined;
-  }
-
-  // Why: To check if a signal with the given ID exists
-  has(id: string): boolean {
-    return this.registry.has(id);
-  }
-
-  // Why: To remove a signal from the registry
-  remove(id: string): void {
-    this.registry.delete(id);
-  }
-  delete(id: string): void {
-    this.registry.delete(id);
-  }
-
-  // Why: To clear all signals from the registry
-  clear(): void {
-    this.registry.clear();
+    signalSubs.forEach((callbacks) => {
+      callbacks.forEach((callback) => callback(newValue, oldValue));
+    });
   }
 }
+
+export const signalRegistry = SignalRegistry.getInstance();
