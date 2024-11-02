@@ -29,6 +29,10 @@ export function signal<T>(initialValue: T) {
   function set(newValue: T) {
     // console.log("signal.set", currentTracker, this);
     const oldValue = value;
+    if (isSignal(oldValue) || isSignal(newValue)) {
+      console.log("signal.set: oldValue is a signal", oldValue);
+      return;
+    }
     if (newValue === oldValue) {
       // console.log(
       //   "signal.set: value is the same, skipping",
@@ -209,4 +213,93 @@ export function debugSignal<T>(
     return [_signal.get, _signal.set, _signal as ReturnType<typeof signal<T>>];
   }
   return _signal;
+}
+
+export function isSignal<T>(value: T): boolean {
+  return typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    (value as any).type === "signal";
+}
+
+// Why: Creates a resource signal that handles async data loading and updates with proper cleanup
+export function createResource<T = any>(
+  fetcher: (
+    track: <R>(fn: () => R) => R,
+  ) => Promise<T | Signal<T> | ReadSignal<T>>,
+): {
+  data: Signal<T | undefined>;
+  loading: Signal<boolean>;
+  error: Signal<Error | undefined>;
+  dispose: () => void;
+} {
+  const data = signal<T | undefined>(undefined);
+  const loading = signal(true);
+  const error = signal<Error | undefined>(undefined);
+
+  // Store cleanup function
+  let cleanup: (() => void) | undefined;
+  let isDisposed = false;
+
+  // Why: Track function to pass to the fetcher
+  function track<R>(fn: () => R): R {
+    return data.track(fn);
+  }
+
+  // Why: Function to reload the resource
+  function load() {
+    if (isDisposed) return;
+
+    loading.value = true;
+    error.value = undefined;
+
+    fetcher(track)
+      .then((result) => {
+        if (isDisposed) return;
+
+        if (isSignal(result)) {
+          const signalResult = result as Signal<T>;
+          // Handle signal result
+          data.value = signalResult.value;
+          // Store the unsubscribe function
+          cleanup = signalResult.subscribe((newValue) => {
+            if (!isDisposed) {
+              data.value = newValue;
+            }
+          });
+        } else {
+          // Handle direct value result
+          data.value = result as T;
+        }
+      })
+      .catch((err) => {
+        if (!isDisposed) {
+          error.value = err instanceof Error ? err : new Error(String(err));
+        }
+      })
+      .finally(() => {
+        if (!isDisposed) {
+          loading.value = false;
+        }
+      });
+  }
+
+  // Initial load
+  load();
+
+  // Why: Cleanup function to unsubscribe from signal updates and prevent further updates
+  const dispose = () => {
+    isDisposed = true;
+    if (cleanup) {
+      cleanup();
+      cleanup = undefined;
+    }
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    dispose,
+  };
 }

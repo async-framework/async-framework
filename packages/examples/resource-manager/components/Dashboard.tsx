@@ -1,4 +1,4 @@
-import { computed, createRouter, iif, signal } from "@async/framework";
+import { computed, createRouter, iif, Signal, signal } from "@async/framework";
 import { getResources, type Resource } from "../data/mock.ts";
 
 export function Dashboard({
@@ -11,7 +11,7 @@ export function Dashboard({
 
   // Load resources
   getResources().then((data) => {
-    resources.value = data;
+    resources.value = data.value;
     loading.value = false;
   });
 

@@ -3,6 +3,12 @@ type Signal<T> = {
   subscribe: (callback: (newValue: T, oldValue: T) => void) => void;
   value: T;
 };
+function isSignal<T>(value: T): boolean {
+  return typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    (value as any).type === "signal";
+}
 type JSXChild =
   | string
   | number
@@ -63,6 +69,19 @@ function renderValueBasedOnType(
         for (const child of newValue) {
           appendChild(parent, child);
         }
+      } else if (newValue === null && oldValue) {
+        if (Array.isArray(oldValue)) {
+          for (const child of oldValue) {
+            parent.removeChild(child);
+          }
+        } else {
+          parent.removeChild(oldValue);
+        }
+      } else if (isSignal(newValue?.type)) {
+        // console.log("appendChild signal", newValue);
+        const value = newValue.value;
+        renderValueBasedOnType(parent, typeof value, value, oldValue);
+        return;
       } else {
         // console.log("appendChild", newValue);
         parent.appendChild(newValue);
@@ -85,7 +104,7 @@ export function jsx(
   if (typeof type === "function") {
     const result = type.call(this, props);
     // Handle case where component returns a signal
-    if ((result as Signal<any>)?.subscribe) {
+    if (isSignal(result)) {
       const signal = result as Signal<any>;
       const value = signal.value;
       // const innerParent = document.createDocumentFragment();
@@ -150,7 +169,7 @@ function appendChild(
   }
 
   // Handle signals
-  if ((child as Signal<any>)?.subscribe) {
+  if (isSignal(child)) {
     const signal = child as Signal<any>;
     let value = signal.value;
     if (value === undefined || value === null) {
@@ -192,7 +211,7 @@ function appendChild(
 
 // Helper function to handle attributes
 function handleAttribute(element: HTMLElement, key: string, value: any): void {
-  if (value?.subscribe) {
+  if (isSignal(value)) {
     // Handle signal values in attributes
     if (key === "value" && element instanceof HTMLInputElement) {
       // Special handling for input value

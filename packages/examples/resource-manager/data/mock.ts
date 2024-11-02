@@ -1,3 +1,4 @@
+import { Signal, signal } from "@async/framework";
 export type Resource = {
   id: string;
   name: string;
@@ -28,8 +29,8 @@ export const createMockResources = (
       .toISOString(),
   }));
 
-let mockResources = createMockResources();
-export function getResources(): Promise<Resource[]> {
+const mockResources = signal(createMockResources());
+export function getResources(): Promise<Signal<Resource[]>> {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockResources), 500);
   });
@@ -38,13 +39,18 @@ export function getResources(): Promise<Resource[]> {
 export function getResourceById(id: string): Promise<Resource | undefined> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(mockResources.find((r) => r.id === id));
+      if (mockResources.value) {
+        resolve(mockResources.value.find((r) => r.id === id));
+      } else {
+        resolve(undefined);
+      }
     }, 300);
   });
 }
 
 // Update mock resources every 5 seconds
 setInterval(() => {
-  console.log("updating mock resources");
-  mockResources = createMockResources();
+  const resources = createMockResources();
+  console.log("MOCK: updating mock resources", resources.length);
+  mockResources.value = resources;
 }, 5000);
