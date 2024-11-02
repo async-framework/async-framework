@@ -15,6 +15,23 @@ type JSXChild =
 type JSXElement = HTMLElement | DocumentFragment;
 type Component = (props: any) => JSXElement | Signal<any>;
 
+function renderValueBasedOnType(
+  parent: HTMLElement | DocumentFragment,
+  type: string,
+  value: any,
+) {
+  // TODO: render based on value type being a DOM element
+  switch (type) {
+    case "number":
+    case "string":
+    case "boolean":
+      parent.appendChild(document.createTextNode(String(value)));
+      break;
+    default:
+      parent.appendChild(value);
+  }
+}
+
 // Why: Provides JSX runtime support for client-side rendering with proper typing
 export function jsx(
   this: any,
@@ -22,6 +39,10 @@ export function jsx(
   props: Record<string, any> | null,
   ...children: JSXChild[]
 ): JSXElement {
+  // if (type === "main" && props?.class?.includes("container")) {
+  //   console.log("jsx", this, import.meta.url);
+  //   debugger
+  // }
   // Handle function components
   if (typeof type === "function") {
     const result = type.call(this, props);
@@ -89,11 +110,14 @@ function appendChild(
   // Handle signals
   if ((child as Signal<any>)?.subscribe) {
     const signal = child as Signal<any>;
-    const textNode = document.createTextNode(String(signal.value));
+    let value = signal.value;
+    if (value === undefined || value === null) {
+      value = "";
+    }
     signal.subscribe((newValue: any) => {
-      textNode.textContent = String(newValue);
+      renderValueBasedOnType(parent, typeof newValue, newValue);
     });
-    parent.appendChild(textNode);
+    renderValueBasedOnType(parent, typeof value, value);
     return;
   }
 

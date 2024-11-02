@@ -27,8 +27,11 @@ app.use(logger());
 
 // Add this route to handle .tsx files
 app.get(async (c, next) => {
-  if (c.req.path.endsWith(".tsx")) {
-    console.log("GET: *.tsx", c.req.path);
+  const isTsx = c.req.path.endsWith(".tsx");
+  const isTs = c.req.path.endsWith(".ts");
+  const notPkg = !/async-framework/.test(c.req.path);
+  if (isTsx || isTs && notPkg) {
+    console.log("GET: ", isTsx ? "*.tsx" : "*.ts", c.req.path);
     const path = c.req.path;
     try {
       const fullPath = join(packagesDirectory, path);
