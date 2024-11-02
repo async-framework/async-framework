@@ -4,6 +4,8 @@ import {
   type JSXChild,
   renderComponent,
 } from "./component/render.ts";
+import { contextRegistry } from "../context/registry.ts";
+import { GlobalContext } from "../context/types.ts";
 
 // Define types for JSX elements and children
 type Signal<T> = {
@@ -25,7 +27,7 @@ type JSXAttributes = Record<
   string,
   string | number | boolean | Signal<any> | ReadSignal<any> | undefined
 >;
-type JSXElement = HTMLElement | DocumentFragment;
+type JSXElement = HTMLElement | Element | DocumentFragment;
 type Component = (props: any) => JSXElement | Signal<any>;
 
 // Why: Provides JSX runtime support with context awareness

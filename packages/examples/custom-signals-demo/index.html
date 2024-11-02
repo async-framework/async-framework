@@ -8,12 +8,12 @@
     <script type="importmap">
       {
         "imports": {
-          "async-framework": "/async-framework.js"
+          "@async/framework": "/async-framework.ts"
         }
       }
     </script>
     <script type="module" src="/livereload.js"></script>
-    <link rel="modulepreload" href="/async-framework.js" />
+    <link rel="modulepreload" href="/async-framework.ts" />
   </head>
   <body class="bg-gray-100 min-h-screen">
     <header class="w-full bg-blue-600 p-4 text-white mb-8">
@@ -97,41 +97,37 @@
     </div>
 
     <script type="module">
-      // Import the render function
-      import { render } from "async-framework";
+      import { render, signal } from "@async/framework";
 
       // Render the app without an element to attach to
-      const rootDom = document.querySelector("[data-container='root']");
-      const asyncLoader = render(rootDom);
-      globalThis.asyncLoader = asyncLoader;
-      const signals = asyncLoader.signals;
+      const asyncLoader = render();
 
-      // Initialize signals
-      const count = signals.getOrCreate("count", 0);
-      const firstName = signals.getOrCreate("firstName", "");
-      const lastName = signals.getOrCreate("lastName", "");
-      const fullName = signals.getOrCreate("fullName", "");
-      const celsius = signals.getOrCreate("celsius", 0);
-      const fahrenheit = signals.getOrCreate("fahrenheit", "0");
+      // Initialize signals using the signal function
+      const count = signal(0, "count");
+      const firstName = signal("", "firstName");
+      const lastName = signal("", "lastName");
+      const fullName = signal("", "fullName");
+      const celsius = signal(0, "celsius");
+      const fahrenheit = signal("0", "fahrenheit");
 
       // Set up subscriptions to update the DOM
       fullName.subscribe((value) => {
-        console.log("fullName", value);
         document.getElementById("fullName").textContent = value;
       });
+
       count.subscribe((value) => {
-        console.log("count", value);
-        document.getElementById("count").textContent = value;
+        document.getElementById("count").textContent = value.toString();
       });
+
       fahrenheit.subscribe((value) => {
-        console.log("fahrenheit", value);
-        document.getElementById("fahrenheit").textContent = value;
+        document.getElementById("fahrenheit").textContent = value.toString();
       });
 
       // Initial updates
       document.getElementById("fullName").textContent = fullName.value;
-      document.getElementById("count").textContent = count.value;
-      document.getElementById("fahrenheit").textContent = fahrenheit.value;
+      document.getElementById("count").textContent = count.value.toString();
+      document.getElementById("fahrenheit").textContent = fahrenheit.value
+        .toString();
     </script>
   </body>
 </html>

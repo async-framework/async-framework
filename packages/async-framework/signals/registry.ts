@@ -6,6 +6,7 @@ export class SignalRegistry {
     string,
     Map<string, Set<(value: any, oldValue: any) => void>>
   >();
+  private signals = new Map<string, Signal<any>>();
   private globalId = "global";
 
   private constructor() {}
@@ -15,6 +16,42 @@ export class SignalRegistry {
       SignalRegistry.instance = new SignalRegistry();
     }
     return SignalRegistry.instance;
+  }
+
+  register<T>(signal: Signal<T>): void {
+    if (this.signals.has(signal.id)) {
+      console.error(`Signal with id ${signal.id} already registered`);
+      return;
+    }
+    if (signal.id === "global") {
+      console.error(`Signal with id ${signal.id} is reserved`);
+      return;
+    }
+    if (!signal.id) {
+      console.error(`Signal with id ${signal.id} is required`);
+      return;
+    }
+    this.signals.set(signal.id, signal);
+  }
+
+  get<T>(signalId: string): Signal<T> | undefined {
+    if (!signalId) {
+      console.error(`Signal with id ${signalId} is required`);
+      return;
+    }
+    if (signalId === "global") {
+      console.error(`Signal with id ${signalId} is reserved`);
+      return;
+    }
+    if (!this.signals.has(signalId)) {
+      console.error(`Signal with id ${signalId} is not registered`);
+      return;
+    }
+    return this.signals.get(signalId) as Signal<T> | undefined;
+  }
+
+  getAllSignals(): Map<string, Signal<any>> {
+    return new Map(this.signals);
   }
 
   subscribe<T>(
@@ -79,5 +116,3 @@ export class SignalRegistry {
     });
   }
 }
-
-export const signalRegistry = SignalRegistry.getInstance();
