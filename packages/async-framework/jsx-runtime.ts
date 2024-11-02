@@ -48,23 +48,23 @@ function renderValueBasedOnType(
       break;
     case "function":
       // handle iif
-      console.log("renderValueBasedOnType function", newValue);
+      // console.log("renderValueBasedOnType function", newValue);
       const result = newValue();
       return renderValueBasedOnType(parent, typeof result, result, oldValue);
     default:
       if (parent.firstElementChild === oldValue && parent.firstElementChild) {
-        console.log("replace child", newValue, oldValue);
+        // console.log("replace child", newValue, oldValue);
         parent.replaceChild(newValue, parent.firstElementChild);
       } else if (parent.firstChild === oldValue && parent.firstChild) {
-        console.log("replace child", newValue, oldValue);
+        // console.log("replace child", newValue, oldValue);
         parent.replaceChild(newValue, parent.firstChild);
       } else if (Array.isArray(newValue)) {
-        console.log("appendChild array", newValue);
+        // console.log("appendChild array", newValue);
         for (const child of newValue) {
           appendChild(parent, child);
         }
       } else {
-        console.log("appendChild", newValue);
+        // console.log("appendChild", newValue);
         parent.appendChild(newValue);
       }
   }
@@ -92,7 +92,7 @@ export function jsx(
       const parent = document.createElement("div");
       renderValueBasedOnType(parent, typeof value, value, null);
       signal.subscribe((newValue: any) => {
-        console.log("jsx.signal.subscribe", newValue);
+        // console.log("jsx.signal.subscribe", newValue);
         renderValueBasedOnType(parent, typeof newValue, newValue, value);
       });
       return parent as unknown as JSXElement;

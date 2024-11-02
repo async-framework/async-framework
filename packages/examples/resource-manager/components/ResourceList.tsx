@@ -13,7 +13,7 @@ export function ResourceList({
 
   // Load resources
   getResources().then((data) => {
-    console.log("grab data", data);
+    console.log("grab data", data.length);
     resources.value = data;
     loading.value = false;
   });
