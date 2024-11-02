@@ -36,7 +36,20 @@ export function Counter() {
             })
           )}
         >
-          Count: {count} Doubled: {doubled} Tripled: {tripled}
+          <div>
+            <div>
+              <span class="text-red-500">WIP</span> Render Problem
+            </div>
+          </div>
+          <div class="text-red-500">
+            Count: {count} Doubled: {doubled} Tripled: {tripled}
+          </div>
+          <div>
+            <div>Fake Fixed Render Problem</div>
+            Count: <span>{count}</span> Doubled: <span>{doubled}</span> Tripled:
+            {" "}
+            <span>{tripled}</span>
+          </div>
         </h2>
         <button
           onClick={() => (theme.value = theme.value === "light"
