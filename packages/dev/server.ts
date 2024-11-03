@@ -25,13 +25,36 @@ const app = new Hono();
 
 app.use(logger());
 
+
+// custom-element signals
+app.get("/custom-element-signals.js", async (c) => {
+  try {
+    const bundleContent = await bundle(
+      join(packagesDirectory, "custom-element-signals/src/index.ts"),
+    );
+    return c.body(bundleContent, 200, {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "max-age=3600",
+    });
+  } catch (error: unknown | Error) {
+    console.error("Bundling error for custom-element-signals:", error);
+    return c.text(
+      `Error creating bundle: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      500,
+    );
+  }
+});
+
+
 // Add this route to handle .tsx files
 app.get(async (c, next) => {
   const path = c.req.path;
   const isTsx = path.endsWith(".tsx");
   const isTs = path.endsWith(".ts");
   const isJs = path.endsWith(".js");
-  const notPkg = !/async-framework/.test(path);
+  const notPkg = !/async-framework|livereload/.test(path);
 
   if ((isTsx || isTs || isJs) && notPkg) {
     console.log("GET: ", path);
@@ -161,46 +184,6 @@ const renderDirectoryListingMiddleware = renderDirectoryListing(
 app.get("/", appendTrailingSlash(), renderDirectoryListingMiddleware);
 app.get("/examples", appendTrailingSlash(), renderDirectoryListingMiddleware);
 
-app.get("/tailwind.css", async (c) => {
-  try {
-    const tailwindCss = await Deno.readTextFile(
-      join(serverDirectory, "tailwind.css"),
-    );
-    return c.body(tailwindCss, 200, {
-      "Content-Type": "text/css",
-      "Cache-Control": "max-age=3600",
-    });
-  } catch (error: unknown) {
-    if (error && typeof error === "object" && "name" in error) {
-      console.error("GET: /tailwind.css", error.name);
-    } else {
-      console.error("Error reading tailwind.css:");
-    }
-    return c.text("/* Error reading tailwind.css */", 500);
-  }
-});
-
-
-// custom-element signals
-app.get("/custom-element-signals.js", async (c) => {
-  try {
-    const bundleContent = await bundle(
-      join(packagesDirectory, "custom-element-signals/src/index.ts"),
-    );
-    return c.body(bundleContent, 200, {
-      "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
-    });
-  } catch (error: unknown | Error) {
-    console.error("Bundling error for custom-element-signals:", error);
-    return c.text(
-      `Error creating bundle: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      500,
-    );
-  }
-});
 
 
 // Update the /bundle route
