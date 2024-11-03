@@ -1,6 +1,6 @@
 import { signal } from "../signals/signals.ts";
 import { getCurrentContext } from "../component/context.ts";
-import { contextRegistry } from "../context/registry.ts";
+import { contextRegistry } from "../context/instance.ts";
 import type { ComponentContext } from "../context/types.ts";
 
 // Why: Implements useState hook with signal integration

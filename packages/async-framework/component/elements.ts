@@ -1,5 +1,5 @@
 // New file for custom elements definitions
-import { ComponentContext } from "./context.ts";
+import { ComponentContext } from "../context/types.ts";
 
 // Why: Provides a base element for signals with lifecycle management
 export class AsyncSignalElement extends HTMLElement {

@@ -27,21 +27,35 @@ app.use(logger());
 
 // Add this route to handle .tsx files
 app.get(async (c, next) => {
-  const isTsx = c.req.path.endsWith(".tsx");
-  const isTs = c.req.path.endsWith(".ts");
-  const notPkg = !/async-framework/.test(c.req.path);
-  if (isTsx || isTs && notPkg) {
-    console.log("GET: ", isTsx ? "*.tsx" : "*.ts", c.req.path);
-    const path = c.req.path;
+  const path = c.req.path;
+  const isTsx = path.endsWith(".tsx");
+  const isTs = path.endsWith(".ts");
+  const isJs = path.endsWith(".js");
+  const notPkg = !/async-framework/.test(path);
+
+  if ((isTsx || isTs || isJs) && notPkg) {
+    console.log("GET: ", path);
     try {
-      const fullPath = join(packagesDirectory, path);
+      // If .js is requested, try to find a .ts file first
+      let fullPath = join(packagesDirectory, path);
+      if (isJs) {
+        const tsPath = fullPath.replace(/\.js$/, '.ts');
+        try {
+          // Check if .ts version exists
+          await Deno.stat(tsPath);
+          fullPath = tsPath; // Use the .ts file if it exists
+        } catch {
+          // If .ts doesn't exist, continue with .js path
+        }
+      }
+
       const bundleContent = await bundle(fullPath);
       return c.body(bundleContent, 200, {
         "Content-Type": "application/javascript",
         "Cache-Control": "max-age=3600",
       });
     } catch (error: unknown | Error) {
-      console.error("Bundling error for tsx file:", error);
+      console.error("Bundling error:", error);
       return c.text(
         `Error creating bundle: ${
           error instanceof Error ? error.message : "Unknown error"

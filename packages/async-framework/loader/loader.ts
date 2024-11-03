@@ -2,6 +2,12 @@
 import { escapeSelector, isPromise } from "../utils.ts";
 import type { Signal } from "../signals/signals.ts";
 import { SignalRegistry } from "../signals/registry.ts";
+// import { contextStack, contextRegistry } from "../context/instance.ts";
+import {
+  getCurrentContext,
+  popContext,
+  pushContext,
+} from "../component/context.ts";
 
 export interface AsyncLoaderContext<T = any, M = any> {
   value: T | undefined | null | Promise<T>;
@@ -606,21 +612,29 @@ export class AsyncLoader {
         );
 
         try {
-          const res = self.handlerRegistry.handler(context);
+          // create context stack
+          // console.log('handleContainerEvent: creating context');
+          const parentContext = getCurrentContext();
+          pushContext(element, parentContext);
+          let res = self.handlerRegistry.handler(context);
+          // console.log('handleContainerEvent: handler result', res);
           if (isPromise(res)) {
-            await res;
+            res = await res;
           }
+          // console.log('handleContainerEvent: handler result after await', res);
         } catch (error) {
           // Reset value if there's an error
-          value = undefined;
           console.error(
             `AsyncLoader.handleContainerEvent: Error`,
             error,
           ); // Log any errors during handler execution
+        } finally {
+          // clear the context
+          popContext();
+          // clear and references to avoid memory leak
+          value = undefined;
+          module = undefined;
         }
-        // clear and references to avoid memory leak
-        value = undefined;
-        module = undefined;
 
         // If the event doesn't bubble, stop after handling the first matching element
         if (stop) {

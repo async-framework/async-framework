@@ -15,6 +15,13 @@ export class ContextRegistry {
     this.registerContextType("resource");
     this.registerContextType("hook");
     this.registerContextType("global");
+
+    // Allow dynamic registration of ctx- types
+    this.registerContextTypePrefix("ctx-");
+    this.registerContextTypePrefix("cmp-");
+    this.registerContextTypePrefix("sig-");
+    this.registerContextTypePrefix("res-");
+    this.registerContextTypePrefix("hook-");
   }
 
   static getInstance(): ContextRegistry {
@@ -24,7 +31,7 @@ export class ContextRegistry {
     return ContextRegistry.instance;
   }
 
-  // Why: Register a new context type
+  // Why: Register a new context type with optional prefix check
   registerContextType(type: string): void {
     if (!this.contextTypes.has(type)) {
       this.contextTypes.add(type);
@@ -32,27 +39,37 @@ export class ContextRegistry {
     }
   }
 
-  // Why: Generate a unique ID for a given context type with full parent chain
+  // Why: Register a prefix to allow dynamic type registration
+  registerContextTypePrefix(prefix: string): void {
+    this.contextTypes.add(prefix);
+  }
+
+  // Why: Generate a unique ID with prefix support
   generateId(type: string, parentId?: string): string {
+    // Check for exact type match first
     if (!this.contextTypes.has(type)) {
-      throw new Error(`Unknown context type: ${type}`);
+      // Check if type starts with a registered prefix
+      const hasValidPrefix = Array.from(this.contextTypes).some((prefix) =>
+        prefix.endsWith("-") && type.startsWith(prefix)
+      );
+
+      if (!hasValidPrefix) {
+        throw new Error(`Unknown context type: ${type}`);
+      }
+
+      // Auto-register the new type
+      this.registerContextType(type);
     }
 
     const count = this.counters.get(type) || 0;
     this.counters.set(type, count + 1);
 
-    // Build the full context path
     const parts: string[] = [];
-
-    // Add parent path if it exists
     if (parentId) {
       parts.push(parentId);
     }
-
-    // Add this context's ID
     parts.push(`${type}-${count}`);
 
-    // Join with dots to create hierarchical ID
     return parts.join(".");
   }
 

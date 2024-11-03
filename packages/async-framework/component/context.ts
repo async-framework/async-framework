@@ -15,7 +15,7 @@ export function getCurrentContext(): ComponentContext | null {
 // Why: Creates and pushes a new component context
 export function pushContext(
   element: HTMLElement | null = null,
-  parentContext?: ComponentContext,
+  parentContext?: ComponentContext | null,
 ): ComponentContext {
   const context: ComponentContext = {
     type: "component",

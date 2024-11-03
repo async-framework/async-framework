@@ -1,10 +1,6 @@
 import { Signal } from "../signals/signals.ts";
-import {
-  ComponentContext,
-  getCurrentContext,
-  popContext,
-  pushContext,
-} from "./context.ts";
+import type { ComponentContext } from "../context/types.ts";
+import { getCurrentContext, popContext, pushContext } from "./context.ts";
 import { AsyncComponentElement, AsyncSignalElement } from "./elements.ts";
 
 // Update appendChild to use AsyncSignalElement
@@ -241,7 +237,7 @@ export function handleAttribute(
 }
 
 // Helper function to check if a value is a signal
-export function isSignal(value: unknown): value is Signal<any> {
+function isSignal(value: unknown): value is Signal<any> {
   return value !== null &&
     typeof value === "object" &&
     "type" in (value as any) &&

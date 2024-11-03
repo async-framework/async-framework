@@ -121,9 +121,11 @@ export function signal<T>(
 }
 
 // Why: Type guard for signals
-export function isSignal(value: any): value is Signal<any> {
-  return value && typeof value === "object" && "type" in value &&
-    value.type === "signal";
+export function isSignal(value: unknown): value is Signal<any> {
+  return value !== null &&
+    typeof value === "object" &&
+    "type" in (value as any) &&
+    (value as any).type.includes("signal");
 }
 
 // Why: Creates a read-only version of a signal

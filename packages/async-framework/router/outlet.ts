@@ -1,10 +1,10 @@
+import type { ComponentContext } from "../context/types.ts";
 import {
   cleanupContext,
-  ComponentContext,
   popContext,
   pushContext,
 } from "../component/context.ts";
-import { isSignal, Signal } from "../signals/signals.ts";
+import { isSignal } from "../signals/signals.ts";
 import { renderSignalToElement } from "../component/render.ts";
 
 // Why: Implements router outlet as custom element
