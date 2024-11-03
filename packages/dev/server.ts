@@ -49,7 +49,7 @@ app.get("/custom-element-signals.js", async (c) => {
 
 
 // Add this route to handle .tsx files
-app.get(async (c, next) => {
+app.use(async (c, next) => {
   const path = c.req.path;
   const isTsx = path.endsWith(".tsx");
   const isTs = path.endsWith(".ts");
@@ -75,7 +75,8 @@ app.get(async (c, next) => {
       const bundleContent = await bundle(fullPath);
       return c.body(bundleContent, 200, {
         "Content-Type": "application/javascript",
-        "Cache-Control": "max-age=3600",
+        // "Cache-Control": "max-age=3600",
+        "X-Bundle-Path": relative(rootRepoDir, fullPath),
       });
     } catch (error: unknown | Error) {
       console.error("Bundling error:", error);
@@ -98,12 +99,12 @@ const createPackageBundle = (entryPath: string) => {
   return async (c) => {
     try {
       // console.log("GET BUNDLE: ", entryPath);
-      const bundleContent = await bundle(
-        join(packagesDirectory, entryPath),
-      );
+      const absolutePath = join(packagesDirectory, entryPath);
+      const bundleContent = await bundle(absolutePath);
       return c.body(bundleContent, 200, {
         "Content-Type": "application/javascript",
-        "Cache-Control": "max-age=3600",
+        // "Cache-Control": "max-age=3600",
+        "X-Bundle-Path": relative(rootRepoDir, absolutePath),
       });
     } catch (error: unknown | Error) {
       console.error("Bundling error for async-framework:", error);
@@ -197,7 +198,8 @@ app.get("/bundle", async (c) => {
     const bundleContent = await bundle(entryPoint);
     return c.body(bundleContent, 200, {
       "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
+      // "Cache-Control": "max-age=3600",
+      "X-Bundle-Path": relative(rootRepoDir, entryPoint),
     });
   } catch (error: unknown | Error) {
     console.error("Bundling error:", error);
@@ -215,6 +217,9 @@ app.use(
   "/examples/*",
   serveStatic({
     root: packagesDirectory,
+    onFound(path, c) {
+      console.log("GET static: ", path, "found");
+    }
   }),
 );
 
@@ -240,7 +245,8 @@ app.get("/livereload.js", async (c) => {
     );
     return c.body(livereloadJs, 200, {
       "Content-Type": "application/javascript",
-      "Cache-Control": "max-age=3600",
+      // "Cache-Control": "max-age=3600",
+      "X-Bundle-Path": join(serverDirectory, "livereload.js"),
     });
   } catch (error: unknown) {
     if (error && typeof error === "object" && "name" in error) {

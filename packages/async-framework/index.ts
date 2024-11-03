@@ -6,3 +6,4 @@ export * from "./framework/index.ts";
 export * from "./router/index.ts";
 export * from "./component/index.ts";
 export * from "./context/index.ts";
+export * from "./jsx-runtime.ts";
