@@ -49,8 +49,8 @@ export function getResourceById(id: string): Promise<Resource | undefined> {
 }
 
 // Update mock resources every 5 seconds
-setInterval(() => {
-  const resources = createMockResources();
-  console.log("MOCK: updating mock resources", resources.length);
-  mockResources.value = resources;
-}, 5000);
+// setInterval(() => {
+//   const resources = createMockResources();
+//   console.log("MOCK: updating mock resources", resources.length);
+//   mockResources.value = resources;
+// }, 5000);

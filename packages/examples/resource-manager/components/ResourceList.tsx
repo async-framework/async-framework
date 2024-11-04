@@ -76,7 +76,7 @@ export function ResourceList({
   });
 
   return (
-    <div class="space-y-6">
+    <div class="flex flex-col gap-6">
       <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-900">Resources</h1>
         <div class="flex space-x-4">
