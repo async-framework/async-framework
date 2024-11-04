@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
+import { dirname, fromFileUrl } from "@std/path";
 import { findAvailablePort } from "#/dev/server-utils/index.ts";
 
 const app = new Hono();
@@ -68,7 +69,12 @@ app.get("/about", (c) => {
 });
 
 // Serve static files from the public directory
-app.use("/static/*", serveStatic({ root: "./" }));
+app.use(
+  "/static/*",
+  serveStatic({
+    root: dirname(fromFileUrl(import.meta.url)),
+  })
+);
 
 const port = await findAvailablePort(3000, 3100);
 console.log(`HTTP server running on http://localhost:${port}`);

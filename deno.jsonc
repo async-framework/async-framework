@@ -7,6 +7,7 @@
     "test:dev": "deno test --allow-read --allow-env --allow-write --quiet packages/dev/server-utils/bundler.test.ts",
     "start": "deno run -A packages/dev/server.ts",
     "start:app": "deno run -A packages/example-apps/hello-world/server.tsx",
+    "dev:example-apps": "deno run --watch --allow-env --allow-read --allow-net packages/example-apps/hello-world/server.tsx",
     "dev": "deno run -A --watch packages/dev/server.ts --livereload"
   },
   "workspace": ["./packages/async-framework/"],
