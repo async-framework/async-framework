@@ -79,7 +79,7 @@ export function ResourceList({
     <div class="flex flex-col gap-6">
       <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-900">Resources</h1>
-        <div class="flex space-x-4">
+        <div class="flex gap-4">
           <input
             type="text"
             placeholder="Search resources..."

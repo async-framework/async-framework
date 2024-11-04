@@ -13,7 +13,7 @@ export function Navigation({
     <nav class="bg-white shadow-md">
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between h-16">
-          <div class="flex space-x-4">
+          <div class="flex gap-4">
             <a
               href="#"
               onClick={(e) => {

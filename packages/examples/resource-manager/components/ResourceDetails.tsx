@@ -84,7 +84,7 @@ export function ResourceDetails({
             <div class="grid grid-cols-2 gap-6">
               <div>
                 <h3 class="text-lg font-semibold mb-2">Details</h3>
-                <dl class="space-y-2">
+                <dl class="flex flex-col gap-2">
                   <div>
                     <dt class="text-sm text-gray-600">ID</dt>
                     <dd class="text-sm font-medium">{resource.value.id}</dd>

@@ -42,7 +42,7 @@ export function Dashboard({
       );
     },
     () => (
-      <div class="space-y-6">
+      <div class="flex flex-col gap-6">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -84,7 +84,7 @@ export function Dashboard({
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
               Resources by Type
             </h3>
-            <div class="space-y-4">
+            <div class="flex flex-col gap-4">
               <div>
                 <div class="flex justify-between mb-1">
                   <span class="text-sm font-medium">Servers</span>
@@ -148,7 +148,7 @@ export function Dashboard({
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
               Recent Activity
             </h3>
-            <div class="space-y-4">
+            <div class="flex flex-col gap-4">
               {iif(resources, (val) =>
                 val
                   .sort(
