@@ -95,13 +95,13 @@ export function Dashboard({
                 <div class="w-full bg-gray-200 rounded-full h-2">
                   <div
                     class="bg-blue-500 h-2 rounded-full"
-                    style={`width: 50%`}
-                  >
-                    {iif(
-                      stats,
-                      (val: any) => (val.byType.server / val.total) * 100,
+                    style={computed(
+                      () =>
+                        `width: ${
+                          (stats.value.byType.server / stats.value.total) * 100
+                        }%`,
                     )}
-                    %
+                  >
                   </div>
                 </div>
               </div>
