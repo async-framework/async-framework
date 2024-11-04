@@ -4,8 +4,6 @@ import {
   type JSXChild,
   renderComponent,
 } from "./component/render.ts";
-import { contextRegistry } from "../context/registry.ts";
-import { GlobalContext } from "../context/types.ts";
 
 // Define types for JSX elements and children
 type Signal<T> = {

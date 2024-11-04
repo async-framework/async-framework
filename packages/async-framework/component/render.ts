@@ -22,7 +22,7 @@ export function appendChild(
       wrapper.setAttribute("context-id", context.id);
 
       renderSignalToElement(child, wrapper, context);
-      parent.appendChild(wrapper);
+      appendChild(parent, wrapper);
     } finally {
       popContext();
     }
@@ -38,7 +38,14 @@ export function appendChild(
     return;
   }
 
-  if (child instanceof Node) {
+  if (
+    child instanceof Node ||
+    child instanceof DocumentFragment ||
+    child instanceof Text ||
+    child instanceof Comment ||
+    child instanceof HTMLElement ||
+    child instanceof HTMLDivElement
+  ) {
     parent.appendChild(child);
     return;
   }
@@ -72,7 +79,8 @@ export function renderSignalToElement(
       if (result instanceof Node) {
         newNode = result;
       } else {
-        newNode = document.createTextNode(String(result));
+        return appendChild(element, result);
+        // newNode = document.createTextNode(String(result));
       }
     } else if (isSignal(value)) {
       // For computed signals, we want to use their current value
@@ -82,8 +90,18 @@ export function renderSignalToElement(
       } else if (typeof computedValue === "function") {
         const result = computedValue();
         newNode = document.createTextNode(String(result));
+      } else if (Array.isArray(computedValue)) {
+        newNode = document.createDocumentFragment();
+        for (const child of computedValue) {
+          appendChild(newNode as DocumentFragment, child);
+        }
       } else {
         newNode = document.createTextNode(String(computedValue));
+      }
+    } else if (Array.isArray(value)) {
+      newNode = document.createDocumentFragment();
+      for (const child of value) {
+        appendChild(newNode as DocumentFragment, child);
       }
     } else {
       // Handle primitive values and objects
@@ -94,9 +112,12 @@ export function renderSignalToElement(
     if (!currentNode) {
       currentNode = newNode;
       element.appendChild(currentNode);
-    } else {
+    } else if (element.firstChild === currentNode) {
       element.replaceChild(newNode, currentNode);
       currentNode = newNode;
+    } else {
+      currentNode = newNode;
+      appendChild(element, currentNode);
     }
   };
 
