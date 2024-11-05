@@ -2,6 +2,8 @@
 
 A lightweight, signal-based framework for building reactive web applications with custom elements and async handlers.
 
+[![Async Framework](http://img.youtube.com/vi/mShb7a9znUg/0.jpg)](http://www.youtube.com/watch?v=mShb7a9znUg "Async Framework")
+
 ## Core Concepts
 
 1. **Signals**: Reactive state management
