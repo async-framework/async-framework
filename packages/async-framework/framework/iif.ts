@@ -4,6 +4,8 @@ import {
   signal as createSignal,
 } from "../signals/index.ts";
 
+// TODO: rename to when()
+// Why: Provides a type-safe way to handle conditional rendering based on signals
 export function iif<T = any, C = any>(
   condition: Signal<C> | ReadSignal<C>,
   first: (val: C) => T,

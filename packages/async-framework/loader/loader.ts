@@ -118,8 +118,11 @@ export class AsyncLoader {
   constructor(config: AsyncLoaderConfig) {
     this.config = config;
     this.rootContext = config.rootContext || {};
+    // TODO: better way to grab instance
     this.handlerRegistry = config.handlerRegistry;
+    // TODO: better way to grab instance
     this.signalRegistry = config.signalRegistry || SignalRegistry.getInstance();
+    // TODO: better way to grab instance
     this.templateRegistry = config.templateRegistry;
     this.eventPrefix = config.eventPrefix || "on:";
     this.containerAttribute = config.containerAttribute || "data-container";
