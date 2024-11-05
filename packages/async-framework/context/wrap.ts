@@ -47,6 +47,7 @@ export function wrapContext<T extends HTMLElement>(
       if (context.signals) {
         context.signals.clear();
       }
+      mounted = false;
     },
     get context() {
       return context;
