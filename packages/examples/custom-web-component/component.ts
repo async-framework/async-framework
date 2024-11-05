@@ -32,44 +32,50 @@ export class CounterElement extends HTMLElement {
   }
   createTemplate() {
     const template = html`
-        <div class="p-6 bg-white rounded-lg shadow-md">
-          <div class="text-center mb-4">
-            <div class="text-2xl font-bold">
-              Count: ${this.count}
-            </div>
-            
-            ${
+        <div class="p-6 bg-white rounded-lg shadow-md flex">
+          <!-- Left side with counter -->
+          <div class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+              <div class="text-2xl font-bold mb-4">
+                Count: ${this.count}
+              </div>
+              
+              ${
       when(this.isPositive, () =>
         html`
-              <div class="text-green-600">Number is positive!</div>
-            `)
+                  <div class="text-green-600 mb-2">Number is positive!</div>
+                `)
     }
-            <div class="text-sm text-gray-600">
-              Doubled: ${this.doubled}
+              <div class="text-sm text-gray-600 mb-4">
+                Doubled: ${this.doubled}
+              </div>
+              
+              <div class="flex gap-2">
+                <button 
+                  class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded"
+                  on:click="./handlers/decrement.js"
+                >-</button>
+                <button 
+                  class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded"
+                  on:click="./handlers/increment.js"
+                >+</button>
+              </div>
             </div>
           </div>
-          
-          <div class="flex gap-2">
-            <button 
-              class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded"
-              on:click="./handlers/decrement.js"
-            >-</button>
-            <button 
-              class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded"
-              on:click="./handlers/increment.js"
-            >+</button>
-          </div>
-  
-          <div class="mt-4">
-            <h3 class="font-bold">History:</h3>
-            <ul class="list-disc pl-5">
-              ${
+
+          <!-- Right side with history -->
+          <div class="flex-1 border-l pl-6 min-h-screen">
+            <h3 class="font-bold mb-2">History:</h3>
+            <div class="max-h-[300px] overflow-y-auto min-h-screen">
+              <ul class="list-disc pl-5">
+                ${
       each(this.history, (value) =>
         html`
-                <li>${value}</li>
-              `)
+                    <li>${value}</li>
+                  `)
     }
-            </ul>
+              </ul>
+            </div>
           </div>
         </div>
       `;
