@@ -106,3 +106,14 @@ export function generateTemplateId(element: Element): string {
     .toLowerCase();
   return `template-id-${hash}`;
 }
+
+/**
+ * Queries all elements matching a selector within an element or the document body
+ */
+export function querySelectorAll(element: Element | string, selector?: string): HTMLElement[] {
+  if (!selector && typeof element === "string") {
+    selector = element;
+    element = document.body;
+  }
+  return Array.from((element as Element).querySelectorAll(selector as string));
+}

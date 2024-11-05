@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { escapeSelector, isPromise } from "../utils.ts";
+import { escapeSelector, isPromise, querySelectorAll } from "../utils.ts";
 import type { Signal } from "../signals/signals.ts";
 import { SignalRegistry } from "../signals/registry.ts";
 // import { contextStack, contextRegistry } from "../context/instance.ts";
@@ -161,27 +161,6 @@ export class AsyncLoader {
     return [...uniqueEvents];
   }
 
-  // refactor to DOM class??
-  query(element: Element | HTMLElement = this.domRoot, selector = "*") {
-    return Array.from(element.querySelectorAll(selector));
-  }
-  getContainers(
-    containerName?: string,
-    bodyElement?: Element | HTMLElement,
-  ): Array<Element | HTMLElement> {
-    let selector = "";
-    if (containerName === "*") {
-      selector = containerName;
-    } else if (containerName) {
-      selector = `[${this.containerAttribute}="${containerName}"]`;
-    } else {
-      selector = `[${this.containerAttribute}]`;
-    }
-    if (!bodyElement) {
-      bodyElement = this.domRoot;
-    }
-    return this.query(bodyElement, selector);
-  }
 
   // Discovers custom events on the container element
   // Why: Automatically detects all custom event types used in the application by:
@@ -190,7 +169,7 @@ export class AsyncLoader {
   // 3. Removing duplicates to ensure each event type is only registered once
   // This enables automatic event registration without manual event configuration.
   discoverCustomEvents(bodyElement: Element) {
-    const customEventAttributes = this.getContainers("*", bodyElement)
+    const customEventAttributes = querySelectorAll(bodyElement, "*")
       .flatMap((el: any) => Array.from(el.attributes))
       .filter((attr: any) => attr.name.startsWith(this.eventPrefix))
       .map((attr: any) => attr.name.slice(this.eventPrefix.length));
@@ -212,7 +191,7 @@ export class AsyncLoader {
   parseDOM(containerElement: undefined | any[] | any) {
     const self = this;
     if (!containerElement) {
-      const containerEls = this.getContainers();
+      const containerEls = querySelectorAll(this.domRoot, `[${this.containerAttribute}]`);
       containerEls.forEach(function newHandleForEachContainer(el) {
         self.handleNewContainer(el);
       });
@@ -331,7 +310,7 @@ export class AsyncLoader {
     const self = this;
     // Select elements with 'on:{event}' attributes for example 'on:click'
     const eventAttr = `${self.eventPrefix}${eventName}`;
-    const elements = self.query(
+    const elements = querySelectorAll(
       containerElement,
       `[${escapeSelector(eventAttr)}]`,
     );
