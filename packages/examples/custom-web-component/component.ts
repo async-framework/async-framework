@@ -13,6 +13,7 @@ export class CounterElement extends HTMLElement {
   private count;
   private doubled;
   private isPositive;
+  private isNegative;
   private history;
 
   constructor() {
@@ -22,6 +23,7 @@ export class CounterElement extends HTMLElement {
       this.count = signal(0);
       this.doubled = computed(() => this.count.value * 2);
       this.isPositive = computed(() => this.count.value > 0);
+      this.isNegative = computed(() => this.count.value < 0);
       this.history = signal<number[]>([]);
     });
   }
@@ -36,16 +38,19 @@ export class CounterElement extends HTMLElement {
           <!-- Left side with counter -->
           <div class="flex-1 flex items-center justify-center">
             <div class="text-center">
+              ${/* TODO: not inserted in correct order. inserted by appending to the parent DOM. */ ""}
+              ${when(this.isPositive, () => {
+                return html`
+                  <div class="text-green-600 mb-2">Number is positive!</div>
+                `})}
+              ${when(this.isNegative, () => {
+                return html`
+                  <div class="text-red-600 mb-2">Number is negative!</div>
+                `;
+              })}
               <div class="text-2xl font-bold mb-4">
                 Count: ${this.count}
               </div>
-              
-              ${
-      when(this.isPositive, () =>
-        html`
-                  <div class="text-green-600 mb-2">Number is positive!</div>
-                `)
-    }
               <div class="text-sm text-gray-600 mb-4">
                 Doubled: ${this.doubled}
               </div>

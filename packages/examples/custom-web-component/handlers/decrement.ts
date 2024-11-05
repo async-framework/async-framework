@@ -1,7 +1,9 @@
 import type { AsyncLoaderContext } from "@async/framework";
+import type { CounterElement } from "../component.ts";
 
 export default function handler(
-  { rootContext }: AsyncLoaderContext<any, any, any>,
+  { element }: AsyncLoaderContext<any, any, any>,
 ) {
-  rootContext.appElement.decrement();
+  const component = element.closest("counter-element") as CounterElement;
+  component.decrement();
 }
