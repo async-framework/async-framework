@@ -29,7 +29,11 @@ export const createMockResources = (
       .toISOString(),
   }));
 
-const mockResources = signal(createMockResources());
+let resources = createMockResources();
+if (resources.length === 0) {
+  resources = createMockResources();
+}
+const mockResources = signal(resources);
 export function getResources(): Promise<Signal<Resource[]>> {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockResources), 500);
