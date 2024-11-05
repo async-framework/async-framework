@@ -141,59 +141,105 @@ index.html:
    <title>Async Framework Demo</title>
  </head>
  <body>
-   <todo-app>
-     <input type="text" on:keyup="./handlers/input.js">
-     <button on:click="./handlers/add-todo.js, ./handlers/clear-input.js">
-       Add Todo
-     </button>
-     <ul id="todo-list"></ul>
-   </todo-app>
+   <div data-container="root">
+     <todo-app></todo-app>
+   </div>
 
    <script type="module">
-     import { TodoApp } from './TodoApp.js';
-     customElements.define('todo-app', TodoApp);
-   </script>
+      import { render } from "@async/framework";
+      import { TotoApp } from "./TodoApp.js";
+
+      // Register the custom element
+      customElements.define("todo-app", TotoApp);
+
+      // Render the component into the container
+      render(
+        document.querySelector("todo-app")
+        {
+          root: document.querySelector('[data-container="root"]'),
+          // events in the app
+          events: ["click", "keyup"],
+        },
+      );
+    </script>
  </body>
  </html>
 ```
 TodoApp.js:
 ```tsx
- import { signal } from '@async/framework';
+import { ContextWrapper, html, signal, each, wrapContext } from "@async/framework";
 
- export class TodoApp extends HTMLElement {
-   constructor() {
-     super();
-     this.todos = signal([]);
-     this.inputValue = signal('');
-   }
+export class TodoApp extends HTMLElement {
+  private wrapper: ContextWrapper;
+  private todos;
+  private inputValue;
 
-   connectedCallback() {
-     this.todos.subscribe(todos => {
-       const list = this.querySelector('#todo-list');
-       list.innerHTML = todos
-         .map(todo => /*html*/`
-           <li>
-             ${todo}
-             <button on:click="./handlers/remove-todo.js">Remove</button>
-           </li>
-         `)
-         .join('');
-     });
-   }
-    }
+  constructor() {
+    super();
+    this.wrapper = wrapContext(this, () => {
+      this.todos = signal<string[]>([]);
+      this.inputValue = signal("");
+    });
+  }
+
+  createTemplate() {
+    const template = html`
+      <div class="p-6 bg-white rounded-lg shadow-md">
+        <div class="mb-4 flex gap-2">
+          <input 
+            type="text" 
+            class="flex-1 px-4 py-2 border rounded"
+            value="${this.inputValue}"
+            on:keyup="./handlers/input.js"
+          >
+          <button 
+            class="px-4 py-2 bg-indigo-600 text-white rounded"
+            on:click="./handlers/add-todo.js, ./handlers/clear-input.js"
+          >
+            Add Todo
+          </button>
+        </div>
+
+        <ul class="space-y-2">
+          ${each(this.todos, (todo) => html`
+            <li class="flex items-center justify-between p-2 border rounded">
+              <span>${todo}</span>
+              <button 
+                class="px-2 py-1 bg-red-500 text-white rounded"
+                on:click="./handlers/remove-todo.js"
+              >
+                Remove
+              </button>
+            </li>
+          `)}
+        </ul>
+      </div>
+    `;
+    return template;
+  }
+
+  connectedCallback() {
+    this.wrapper.render(() => this.createTemplate());
+  }
+  disconnectedCallback() {
+    this.wrapper.cleanup();
+  }
+}
 ```
 
 Handlers:
 ```tsx
  // handlers/input.js
  export function handler(context) {
-   const { element, component } = context;
+   const { element } = context;
+   const component = element.closest("todo-app");
    component.inputValue.value = element.value;
  }
 
  // handlers/add-todo.js
  export function handler(context) {
-   const { component } = context;
+  const { element } = context;
+   const component = element.closest("todo-app");
    const newTodo = component.inputValue.value.trim();
    if (newTodo) {
      component.todos.value = [...component.todos.value, newTodo];
@@ -202,7 +248,8 @@ Handlers:
 
  // handlers/clear-input.js
  export function handler(context) {
-   const { component } = context;
+   const { element } = context;
+   const component = element.closest("todo-app");
    component.inputValue.value = '';
    context.element.querySelector('input').value = '';
  }

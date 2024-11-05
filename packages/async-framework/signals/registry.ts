@@ -33,6 +33,9 @@ export class SignalRegistry {
     }
     this.signals.set(signal.id, signal);
   }
+  set<T>(signal: Signal<T>): void {
+    return this.register(signal);
+  }
 
   get<T>(signalId: string): Signal<T> | undefined {
     if (!signalId) {

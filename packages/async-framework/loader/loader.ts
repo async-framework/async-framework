@@ -24,7 +24,7 @@ export interface AsyncLoaderContext<T = any, M = any, C = Element> {
   };
   signals: {
     get: (id: string) => Signal<any> | undefined;
-    set: (id: string, signal: Signal<any>) => void;
+    set: (signal: Signal<any>) => void;
   };
   container: C;
   module: M;
@@ -112,12 +112,12 @@ export class AsyncLoader {
   private eventPrefix: string;
   private containerAttribute: string;
   private processedContainers: WeakSet<Element>;
-  private context: any;
+  private rootContext: any;
   private domRoot: Element | HTMLElement;
   private config: AsyncLoaderConfig;
   constructor(config: AsyncLoaderConfig) {
     this.config = config;
-    this.context = config.context || {};
+    this.rootContext = config.rootContext || {};
     this.handlerRegistry = config.handlerRegistry;
     this.signalRegistry = config.signalRegistry || SignalRegistry.getInstance();
     this.templateRegistry = config.templateRegistry;
@@ -604,7 +604,7 @@ export class AsyncLoader {
           },
 
           get rootContext() {
-            return self.context;
+            return self.rootContext;
           },
         };
         // copy the context properties from the async loader
