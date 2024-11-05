@@ -434,8 +434,18 @@ export class QwikHandlerRegistry extends HandlerRegistry {
 
   override parseAttribute(attrValue: string) {
     // Split by newlines for Qwik handlers
-    return attrValue.split("\n").map((v) => v.trim()).filter(Boolean);
-    // return super.parseAttribute(attrValue);
+    // qwik uses \n for multiline handlers
+    const qwikSplitIndex = "\n";
+    if (attrValue.includes(qwikSplitIndex)) {
+      return super.parseAttribute(attrValue, qwikSplitIndex);
+    }
+    // to comma
+    const commaSplitIndex = ",";
+    if (attrValue.includes(commaSplitIndex)) {
+      return super.parseAttribute(attrValue, commaSplitIndex);
+    }
+    // default to this.splitIndex
+    return super.parseAttribute(attrValue);
   }
 
   // Add cleanup method

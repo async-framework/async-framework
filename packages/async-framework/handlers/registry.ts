@@ -98,12 +98,11 @@ export class HandlerRegistry {
    * @param {string} attrValue - The attribute value to parse.
    * @returns {string[]} - The array of script paths.
    */
-  parseAttribute(attrValue: string) {
+  parseAttribute(attrValue: string, splitIndex: string = this.splitIndex) {
     if (!attrValue) return [];
     if (this.attributeRegistry.has(attrValue)) {
       return this.attributeRegistry.get(attrValue);
     }
-    const splitIndex = this.splitIndex;
     // console.log('parseElementForEvent: event name', eventName);
     const split = attrValue.split(splitIndex);
     // console.log('parseElementForEvent: event name', split);
