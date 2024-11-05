@@ -30,7 +30,7 @@ export function App() {
                 // TODO: refactor this to use context/slack to use loader/handlers correctly
                 const success = globalThis.framework.loader.dispatch(
                   "update",
-                  e.target.value
+                  e.target.value,
                 );
                 if (!success) {
                   console.error("Failed to dispatch update event");

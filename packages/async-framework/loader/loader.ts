@@ -9,7 +9,7 @@ import {
   pushContext,
 } from "../component/context.ts";
 
-export interface AsyncLoaderContext<T = any, M = any> {
+export interface AsyncLoaderContext<T = any, M = any, C = Element> {
   value: T | undefined | null | Promise<T>;
   attrValue: string;
   dispatch: (eventName: string, detail?: T) => void;
@@ -19,20 +19,21 @@ export interface AsyncLoaderContext<T = any, M = any> {
   handlers: {
     handler: <R = any>(
       this: M,
-      context: AsyncLoaderContext<T, M>,
+      context: AsyncLoaderContext<T, M, C>,
     ) => Promise<R> | R;
   };
   signals: {
     get: (id: string) => Signal<any> | undefined;
     set: (id: string, signal: Signal<any>) => void;
   };
-  container: Element;
+  container: C;
   module: M;
   break: () => void;
   // mimic Event
   preventDefault: () => void;
   stopPropagation: () => void;
   target: Event["target"];
+  rootContext?: any;
 }
 
 export interface AsyncLoaderConfig {
@@ -52,8 +53,8 @@ export interface AsyncLoaderConfig {
   containers?: Map<Element, Map<string, Map<Element, string>>>;
   events?: string[];
   processedContainers?: WeakSet<Element>;
-  context?: any;
   domRoot?: Element | HTMLElement;
+  rootContext?: any;
 }
 
 export class AsyncLoader {
@@ -601,15 +602,19 @@ export class AsyncLoader {
             stop = true;
             return stop;
           },
+
+          get rootContext() {
+            return self.context;
+          },
         };
         // copy the context properties from the async loader
-        Object.defineProperties(
-          context,
-          Object.getOwnPropertyDescriptors(this.context),
-          // get signals() {
-          //   return container._controller.signals;
-          // }
-        );
+        // Object.defineProperties(
+        //   context,
+        //   Object.getOwnPropertyDescriptors(this.context),
+        //   // get signals() {
+        //   //   return container._controller.signals;
+        //   // }
+        // );
 
         try {
           // create context stack

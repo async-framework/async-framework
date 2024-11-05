@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counter Component Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@async/framework/jsx-runtime": "/async-framework.ts",
+          "@async/framework": "/async-framework.ts",
+          "custom-element-signals": "/custom-element-signals.js"
+        }
+      }
+    </script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div data-container="root">
+      <counter-element></counter-element>
+    </div>
+
+    <script type="module">
+      import { render } from "@async/framework";
+      import { CounterElement } from "./component.ts";
+
+      // Register the custom element
+      customElements.define("counter-element", CounterElement);
+
+      // Render the component into the container
+      const appElement = document.querySelector("counter-element");
+      render(
+        appElement,
+        {
+          root: document.querySelector('[data-container="root"]'),
+          events: ["click"],
+          context: {
+            appElement,
+          },
+        },
+      );
+    </script>
+  </body>
+</html>
