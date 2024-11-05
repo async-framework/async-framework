@@ -2,9 +2,17 @@ import {
   getCurrentContext,
   popContext,
   pushContext,
-} from "../component/context.ts";
+} from "./context.ts";
 import type { ComponentContext } from "./types.ts";
 import { contextRegistry } from "./instance.ts";
+
+// Why: Sanitizes element names for context IDs
+export function sanitizeElementName(element: HTMLElement | null): string {
+  if (!element) return "anonymous";
+  const name = element.tagName.toLowerCase();
+  return `ctx-${name.includes("-") ? name : `el-${name}`}`;
+}
+
 
 export interface ContextWrapper<T extends HTMLElement = HTMLElement> {
   cleanup(): void;
@@ -14,12 +22,6 @@ export interface ContextWrapper<T extends HTMLElement = HTMLElement> {
   mounted: boolean;
 }
 
-// Why: Sanitizes element names for context IDs
-function sanitizeElementName(element: HTMLElement | null): string {
-  if (!element) return "anonymous";
-  const name = element.tagName.toLowerCase();
-  return `ctx-${name.includes("-") ? name : `el-${name}`}`;
-}
 
 export function wrapContext<T extends HTMLElement>(
   element: T,

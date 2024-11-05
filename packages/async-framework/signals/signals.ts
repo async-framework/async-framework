@@ -1,4 +1,4 @@
-import { getCurrentContext } from "../component/context.ts";
+import { getCurrentContext } from "../context/context.ts";
 import { contextRegistry } from "../context/instance.ts";
 import { ComponentContext, ComputedContext } from "../context/types.ts";
 import { SignalRegistry } from "./registry.ts";

@@ -3,7 +3,7 @@ import {
   cleanupContext,
   popContext,
   pushContext,
-} from "../component/context.ts";
+} from "../context/context.ts";
 import { isSignal } from "../signals/signals.ts";
 import { renderSignalToElement } from "../component/render.ts";
 

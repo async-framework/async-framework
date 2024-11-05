@@ -1,5 +1,5 @@
 import { computed, isSignal, ReadSignal, Signal } from "../signals/signals.ts";
-import { getCurrentContext } from "../component/context.ts";
+import { getCurrentContext } from "../context/context.ts";
 import type { ComponentContext } from "../context/types.ts";
 
 // Update types to be more specific and avoid circular references

@@ -7,7 +7,7 @@ import {
   getCurrentContext,
   popContext,
   pushContext,
-} from "../component/context.ts";
+} from "../context/context.ts";
 
 export interface AsyncLoaderContext<T = any, M = any, C = Element> {
   value: T | undefined | null | Promise<T>;

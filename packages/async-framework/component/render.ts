@@ -1,6 +1,6 @@
 import { SIGNAL, Signal } from "../signals/signals.ts";
 import type { ComponentContext } from "../context/types.ts";
-import { getCurrentContext, popContext, pushContext } from "./context.ts";
+import { getCurrentContext, popContext, pushContext } from "../context/context.ts";
 import { AsyncComponentElement, AsyncSignalElement } from "./elements.ts";
 
 // Update appendChild to use AsyncSignalElement

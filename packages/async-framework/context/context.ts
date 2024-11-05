@@ -1,6 +1,6 @@
 import { signalRegistry } from "../signals/instance.ts";
-import { contextRegistry, contextStack } from "../context/instance.ts";
-import type { ComponentContext } from "../context/types.ts";
+import { contextRegistry, contextStack } from "./instance.ts";
+import type { ComponentContext } from "./types.ts";
 
 // Why: Generates unique IDs for components and signals
 export function generateId(type: string, parentId?: string): string {

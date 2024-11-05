@@ -1,5 +1,5 @@
 import { signal } from "../signals/signals.ts";
-import { getCurrentContext } from "../component/context.ts";
+import { getCurrentContext } from "../context/context.ts";
 import { contextRegistry } from "../context/instance.ts";
 import type { ComponentContext } from "../context/types.ts";
 

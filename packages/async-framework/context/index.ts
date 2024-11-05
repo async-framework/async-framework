@@ -1,3 +1,4 @@
+export * from "./context.ts";
 export * from "./registry.ts";
 export * from "./instance.ts";
 export * from "./wrap.ts";
