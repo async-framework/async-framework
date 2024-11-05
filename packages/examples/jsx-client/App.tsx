@@ -16,7 +16,7 @@ export function App() {
       class="min-h-screen bg-gray-100 py-8 px-4"
       on:update="App.tsx, Counter.tsx"
     >
-      <div class="max-w-3xl mx-auto space-y-8">
+      <div class="max-w-3xl mx-auto flex flex-col gap-8">
         <div class="bg-white rounded-lg shadow-md p-6">
           <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {nameSig}</h1>
           <input

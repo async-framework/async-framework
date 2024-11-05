@@ -37,15 +37,12 @@ export function Counter() {
           )}
         >
           <div>
-            <div>
-              <span class="text-red-500">WIP</span> Render Problem
-            </div>
+            <div>Rendering edge cases</div>
           </div>
           <div class="text-red-500">
             Count: {count} Doubled: {doubled} Tripled: {tripled}
           </div>
           <div>
-            <div>Fake Fixed Render Problem</div>
             Count: <span>{count}</span> Doubled: <span>{doubled}</span> Tripled:
             {" "}
             <span>{tripled}</span>
@@ -61,7 +58,7 @@ export function Counter() {
         </button>
       </div>
 
-      <div class="space-x-4">
+      <div class="flex gap-4">
         <button
           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
           onClick={() => count.value++}
