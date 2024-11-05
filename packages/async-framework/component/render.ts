@@ -1,4 +1,4 @@
-import { Signal } from "../signals/signals.ts";
+import { SIGNAL, Signal } from "../signals/signals.ts";
 import type { ComponentContext } from "../context/types.ts";
 import { getCurrentContext, popContext, pushContext } from "./context.ts";
 import { AsyncComponentElement, AsyncSignalElement } from "./elements.ts";
@@ -10,6 +10,12 @@ export function appendChild(
 ): void {
   if (child === null || child === undefined) {
     return;
+  }
+
+  // grab signal from element
+  // this is the same as Solid signal getter/setter
+  if (!isSignal(child) && child[SIGNAL]) {
+    child = child[SIGNAL];
   }
 
   if (isSignal(child)) {

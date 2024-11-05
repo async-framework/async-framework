@@ -4,7 +4,15 @@ import { ComponentContext, ComputedContext } from "../context/types.ts";
 import { SignalRegistry } from "./registry.ts";
 
 // Why: Tracks the current computation context for signal dependencies
+// TODO: refactor to context and slacks
 let currentTracker: (() => void) | null = null;
+
+/**
+ * Symbol used to tell `Signal`s apart from other functions.
+ *
+ * This can be used to auto-unwrap signals in various cases, or to auto-wrap non-signal values.
+ */
+export const SIGNAL = /* @__PURE__ */ Symbol("SIGNAL");
 
 export interface Signal<T> {
   id: string;
@@ -45,6 +53,7 @@ export function signal<T>(
   }
   const id = options.id || contextRegistry.generateId("signal", context?.id);
 
+  // TODO: better way to get signal registry
   const signalRegistry = SignalRegistry.getInstance();
   // Update the signal context with proper typing
   const signalContext: SignalContext<T> = {
@@ -114,6 +123,10 @@ export function signal<T>(
     signalRegistry.notify(signalObj, newValue, oldValue);
   }
 
+  get[SIGNAL] = signalObj;
+  set[SIGNAL] = signalObj;
+  signalObj[SIGNAL] = signalObj;
+
   // Register the signal
   signalRegistry.register(signalObj);
 
@@ -131,15 +144,16 @@ export function isSignal(value: unknown): value is Signal<any> {
 // Why: Creates a read-only version of a signal
 export type ReadSignal<T> = Omit<Signal<T>, "set" | "value"> & {
   readonly value: T;
+  [SIGNAL]: Signal<T>;
 };
 
 // Why: To create a signal with a getter, setter, and signal object
 export function createSignal<T>(
   initialValue: T,
   options: SignalOptions = {},
-): [() => T, (newValue: T) => void, Signal<T>] {
+): [() => T, (newValue: T) => void] {
   const sig = signal<T>(initialValue, options);
-  return [sig.get, sig.set, sig];
+  return [sig.get, sig.set];
 }
 
 // Why: Creates a read-only version of a signal
@@ -157,6 +171,7 @@ export function readSignal<T>(sig: Signal<T>): ReadSignal<T> {
     get value() {
       return sig.value;
     },
+    [SIGNAL]: sig,
   };
 }
 
@@ -166,7 +181,8 @@ export function computed<T>(
   options: SignalOptions = {},
 ): ReadSignal<T> {
   const context = getCurrentContext();
-  const id = contextRegistry.generateId("computed", context?.id);
+  const id = options.id ||
+    contextRegistry.generateId("computed", options.context || context?.id);
 
   const computedContext: ComputedContext = {
     type: "computed",
@@ -195,9 +211,10 @@ export function computed<T>(
 export function createComputed<T>(
   computation: () => T,
   options: SignalOptions = {},
-): [() => T, ReadSignal<T>] {
+): [() => T] {
   const context = getCurrentContext();
-  const id = options.id || contextRegistry.generateId("computed", context?.id);
+  const id = options.id ||
+    contextRegistry.generateId("computed", options.context || context?.id);
 
   const sig = signal<T>(computation(), { id, context: options.context });
 
@@ -205,7 +222,7 @@ export function createComputed<T>(
     sig.value = computation();
   });
 
-  return [sig.get, readSignal(sig)];
+  return [sig.get];
 }
 
 // Why: Creates a resource signal that handles async data loading
@@ -222,7 +239,7 @@ export function createResource<T = any>(
 } {
   const context = getCurrentContext();
   const baseId = options.id ||
-    contextRegistry.generateId("resource", context?.id);
+    contextRegistry.generateId("resource", options.context || context?.id);
 
   const data = signal<T | undefined>(undefined, {
     id: `${baseId}.data`,
@@ -260,7 +277,7 @@ export function createResource<T = any>(
             if (!isDisposed) {
               data.value = newValue;
             }
-          }, context);
+          }, options.context || context?.id);
         } else {
           data.value = result as T;
         }

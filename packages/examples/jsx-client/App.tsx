@@ -9,7 +9,7 @@ export function onUpdate(context: AsyncLoaderContext<string>) {
 // original function component
 export function App() {
   console.log("App.tsx");
-  const [name, setName, nameSig] = createSignal("World");
+  const [name, setName] = createSignal("World");
 
   return (
     <div
@@ -18,7 +18,7 @@ export function App() {
     >
       <div class="max-w-3xl mx-auto flex flex-col gap-8">
         <div class="bg-white rounded-lg shadow-md p-6">
-          <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {nameSig}</h1>
+          <h1 class="text-3xl font-bold text-gray-800 mb-4">Hello {name}</h1>
           <input
             type="text"
             value={name()}
