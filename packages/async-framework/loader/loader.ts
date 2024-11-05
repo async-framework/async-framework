@@ -607,6 +607,7 @@ export class AsyncLoader {
             return self.rootContext;
           },
         };
+        // this is too hard to handle the types
         // copy the context properties from the async loader
         // Object.defineProperties(
         //   context,
