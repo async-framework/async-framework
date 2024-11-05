@@ -24,7 +24,7 @@ export class TodoList extends HTMLElement {
   constructor() {
     super();
 
-    this.wrapper = wrapContext(this, (context) => {
+    this.wrapper = wrapContext(this, () => {
       this.todos = signal<Todo[]>([]);
       this.newTodoText = signal("");
       this.filter = signal<"all" | "active" | "completed">("all");

@@ -18,19 +18,13 @@ export class CounterElement extends HTMLElement {
 
   constructor() {
     super();
-
-    this.wrapper = wrapContext(this, (context) => {
+    this.wrapper = wrapContext(this, () => {
       this.count = signal(0);
       this.doubled = computed(() => this.count.value * 2);
       this.isPositive = computed(() => this.count.value > 0);
       this.isNegative = computed(() => this.count.value < 0);
       this.history = signal<number[]>([]);
     });
-  }
-
-  connectedCallback() {
-    this.innerHTML = "";
-    this.render();
   }
   createTemplate() {
     const template = html`
@@ -87,6 +81,10 @@ export class CounterElement extends HTMLElement {
     return template;
   }
 
+  connectedCallback() {
+    this.innerHTML = "";
+    this.render();
+  }
   disconnectedCallback() {
     this.wrapper.cleanup();
   }
@@ -97,12 +95,12 @@ export class CounterElement extends HTMLElement {
   increment() {
     this.count.value++;
     this.history.value = [...this.history.value, this.count.value];
-    this.render();
+    this.wrapper.update(() => this.createTemplate());
   }
 
   decrement() {
     this.count.value--;
     this.history.value = [...this.history.value, this.count.value];
-    this.render();
+    this.wrapper.update(() => this.createTemplate());
   }
 }

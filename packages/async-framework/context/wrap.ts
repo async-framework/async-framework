@@ -36,6 +36,7 @@ export function wrapContext<T extends HTMLElement>(
   } finally {
     popContext();
   }
+  let mounted = false;
 
   return {
     cleanup() {
@@ -47,16 +48,25 @@ export function wrapContext<T extends HTMLElement>(
         context.signals.clear();
       }
     },
-    context,
-    render(fn: () => DocumentFragment) {
+    get context() {
+      return context;
+    },
+    render(fn: () => DocumentFragment, renderFn?: (template: DocumentFragment) => void) {
       // Push context before rendering
       pushContext(element, context);
       try {
-        const template = fn();
-        if (element) {
-          element.innerHTML = "";
-          element.appendChild(template.cloneNode(true));
-          this.mounted = true;
+        if (!mounted) {
+          mounted = true;
+        }
+        if (renderFn) {
+          renderFn(fn());
+        } else {
+          const template = fn();
+          // TODO: better way to "render"
+          if (element) {
+            element.innerHTML = "";
+            element.appendChild(template.cloneNode(true));
+          }
         }
       } finally {
         popContext();
@@ -65,8 +75,12 @@ export function wrapContext<T extends HTMLElement>(
     update(fn: () => DocumentFragment) {
       if (this.mounted) {
         this.render(fn);
+      } else {
+        console.warn("Wrapper is not mounted, skipping update.");
       }
     },
-    mounted: false,
+    get mounted() {
+      return mounted;
+    },
   };
 }
