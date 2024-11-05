@@ -103,6 +103,7 @@
       const asyncLoader = render();
 
       // Initialize signals using the signal function
+      // second argument is the signal id; to provide the context for the signal it's { id: "count", context: "global" }
       const count = signal(0, "count");
       const firstName = signal("", "firstName");
       const lastName = signal("", "lastName");
