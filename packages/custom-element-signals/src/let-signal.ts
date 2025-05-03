@@ -2,7 +2,7 @@ import { parseAttributeValue } from "./utils/parse-attribute-value";
 import { Signal } from "./signal-store";
 import { SignalStoreInstance, signalStore } from "./signal-store-instance";
 
-// its better not to use this but ask the developer to do it otherwise there is a flicker
+// There is no need to do this if everything is SSRd properly./
 // const STYLE_ID = 'let-signal-style';
 // if (!document.getElementById(STYLE_ID)) {
 //   const style = document.createElement('style');
@@ -44,9 +44,11 @@ export class LetSignal<T> extends HTMLElement {
     // we want to use some form of context here. maybe this.closest('let-signal-registry')?
     this._signalRegistry = window.signalRegistry || signalStore;
   }
-  get value(): T | undefined {
+
+  get value(): T | void {
     return this.signal?.get();
   }
+
   set value(value: T) {
     this.signal?.set(value);
   }
@@ -69,39 +71,8 @@ export class LetSignal<T> extends HTMLElement {
     if (!name) {
       throw new Error("let-signal must have a name attribute");
     }
-    // console.log('connectedCallback', name)
 
-    const save = this.getAttribute("save");
-    let value = undefined;
-    // use handler registry
-    if (save) {
-      const key = "signal-" + name;
-      const method = "getItem" in window[save] ? "getItem" : "get";
-      const savedValue = window[save][method](key);
-      if (savedValue) {
-        try {
-          value = JSON.parse(savedValue);
-        } catch (e) {
-          console.error(`Error parsing saved value for ${save}: ${savedValue}`);
-        }
-      }
-    }
-
-    this.signal = this.createSignal(name, value);
-
-    if (save) {
-      this.signal.subscribe((value) => {
-        if (window[save]) {
-          try {
-            const method = "setItem" in window[save] ? "setItem" : "set";
-            const key = "signal-" + name;
-            window[save][method](key, JSON.stringify(value));
-          } catch (e) {
-            console.error(`Error saving value for ${save}: ${value}`);
-          }
-        }
-      });
-    }
+    this.signal = this.createSignal(name);
   }
 
   // This should never happen, but keeping it for completeness
@@ -110,17 +81,17 @@ export class LetSignal<T> extends HTMLElement {
       return;
     }
     if (!this.ready) {
-      // console.log('attributeChangedCallback hasConnectedCallback', name, oldValue, newValue, 'not connected')
       return;
     }
 
     if (name === "name") {
-      // console.log('attributeChangedCallback', name, oldValue, newValue)
       this._signalRegistry.delete(oldValue);
-      this.signal = this.createSignal(newValue, this.value);
+      this.signal = this.createSignal(newValue, this.signal?.get());
       this._signalRegistry.set(newValue, this.signal);
     } else if (name === "value") {
-      this.value = parseAttributeValue(newValue);
+      const newParsedValue = parseAttributeValue(newValue);
+      this.value = newParsedValue;
+      this.signal?.set(newParsedValue);
     }
   }
 
@@ -130,7 +101,6 @@ export class LetSignal<T> extends HTMLElement {
       this._signalRegistry.delete(name);
     }
     this.ready = false;
-    // (this as any)._signalRegistry = null;
     this.signal?.cleanUp();
   }
 }
