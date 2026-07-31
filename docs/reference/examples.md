@@ -10,7 +10,8 @@ The repository includes small examples for the main runtime surfaces.
 | `examples/product` | Async signal loading, ready, and error boundaries |
 | `examples/components` | Scoped fragment components and lifecycle hooks |
 | `examples/app-patterns` | Framework-native full-app composition, derived signals, and app-level errors |
-| `examples/streaming` | Boundary swaps with rescanned handlers |
+| `examples/streaming` | Boundary swaps plus out-of-order stream patches with reveal ordering, error settling, and recovery |
+| `examples/swap-dedupe` | `ifChanged` swap dedupe with live and inline bindings |
 | `examples/server-call` | Command events calling server functions |
 | `examples/hateoas-actions` | Hono-rendered HATEOAS links and forms enhanced into partial swaps |
 | `examples/router` | CSR first render and local route boundary swaps |

@@ -11,7 +11,7 @@ import streamingProfile from "../../examples/vite-jsx-streaming/src/streaming-pr
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const examplesRoot = resolve(root, "examples");
-const staticExamples = ["counter", "product", "components", "app-patterns", "streaming", "server-call", "router", "partials", "cache", "ssr"];
+const staticExamples = ["counter", "product", "components", "app-patterns", "streaming", "swap-dedupe", "server-call", "router", "partials", "cache", "ssr"];
 const serverExamples = ["hateoas-actions"];
 const viteExamples = ["vite-hono", "vite-jsx-streaming"];
 const topLevelExamples = [...staticExamples, ...serverExamples, ...viteExamples, "size"];

@@ -76,11 +76,31 @@
 - Rendering an inline template binding without a Loader now throws the same
   clear error the component renderer raises, instead of silently emitting
   `[object Object]` into the attribute.
+- Review hardening: completion jobs (awaited commits) reject their awaiter
+  without double-reporting through the scheduler `onError` bridge; inline
+  binding comparison tokens JSON-escape keys and leaves so differently-shaped
+  values cannot collide into a skipped swap; a content retry now recovers an
+  error-settled reveal index instead of rejecting as a double commit; the
+  router facade restores the original ready()-resolution order; the registry
+  store's introspection snapshot honors `_snapshotExempt`; the app-owned
+  scheduler bridge reads `runtime.onError` at failure time.
+- Examples: the router example gains a `"*"` fallback route (first render no
+  longer errors on the served URL); the ssr example resumes through the
+  public `readSnapshot(document)` API; the streaming example now actually
+  streams — out-of-order inline wire patches through
+  `AsyncStream.applyScript` with reveal ordering, error settling, and
+  recovery; new swap-dedupe example for `ifChanged`; partials README
+  documents the runtime-capture pattern.
+- Production tests: a server-render → JSON wire → `readSnapshot` browser
+  resume round trip (no partial, server function, or re-render on the
+  browser side), and a progressive-document streaming flow (shuffled inline
+  patches, buffering, error settle, recovery) run as part of the server and
+  runtime suites.
 - Removed the dead `scripts/release-doctor.js` (superseded by
   `async-pipeline release doctor`); the `examples` scripts run the whole
   `tests/examples/` suite; fixed the stale `benchmarks/results/` ignore
   rule; stream scenario budgets carry working headroom (47500).
-- Bundle size from bundled TypeScript source: `browser.ts` raw 277,223 B (277.2 KB / 0.277 MB), gzip 56,261 B (56.3 KB / 0.056 MB), br 46,191 B (46.2 KB / 0.046 MB) -> `browser.min.js` raw 114,172 B (114.2 KB / 0.114 MB), gzip 34,299 B (34.3 KB / 0.034 MB), br 30,123 B (30.1 KB / 0.030 MB); delta raw -163,051 B (-163.1 KB / -0.163 MB), gzip -21,962 B (-22.0 KB / -0.022 MB), br -16,068 B (-16.1 KB / -0.016 MB).
+- Bundle size from bundled TypeScript source: `browser.ts` raw 279,293 B (279.3 KB / 0.279 MB), gzip 56,929 B (56.9 KB / 0.057 MB), br 46,749 B (46.7 KB / 0.047 MB) -> `browser.min.js` raw 114,672 B (114.7 KB / 0.115 MB), gzip 34,447 B (34.4 KB / 0.034 MB), br 30,225 B (30.2 KB / 0.030 MB); delta raw -164,621 B (-164.6 KB / -0.165 MB), gzip -22,482 B (-22.5 KB / -0.022 MB), br -16,524 B (-16.5 KB / -0.017 MB).
 
 ## 0.19.0 - 2026-07-21
 

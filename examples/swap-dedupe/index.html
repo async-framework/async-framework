@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Async Loader Swap Dedupe</title>
+  </head>
+  <body async:container>
+    <main>
+      <h1>Swap dedupe</h1>
+      <p>
+        "Render same" re-renders identical content — <code>ifChanged</code>
+        skips the swap and the DOM node survives. "Render next" changes the
+        content and swaps.
+      </p>
+      <button type="button" on:click="dedupeDemo.renderSame">Render same</button>
+      <button type="button" on:click="dedupeDemo.renderNext">Render next</button>
+      <p>Status: <strong signal:text="dedupeDemo.status"></strong></p>
+      <section async:boundary="build-card">
+        <p>Press a button to render.</p>
+      </section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

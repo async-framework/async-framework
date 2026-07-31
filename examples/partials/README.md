@@ -21,3 +21,11 @@ Verify:
 ```bash
 pnpm run examples:check
 ```
+
+## Why the handler captures `runtime`
+
+Delegated handler contexts expose `signals`, `handlers`, `loader`, `server`,
+`cache`, and `scheduler` — but not the partial registry. Rendering a partial
+from a handler therefore reaches the runtime through the module-scope
+`runtime` binding. This is the intended pattern for partial-driven swaps
+today.

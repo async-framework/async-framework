@@ -8,13 +8,13 @@
       "scripts": [
         {
           "file": "dist/browser.min.js",
-          "rawBytes": 114172,
-          "gzipBytes": 34299
+          "rawBytes": 114672,
+          "gzipBytes": 34447
         },
         {
           "file": "dist/stream.min.js",
-          "rawBytes": 44232,
-          "gzipBytes": 13630
+          "rawBytes": 44398,
+          "gzipBytes": 13670
         },
         {
           "file": "examples/size/boundary-receiver/main.js",
@@ -23,8 +23,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 158805,
-        "gzipBytes": 47194
+        "rawBytes": 159471,
+        "gzipBytes": 47383
       },
       "budget": {
         "mode": "baseline",
@@ -37,8 +37,8 @@
       "scripts": [
         {
           "file": "dist/browser.min.js",
-          "rawBytes": 114172,
-          "gzipBytes": 34299
+          "rawBytes": 114672,
+          "gzipBytes": 34447
         },
         {
           "file": "examples/size/events-counter/main.js",
@@ -47,8 +47,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 114425,
-        "gzipBytes": 34421
+        "rawBytes": 114925,
+        "gzipBytes": 34567
       },
       "budget": {
         "mode": "baseline",
@@ -61,8 +61,8 @@
       "scripts": [
         {
           "file": "dist/router.min.js",
-          "rawBytes": 129771,
-          "gzipBytes": 38915
+          "rawBytes": 130271,
+          "gzipBytes": 39069
         },
         {
           "file": "examples/size/router-basic/main.js",
@@ -71,8 +71,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 130091,
-        "gzipBytes": 39081
+        "rawBytes": 130591,
+        "gzipBytes": 39236
       },
       "budget": {
         "mode": "baseline",
@@ -236,8 +236,8 @@
       "scripts": [
         {
           "file": "dist/browser.min.js",
-          "rawBytes": 114172,
-          "gzipBytes": 34299
+          "rawBytes": 114672,
+          "gzipBytes": 34447
         },
         {
           "file": "examples/size/server-call-button/main.js",
@@ -246,8 +246,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 114741,
-        "gzipBytes": 34527
+        "rawBytes": 115241,
+        "gzipBytes": 34675
       },
       "budget": {
         "mode": "baseline",
@@ -260,8 +260,8 @@
       "scripts": [
         {
           "file": "dist/browser.min.js",
-          "rawBytes": 114172,
-          "gzipBytes": 34299
+          "rawBytes": 114672,
+          "gzipBytes": 34447
         },
         {
           "file": "examples/size/signals-counter/main.js",
@@ -270,8 +270,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 114331,
-        "gzipBytes": 34374
+        "rawBytes": 114831,
+        "gzipBytes": 34521
       },
       "budget": {
         "mode": "baseline",
@@ -284,13 +284,13 @@
       "scripts": [
         {
           "file": "dist/browser.min.js",
-          "rawBytes": 114172,
-          "gzipBytes": 34299
+          "rawBytes": 114672,
+          "gzipBytes": 34447
         },
         {
           "file": "dist/stream.min.js",
-          "rawBytes": 44232,
-          "gzipBytes": 13630
+          "rawBytes": 44398,
+          "gzipBytes": 13670
         },
         {
           "file": "examples/size/stream-backpatch/main.js",
@@ -299,8 +299,8 @@
         }
       ],
       "closure": {
-        "rawBytes": 159018,
-        "gzipBytes": 47263
+        "rawBytes": 159684,
+        "gzipBytes": 47452
       },
       "budget": {
         "mode": "baseline",

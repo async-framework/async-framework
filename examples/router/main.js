@@ -30,6 +30,12 @@ Async.use({
         <p>Cart: <strong signal:text="routerDemo.cartCount"></strong></p>
       `;
     },
+    "routerDemo.notFound"() {
+      return html`
+        <h1>Not found</h1>
+        <p>No route matches this URL yet. <a href="/">Go home</a></p>
+      `;
+    },
     "routerDemo.product.page"({ id }) {
       return html`
         <article>
@@ -42,7 +48,8 @@ Async.use({
   },
   route: {
     "/": defineRoute("routerDemo.home"),
-    "/products/:id": defineRoute("routerDemo.product.page")
+    "/products/:id": defineRoute("routerDemo.product.page"),
+    "*": defineRoute("routerDemo.notFound")
   }
 });
 

@@ -6,11 +6,47 @@
   </head>
   <body async:container>
     <main>
-      <button type="button" on:click="streamingDemo.streamProduct">Stream product</button>
-      <section async:boundary="product">
-        <p>Waiting for streamed HTML...</p>
+      <h1>Streaming</h1>
+
+      <section>
+        <h2>Handler-driven swap</h2>
+        <button type="button" on:click="streamingDemo.streamProduct">Stream product</button>
+        <section async:boundary="product">
+          <p>Waiting for streamed HTML...</p>
+        </section>
+      </section>
+
+      <section>
+        <h2>Out-of-order stream patches</h2>
+        <p>
+          Three feed boundaries reveal in source order even though their
+          patches arrive shuffled; the news patch fails first and recovers
+          with a later patch.
+        </p>
+        <section async:reveal="streamingFeed" async:reveal-order="forwards" async:reveal-tail="collapsed">
+          <section async:boundary="feed-news"><p>Loading news…</p></section>
+          <section async:boundary="feed-stats"><p>Loading stats…</p></section>
+          <section async:boundary="feed-tips"><p>Loading tips…</p></section>
+        </section>
       </section>
     </main>
+
+    <!-- Wire patches a streaming server would emit between HTML chunks. The
+         stats patch arrives before news, so it buffers under order="forwards";
+         the news error settles its slot; the final patch recovers it. -->
+    <script type="application/json" data-stream-patch>
+      { "boundary": "feed-stats", "seq": 1, "html": "<p>42 sales so far today</p>" }
+    </script>
+    <script type="application/json" data-stream-patch>
+      { "boundary": "feed-news", "seq": 1, "error": { "message": "news source offline" } }
+    </script>
+    <script type="application/json" data-stream-patch>
+      { "boundary": "feed-tips", "seq": 1, "html": "<p>Tip: stream boundaries, not documents</p>" }
+    </script>
+    <script type="application/json" data-stream-patch>
+      { "boundary": "feed-news", "seq": 2, "html": "<p>News is back online</p>" }
+    </script>
+
     <script type="module" src="./main.js"></script>
   </body>
 </html>

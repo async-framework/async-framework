@@ -4,7 +4,8 @@ import {
   defineApp,
   defineCache,
   defineRoute,
-  html
+  html,
+  readSnapshot
 } from "../../src/index.js";
 
 function sharedDefinition() {
@@ -81,10 +82,9 @@ serverRuntime.destroy();
 
 document.querySelector("#app").innerHTML = response.html;
 
-const snapshot = JSON.parse(document.querySelector("[async\\:snapshot]").textContent);
 const browserApp = defineApp(sharedDefinition());
 createApp(browserApp, {
   root: document,
   router: false,
-  snapshot
+  snapshot: readSnapshot(document)
 }).start();

@@ -14,9 +14,14 @@ const prohibited = {
 };
 const allowedCounts = {
   "ssr/main.js": {
-    globalSelectors: 2,
+    globalSelectors: 1,
     documentListeners: 0,
     innerHtmlAssignments: 1
+  },
+  "streaming/main.js": {
+    globalSelectors: 1,
+    documentListeners: 0,
+    innerHtmlAssignments: 0
   },
   "size/stream-backpatch/main.js": {
     globalSelectors: 1,
@@ -31,6 +36,7 @@ const allowedCounts = {
 };
 const exceptionReadmes = {
   "ssr/main.js": "ssr/README.md",
+  "streaming/main.js": "streaming/README.md",
   "size/stream-backpatch/main.js": "size/stream-backpatch/README.md",
   "vite-jsx-streaming/src/main.js": "vite-jsx-streaming/README.md"
 };

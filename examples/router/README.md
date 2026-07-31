@@ -21,3 +21,11 @@ Verify:
 ```bash
 pnpm run examples:check
 ```
+
+## Fallback route
+
+The `"*"` route catches every URL the explicit routes miss (including the
+`/examples/router/` URL this demo is served from), so the first render shows
+the not-found partial instead of an empty boundary. Splat segments also work
+inside patterns: `"/files/*"` (anonymous rest) and `"/files/*rest"` (named
+rest param) both match nested paths.

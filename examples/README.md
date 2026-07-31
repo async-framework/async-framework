@@ -12,6 +12,10 @@ From the repo root:
 python3 -m http.server 4173
 ```
 
+Attribute markers such as `async:app` and `async:container` are authoring
+conventions the runtime does not read; boundaries, bindings, and handlers are
+what the loader scans for.
+
 Then open the example URL, such as
 `http://127.0.0.1:4173/examples/counter/`.
 
@@ -23,7 +27,8 @@ Then open the example URL, such as
 | [product](./product/README.md) | Async signal loading, ready, and error boundaries | `http://127.0.0.1:4173/examples/product/` |
 | [components](./components/README.md) | Scoped fragment components and lifecycle hooks | `http://127.0.0.1:4173/examples/components/` |
 | [app-patterns](./app-patterns/README.md) | Framework-native app composition, derived signals, and app-level errors | `http://127.0.0.1:4173/examples/app-patterns/` |
-| [streaming](./streaming/README.md) | Boundary swaps with rescanned handlers | `http://127.0.0.1:4173/examples/streaming/` |
+| [streaming](./streaming/README.md) | Boundary swaps plus out-of-order stream patches with reveal ordering, error settling, and recovery | `http://127.0.0.1:4173/examples/streaming/` |
+| [swap-dedupe](./swap-dedupe/README.md) | `ifChanged` swap dedupe with live and inline bindings | `http://127.0.0.1:4173/examples/swap-dedupe/` |
 | [server-call](./server-call/README.md) | Command events calling server functions | `http://127.0.0.1:4173/examples/server-call/` |
 | [hateoas-actions](./hateoas-actions/README.md) | Hono-rendered HATEOAS links and forms enhanced into partial swaps | `pnpm start` |
 | [router](./router/README.md) | CSR first render and local route boundary swaps | `http://127.0.0.1:4173/examples/router/` |
