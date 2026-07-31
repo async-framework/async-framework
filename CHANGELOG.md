@@ -80,6 +80,7 @@
   `async-pipeline release doctor`); the `examples` scripts run the whole
   `tests/examples/` suite; fixed the stale `benchmarks/results/` ignore
   rule; stream scenario budgets carry working headroom (47500).
+- Bundle size from bundled TypeScript source: `browser.ts` raw 277,223 B (277.2 KB / 0.277 MB), gzip 56,261 B (56.3 KB / 0.056 MB), br 46,191 B (46.2 KB / 0.046 MB) -> `browser.min.js` raw 114,172 B (114.2 KB / 0.114 MB), gzip 34,299 B (34.3 KB / 0.034 MB), br 30,123 B (30.1 KB / 0.030 MB); delta raw -163,051 B (-163.1 KB / -0.163 MB), gzip -21,962 B (-22.0 KB / -0.022 MB), br -16,068 B (-16.1 KB / -0.016 MB).
 
 ## 0.19.0 - 2026-07-21
 
