@@ -1572,4 +1572,3 @@ function renderDocument(routeHtml, { signals, browserCache, boundary, attributes
   const snapshotAttr = attributeName(attributes, "async", "snapshot");
   return `<section ${boundaryAttr}="${escapeHtml(boundary)}">${routeHtml ?? ""}</section><script type="application/json" ${snapshotAttr}>${escapeScriptJson(snapshot)}</script>`;
 }
-
