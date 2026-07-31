@@ -3,8 +3,8 @@ import {
   resolveServerCommandArguments
 } from "./server.js";
 import { AsyncError, asyncErrorCodes } from "./errors.js";
-import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
-import { createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
+import { attachRegistryInspection, createRegistryStore, createTypedRegistryMethods } from "./registry-store.js";
+import { createLazyInvoker, createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
 
 const builtInTokens = new Set(["prevent", "preventDefault", "stopPropagation", "stopImmediatePropagation"]);
 const builtInHandlers = {
@@ -29,31 +29,23 @@ export function createHandlerRegistry(initialMap = {}, options = {}) {
   const lazyRegistry = options.lazyRegistry ?? createLazyRegistry(options);
   const lazyHandlers = new Map();
 
-  const registry = attachRegistryInspection({
-    register(id, fn) {
-      assertId(id);
+  const crud = createTypedRegistryMethods({
+    label: "Handler",
+    entries: handlers,
+    assertEntryId: assertId,
+    validate(id, fn) {
       if (typeof fn !== "function" && !isLazyDescriptor(fn)) {
         throw new TypeError(`Handler "${id}" must be a function.`);
       }
-      if (handlers.has(id)) {
-        throw new Error(`Handler "${id}" is already registered.`);
-      }
-      handlers.set(id, fn);
-      return id;
     },
-
-    registerMany(map) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        registry.register(id, fn);
-      }
-      return registry;
-    },
-
-    unregister(id) {
-      assertId(id);
+    onUnregister(id) {
       lazyHandlers.delete(id);
-      return handlers.delete(id);
     },
+    result: () => registry
+  });
+
+  const registry = attachRegistryInspection({
+    ...crud,
 
     resolve(id) {
       assertId(id);
@@ -62,13 +54,7 @@ export function createHandlerRegistry(initialMap = {}, options = {}) {
         return handler;
       }
       if (!lazyHandlers.has(id)) {
-        lazyHandlers.set(id, async function runLazyHandler(...args) {
-          const resolved = await lazyRegistry.resolve(type, id, handler);
-          if (typeof resolved !== "function") {
-            throw new TypeError(`Handler "${id}" did not resolve to a function.`);
-          }
-          return resolved.apply(this, args);
-        });
+        lazyHandlers.set(id, createLazyInvoker(lazyRegistry, type, id, handler, "Handler"));
       }
       return lazyHandlers.get(id);
     },
@@ -130,15 +116,6 @@ export function createHandlerRegistry(initialMap = {}, options = {}) {
       }
 
       return results;
-    },
-
-    _adoptMany(map = {}) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        if (!handlers.has(id)) {
-          registry.register(id, fn);
-        }
-      }
-      return registry;
     }
   }, registryStore, type);
 

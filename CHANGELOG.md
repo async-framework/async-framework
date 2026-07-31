@@ -29,6 +29,34 @@
 - Removed dead code that duplicated live implementations: `parsePath` in
   signals.js, `isAsyncSignalSnapshot` in app.js, and a no-op template branch
   in the loader's swap HTML renderer.
+- Centralized the typed-registry CRUD scaffolding
+  (`createTypedRegistryMethods` in registry-store.js): the handler, partial,
+  component, cache, and server registries now share one
+  register/registerMany/unregister/_adoptMany implementation instead of five
+  drifting copies. Route and signal registries stay custom by design.
+- Replaced the three hand-rolled pending facades in app.js (loader, router,
+  router-loader) with one `createPendingFacade` implementation; per-facade
+  differences (commit-await methods, `_clearCurrent` batch clearing) are now
+  explicit options.
+- Extracted shared DOM helpers into `src/dom-utils.js` (element walking,
+  boundary lookup, `toFragment`): the boundary receiver now uses the
+  loader's TreeWalker walk instead of `querySelectorAll("*")`, and the
+  receiver-vs-loader clone/adopt fork is an explicit `clone` option.
+- One owner for repeated micro-implementations: `mergeFeatures` (app.js
+  `createAppFeatureSet`, previously copied byte-identical into three entry
+  files), the component fragment comment-marker protocol (html.js, built by
+  components and parsed by the loader), lazy-descriptor invocation
+  (`createLazyInvoker` in lazy-registry.js, adopted by handlers, partials,
+  components, and async signals), `toError`/`errorMessage`/`reportUnhandled`
+  (errors.js, adopted by server, router, and the scheduler), and script-JSON
+  plus attribute escaping (html.js, adopted by app.js SSR output).
+  boundary-receiver.js and lazy-registry.js keep deliberately-commented
+  local copies of `toError`/`errorMessage` so the stream slice stays free of
+  the errors.js module.
+- Derived flow bridges (async-signal `loading`/`error`/`ready`/`status`/
+  `version` metadata and computed refs) no longer serialize into page
+  snapshots: they recompute on resume, and the `.error` metadata bridge
+  previously embedded raw error objects in the page payload.
 
 ## 0.19.0 - 2026-07-21
 

@@ -154,6 +154,52 @@ export function createRegistryStore(initial = {}, options = {}) {
   return registry;
 }
 
+// Shared CRUD scaffolding for typed registries. The handler, partial,
+// component, cache, and server registries all repeated the same
+// register/registerMany/unregister/_adoptMany shape; only the label, id
+// assertion, value validation/normalization, and unregister side effects
+// differ. Route and signal registries stay custom — pattern sorting and the
+// async-descriptor twin map make their flows genuinely different.
+export function createTypedRegistryMethods(options) {
+  const { label, entries, assertEntryId, validate, normalize, onUnregister, result } = options;
+
+  const methods = {
+    register(id, value) {
+      assertEntryId(id);
+      validate?.(id, value);
+      const entry = normalize ? normalize(id, value) : value;
+      if (entries.has(id)) {
+        throw new Error(`${label} "${id}" is already registered.`);
+      }
+      entries.set(id, entry);
+      return id;
+    },
+
+    registerMany(map) {
+      for (const [id, value] of Object.entries(map ?? {})) {
+        methods.register(id, value);
+      }
+      return result();
+    },
+
+    unregister(id) {
+      assertEntryId(id);
+      onUnregister?.(id);
+      return entries.delete(id);
+    },
+
+    _adoptMany(map = {}) {
+      for (const [id, value] of Object.entries(map ?? {})) {
+        if (!entries.has(id)) {
+          methods.register(id, value);
+        }
+      }
+      return result();
+    }
+  };
+  return methods;
+}
+
 export function attachRegistryInspection(target, registry, type) {
   Object.defineProperty(target, "registry", {
     configurable: true,

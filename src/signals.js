@@ -1,6 +1,6 @@
 import { asyncSignal as createAsyncSignal, isAsyncSignal } from "./async-signal.js";
 import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
-import { createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
+import { createLazyInvoker, createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
 
 const signalKind = Symbol.for("@async/framework.signal");
 const computedKind = Symbol.for("@async/framework.computed");
@@ -253,6 +253,12 @@ export function createSignalRegistry(initialMap = {}, options = {}) {
     snapshot() {
       const snapshot = {};
       for (const [id, entry] of entries) {
+        // Derived entries (flow metadata/computed bridges) opt out: they
+        // recompute from their sources on resume, so serializing them into
+        // page snapshots is dead weight.
+        if (entry._snapshotExempt) {
+          continue;
+        }
         snapshot[id] = typeof entry.snapshot === "function" ? entry.snapshot() : entry.value;
       }
       return snapshot;
@@ -430,13 +436,7 @@ export function createSignalRegistry(initialMap = {}, options = {}) {
     if (!isLazyDescriptor(descriptor) && typeof descriptor !== "function") {
       throw new TypeError(`Async signal "${id}" must be a function or lazy descriptor.`);
     }
-    const loader = async function runLazyAsyncSignal(...args) {
-      const resolved = await lazyRegistry.resolve("asyncSignal", id, descriptor);
-      if (typeof resolved !== "function") {
-        throw new TypeError(`Async signal "${id}" did not resolve to a function.`);
-      }
-      return resolved.apply(this, args);
-    };
+    const loader = createLazyInvoker(lazyRegistry, "asyncSignal", id, descriptor, "Async signal");
     const entry = createAsyncSignal(id, loader);
     entries.set(id, entry);
     bindEntry(id, entry);

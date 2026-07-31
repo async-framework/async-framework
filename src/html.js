@@ -185,3 +185,20 @@ export function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+// Canonical script-JSON escaper for inline <script type="application/json">
+// payloads (snapshots, stream patches): "<" must not open a closing tag.
+export function escapeScriptJson(value) {
+  return JSON.stringify(value).replaceAll("<", "\\u003c");
+}
+
+// Component fragment comment-marker protocol. Built by component scopedHtml
+// output and parsed by the loader's fragment-target resolution — one owner
+// keeps the producer and consumer wire formats from drifting.
+export function fragmentMarkerData(marker, edge) {
+  return `async:${marker}:${edge}`;
+}
+
+export function fragmentMarkerComments(marker, html) {
+  return `<!--${fragmentMarkerData(marker, "start")}-->${html}<!--${fragmentMarkerData(marker, "end")}-->`;
+}

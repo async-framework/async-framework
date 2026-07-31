@@ -1,6 +1,7 @@
 import { createCacheRegistry } from "./cache.js";
 import { createComponentRegistry } from "./component.js";
 import { createHandlerRegistry } from "./handlers.js";
+import { escapeHtml, escapeScriptJson } from "./html.js";
 import { Loader } from "./loader.js";
 import { createPartialRegistry } from "./partials.js";
 import { createScheduler } from "./scheduler.js";
@@ -13,6 +14,11 @@ import { createDeclarationBus, system } from "./declaration-bus.js";
 import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes } from "./errors.js";
 
 const registryTypes = new Set(["signal", "handler", "server", "partial", "route", "component", "asyncSignal", "flow"]);
+// Loader-facade method surface, shared by the app loader facade and the
+// router-scoped loader facade (module-top so defineApp() at module scope can
+// construct facades before later declarations initialize).
+const loaderFacadeMethods = ["scan", "swap", "defineRefreshPlan", "refresh", "attach"];
+const loaderCommitMethods = new Set(["swap", "refresh"]);
 
 export function defineApp(initial, options = {}) {
   const features = createAppFeatureSet(options.features);
@@ -575,53 +581,96 @@ export function createApp(appOrDefinition = Async, options = {}) {
 export const Async = defineApp();
 export { createDeclarationBus, system as asyncSystem } from "./declaration-bus.js";
 
-function createLoaderFacade() {
-  let current;
+// One pending-facade implementation behind the loader, router, and
+// router-loader facades: queue calls until a target exists, then flush.
+// The three previous hand-rolled copies had already drifted (_clearCurrent
+// array vs scalar handling); per-facade differences now live in options.
+function createPendingFacade({ methods, getCurrent, awaitCommit, inspect }) {
   const pending = [];
   const readyWaiters = [];
 
   const facade = {
     get current() {
-      return current;
+      return getCurrent();
     },
 
     ready() {
-      if (current) {
-        return Promise.resolve(current);
+      const target = getCurrent();
+      if (target) {
+        return Promise.resolve(target);
       }
       return new Promise((resolve, reject) => {
         readyWaiters.push({ resolve, reject });
       });
     },
 
-    scan(rootOrFragment) {
-      return enqueue("scan", [rootOrFragment]);
-    },
-
-    swap(boundaryId, fragmentOrTemplate, options) {
-      return enqueue("swap", [boundaryId, fragmentOrTemplate, options]);
-    },
-
-    defineRefreshPlan(plan) {
-      return enqueue("defineRefreshPlan", [plan]);
-    },
-
-    refresh(scope, updates, options) {
-      return enqueue("refresh", [scope, updates, options]);
-    },
-
-    attach(target, Component, props) {
-      return enqueue("attach", [target, Component, props]);
-    },
-
     inspect() {
-      return {
-        ready: Boolean(current),
-        pending: pending.length,
-        root: current?.root
-      };
+      return inspect(getCurrent(), pending.length);
     }
   };
+
+  for (const method of methods) {
+    facade[method] = (...args) => enqueue(method, args);
+  }
+
+  const internals = {
+    flush(target) {
+      if (!target) {
+        return;
+      }
+      while (readyWaiters.length > 0) {
+        readyWaiters.shift().resolve(target);
+      }
+      while (pending.length > 0) {
+        const operation = pending.shift();
+        invoke(target, operation.method, operation.args)
+          .then(operation.resolve, operation.reject);
+      }
+    },
+
+    rejectPending(error) {
+      while (pending.length > 0) {
+        pending.shift().reject(error);
+      }
+      while (readyWaiters.length > 0) {
+        readyWaiters.shift().reject(error);
+      }
+    }
+  };
+
+  return { facade, internals };
+
+  function enqueue(method, args) {
+    const target = getCurrent();
+    if (target) {
+      return invoke(target, method, args);
+    }
+    return new Promise((resolve, reject) => {
+      pending.push({ method, args, resolve, reject });
+    });
+  }
+
+  async function invoke(target, method, args) {
+    const result = target[method](...args);
+    if (awaitCommit?.has(method)) {
+      await target._whenCommitted?.(result);
+    }
+    return result;
+  }
+}
+
+function createLoaderFacade() {
+  let current;
+  const { facade, internals } = createPendingFacade({
+    methods: loaderFacadeMethods,
+    awaitCommit: loaderCommitMethods,
+    getCurrent: () => current,
+    inspect: (loader, pendingCount) => ({
+      ready: Boolean(loader),
+      pending: pendingCount,
+      root: loader?.root
+    })
+  });
 
   Object.defineProperties(facade, {
     _setCurrent: {
@@ -630,13 +679,11 @@ function createLoaderFacade() {
           return;
         }
         current = loader;
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().resolve(loader);
-        }
-        flushPending(loader);
+        internals.flush(loader);
       }
     },
     _clearCurrent: {
+      // Accepts a single loader or an array: detachRoot clears batches.
       value(loaderOrLoaders) {
         if (loaderOrLoaders === undefined) {
           current = undefined;
@@ -650,87 +697,30 @@ function createLoaderFacade() {
     },
     _rejectPending: {
       value(error) {
-        while (pending.length > 0) {
-          pending.shift().reject(error);
-        }
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().reject(error);
-        }
+        internals.rejectPending(error);
       }
     }
   });
 
   return facade;
-
-  function enqueue(method, args) {
-    if (current) {
-      return invoke(current, method, args);
-    }
-    return new Promise((resolve, reject) => {
-      pending.push({ method, args, resolve, reject });
-    });
-  }
-
-  function flushPending(loader) {
-    while (pending.length > 0) {
-      const operation = pending.shift();
-      invoke(loader, operation.method, operation.args)
-        .then(operation.resolve, operation.reject);
-    }
-  }
-
-  async function invoke(loader, method, args) {
-    const result = loader[method](...args);
-    if (method === "swap" || method === "refresh") {
-      await loader._whenCommitted?.(result);
-    }
-    return result;
-  }
 }
 
 function createRouterFacade() {
   let current;
-  const pending = [];
-  const readyWaiters = [];
   const loaderFacade = createRouterLoaderFacade(() => current);
+  const { facade, internals } = createPendingFacade({
+    methods: ["navigate", "prefetch"],
+    getCurrent: () => current,
+    inspect: (router, pendingCount) => ({
+      ready: Boolean(router),
+      pending: pendingCount,
+      mode: router?.mode,
+      urlMode: router?.urlMode
+    })
+  });
 
-  const facade = {
-    loader: loaderFacade,
-
-    get current() {
-      return current;
-    },
-
-    ready() {
-      if (current) {
-        return Promise.resolve(current);
-      }
-      return new Promise((resolve, reject) => {
-        readyWaiters.push({ resolve, reject });
-      });
-    },
-
-    match(url) {
-      return current?.match(url) ?? null;
-    },
-
-    navigate(url, options) {
-      return enqueue("navigate", [url, options]);
-    },
-
-    prefetch(url) {
-      return enqueue("prefetch", [url]);
-    },
-
-    inspect() {
-      return {
-        ready: Boolean(current),
-        pending: pending.length,
-        mode: current?.mode,
-        urlMode: current?.urlMode
-      };
-    }
-  };
+  facade.loader = loaderFacade;
+  facade.match = (url) => current?.match(url) ?? null;
 
   Object.defineProperties(facade, {
     _setCurrent: {
@@ -739,11 +729,10 @@ function createRouterFacade() {
           return;
         }
         current = router;
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().resolve(router);
-        }
+        // Loader operations flush before queued router navigations, matching
+        // the original facade ordering.
         loaderFacade._flush(router);
-        flushPending(router);
+        internals.flush(router);
       }
     },
     _clearCurrent: {
@@ -755,142 +744,41 @@ function createRouterFacade() {
     },
     _rejectPending: {
       value(error) {
-        while (pending.length > 0) {
-          pending.shift().reject(error);
-        }
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().reject(error);
-        }
+        internals.rejectPending(error);
         loaderFacade._rejectPending(error);
       }
     }
   });
 
   return facade;
-
-  function enqueue(method, args) {
-    if (current) {
-      return invoke(current, method, args);
-    }
-    return new Promise((resolve, reject) => {
-      pending.push({ method, args, resolve, reject });
-    });
-  }
-
-  function flushPending(router) {
-    while (pending.length > 0) {
-      const operation = pending.shift();
-      invoke(router, operation.method, operation.args)
-        .then(operation.resolve, operation.reject);
-    }
-  }
-
-  async function invoke(router, method, args) {
-    return router[method](...args);
-  }
 }
 
 function createRouterLoaderFacade(getRouter) {
-  const pending = [];
-  const readyWaiters = [];
-
-  const facade = {
-    get current() {
-      return getRouter()?.loader;
-    },
-
-    ready() {
-      const loader = getRouter()?.loader;
-      if (loader) {
-        return Promise.resolve(loader);
-      }
-      return new Promise((resolve, reject) => {
-        readyWaiters.push({ resolve, reject });
-      });
-    },
-
-    scan(rootOrFragment) {
-      return enqueue("scan", [rootOrFragment]);
-    },
-
-    swap(boundaryId, fragmentOrTemplate, options) {
-      return enqueue("swap", [boundaryId, fragmentOrTemplate, options]);
-    },
-
-    defineRefreshPlan(plan) {
-      return enqueue("defineRefreshPlan", [plan]);
-    },
-
-    refresh(scope, updates, options) {
-      return enqueue("refresh", [scope, updates, options]);
-    },
-
-    attach(target, Component, props) {
-      return enqueue("attach", [target, Component, props]);
-    },
-
-    inspect() {
-      const loader = getRouter()?.loader;
-      return {
-        ready: Boolean(loader),
-        pending: pending.length,
-        root: loader?.root
-      };
-    }
-  };
+  const { facade, internals } = createPendingFacade({
+    methods: loaderFacadeMethods,
+    awaitCommit: loaderCommitMethods,
+    getCurrent: () => getRouter()?.loader,
+    inspect: (loader, pendingCount) => ({
+      ready: Boolean(loader),
+      pending: pendingCount,
+      root: loader?.root
+    })
+  });
 
   Object.defineProperties(facade, {
     _flush: {
       value(router) {
-        const loader = router?.loader;
-        if (!loader) {
-          return;
-        }
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().resolve(loader);
-        }
-        flushPending(loader);
+        internals.flush(router?.loader);
       }
     },
     _rejectPending: {
       value(error) {
-        while (pending.length > 0) {
-          pending.shift().reject(error);
-        }
-        while (readyWaiters.length > 0) {
-          readyWaiters.shift().reject(error);
-        }
+        internals.rejectPending(error);
       }
     }
   });
 
   return facade;
-
-  function enqueue(method, args) {
-    const loader = getRouter()?.loader;
-    if (loader) {
-      return invoke(loader, method, args);
-    }
-    return new Promise((resolve, reject) => {
-      pending.push({ method, args, resolve, reject });
-    });
-  }
-
-  function flushPending(loader) {
-    while (pending.length > 0) {
-      const operation = pending.shift();
-      invoke(loader, operation.method, operation.args)
-        .then(operation.resolve, operation.reject);
-    }
-  }
-
-  async function invoke(loader, method, args) {
-    const result = loader[method](...args);
-    if (method === "swap" || method === "refresh") {
-      await loader._whenCommitted?.(result);
-    }
-    return result;
-  }
 }
 
 export function readSnapshot(root = globalThis.document, { attributes } = {}) {
@@ -1033,7 +921,10 @@ function entrypointRequiredError(entrypoint, feature) {
   });
 }
 
-function createAppFeatureSet(...featureSets) {
+// Exported as the single owner of app feature-set merging: the server,
+// router, and flow entry files previously carried byte-identical private
+// copies, so a new feature kind meant editing four places.
+export function createAppFeatureSet(...featureSets) {
   const target = {};
   for (const featureSet of featureSets) {
     mergeAppFeatures(target, featureSet);
@@ -1656,16 +1547,6 @@ function renderDocument(routeHtml, { signals, browserCache, boundary, attributes
   };
   const boundaryAttr = attributeName(attributes, "async", "boundary");
   const snapshotAttr = attributeName(attributes, "async", "snapshot");
-  return `<section ${boundaryAttr}="${escapeAttribute(boundary)}">${routeHtml ?? ""}</section><script type="application/json" ${snapshotAttr}>${escapeScriptJson(snapshot)}</script>`;
+  return `<section ${boundaryAttr}="${escapeHtml(boundary)}">${routeHtml ?? ""}</section><script type="application/json" ${snapshotAttr}>${escapeScriptJson(snapshot)}</script>`;
 }
 
-function escapeAttribute(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;");
-}
-
-function escapeScriptJson(value) {
-  return JSON.stringify(value).replaceAll("<", "\\u003c");
-}

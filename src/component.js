@@ -1,8 +1,8 @@
 import { attributeName } from "./attributes.js";
-import { childrenFragment, escapeHtml, rawHtml, renderTemplate } from "./html.js";
+import { childrenFragment, escapeHtml, fragmentMarkerComments, rawHtml, renderTemplate } from "./html.js";
 import { AsyncError, asyncErrorCodes } from "./errors.js";
-import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
-import { createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
+import { attachRegistryInspection, createRegistryStore, createTypedRegistryMethods } from "./registry-store.js";
+import { createLazyInvoker, createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
 
 const componentKind = Symbol.for("@async/framework.component");
 let componentCounter = 0;
@@ -35,63 +35,34 @@ export function createComponentRegistry(initialMap = {}, options = {}) {
   const lazyRegistry = options.lazyRegistry ?? createLazyRegistry(options);
   const lazyComponents = new Map();
 
-  const registry = attachRegistryInspection({
-    register(id, Component) {
-      if (typeof id !== "string" || id.length === 0) {
-        throw new TypeError("Component id must be a non-empty string.");
-      }
+  const crud = createTypedRegistryMethods({
+    label: "Component",
+    entries,
+    assertEntryId: assertComponentId,
+    validate(id, Component) {
       if (!isComponent(Component) && typeof Component !== "function" && !isLazyDescriptor(Component)) {
         throw new TypeError(`Component "${id}" must be a component function.`);
       }
-      if (entries.has(id)) {
-        throw new Error(`Component "${id}" is already registered.`);
-      }
-      entries.set(id, Component);
-      return id;
     },
-
-    registerMany(map) {
-      for (const [id, Component] of Object.entries(map ?? {})) {
-        registry.register(id, Component);
-      }
-      return registry;
-    },
-
-    unregister(id) {
-      if (typeof id !== "string" || id.length === 0) {
-        throw new TypeError("Component id must be a non-empty string.");
-      }
+    onUnregister(id) {
       lazyComponents.delete(id);
-      return entries.delete(id);
     },
+    result: () => registry
+  });
+
+  const registry = attachRegistryInspection({
+    ...crud,
 
     resolve(id) {
-      if (typeof id !== "string" || id.length === 0) {
-        throw new TypeError("Component id must be a non-empty string.");
-      }
+      assertComponentId(id);
       const Component = entries.get(id);
       if (!isLazyDescriptor(Component)) {
         return Component;
       }
       if (!lazyComponents.has(id)) {
-        lazyComponents.set(id, async function LazyComponent(...args) {
-          const resolved = await lazyRegistry.resolve(type, id, Component);
-          if (typeof resolved !== "function") {
-            throw new TypeError(`Component "${id}" did not resolve to a function.`);
-          }
-          return resolved.apply(this, args);
-        });
+        lazyComponents.set(id, createLazyInvoker(lazyRegistry, type, id, Component, "Component"));
       }
       return lazyComponents.get(id);
-    },
-
-    _adoptMany(map = {}) {
-      for (const [id, Component] of Object.entries(map ?? {})) {
-        if (!entries.has(id)) {
-          registry.register(id, Component);
-        }
-      }
-      return registry;
     }
   }, registryStore, type);
 
@@ -101,6 +72,12 @@ export function createComponentRegistry(initialMap = {}, options = {}) {
 
 export function isComponent(value) {
   return Boolean(value?.[componentKind]);
+}
+
+function assertComponentId(id) {
+  if (typeof id !== "string" || id.length === 0) {
+    throw new TypeError("Component id must be a non-empty string.");
+  }
 }
 
 export function renderComponent(Component, props = {}, runtime, parentScope = "component") {
@@ -169,7 +146,7 @@ export function renderComponent(Component, props = {}, runtime, parentScope = "c
       return attachHooks.length > 0 || visibleHooks.length > 0 || intersectionHooks.length > 0;
     },
     scopedHtml() {
-      return `<!--async:${lifecycleMarker}:start-->${html}<!--async:${lifecycleMarker}:end-->`;
+      return fragmentMarkerComments(lifecycleMarker, html);
     },
     attach(target) {
       for (let index = 0; index < attachHooks.length; index += 1) {

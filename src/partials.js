@@ -1,7 +1,7 @@
 import { isTemplateResult, renderTemplate } from "./html.js";
 import { AsyncError, asyncErrorCodes } from "./errors.js";
-import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
-import { createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
+import { attachRegistryInspection, createRegistryStore, createTypedRegistryMethods } from "./registry-store.js";
+import { createLazyInvoker, createLazyRegistry, isLazyDescriptor } from "./lazy-registry.js";
 
 export function createPartialRegistry(initialMap = {}, options = {}) {
   const registryStore = options.registry ?? createRegistryStore();
@@ -10,31 +10,23 @@ export function createPartialRegistry(initialMap = {}, options = {}) {
   const lazyRegistry = options.lazyRegistry ?? createLazyRegistry(options);
   const lazyPartials = new Map();
 
-  const registry = attachRegistryInspection({
-    register(id, fn) {
-      assertId(id);
+  const crud = createTypedRegistryMethods({
+    label: "Partial",
+    entries,
+    assertEntryId: assertId,
+    validate(id, fn) {
       if (typeof fn !== "function" && !isLazyDescriptor(fn)) {
         throw new TypeError(`Partial "${id}" must be a function.`);
       }
-      if (entries.has(id)) {
-        throw new Error(`Partial "${id}" is already registered.`);
-      }
-      entries.set(id, fn);
-      return id;
     },
-
-    registerMany(map) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        registry.register(id, fn);
-      }
-      return registry;
-    },
-
-    unregister(id) {
-      assertId(id);
+    onUnregister(id) {
       lazyPartials.delete(id);
-      return entries.delete(id);
     },
+    result: () => registry
+  });
+
+  const registry = attachRegistryInspection({
+    ...crud,
 
     resolve(id) {
       assertId(id);
@@ -43,13 +35,7 @@ export function createPartialRegistry(initialMap = {}, options = {}) {
         return partial;
       }
       if (!lazyPartials.has(id)) {
-        lazyPartials.set(id, async function runLazyPartial(...args) {
-          const resolved = await lazyRegistry.resolve(type, id, partial);
-          if (typeof resolved !== "function") {
-            throw new TypeError(`Partial "${id}" did not resolve to a function.`);
-          }
-          return resolved.apply(this, args);
-        });
+        lazyPartials.set(id, createLazyInvoker(lazyRegistry, type, id, partial, "Partial"));
       }
       return lazyPartials.get(id);
     },
@@ -74,15 +60,6 @@ export function createPartialRegistry(initialMap = {}, options = {}) {
       };
       const result = await fn.call(partialContext, props);
       return normalizePartialResult(result, partialContext);
-    },
-
-    _adoptMany(map = {}) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        if (!entries.has(id)) {
-          registry.register(id, fn);
-        }
-      }
-      return registry;
     }
   }, registryStore, type);
 

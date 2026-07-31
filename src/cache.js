@@ -1,4 +1,4 @@
-import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
+import { attachRegistryInspection, createRegistryStore, createTypedRegistryMethods } from "./registry-store.js";
 
 const cacheDefinitionKind = Symbol.for("@async/framework.cacheDefinition");
 
@@ -17,28 +17,18 @@ export function createCacheRegistry(initialMap = {}, { now = () => Date.now(), r
   const entries = registryStore._map(`${type}.entries`);
   const pending = new Map();
 
+  const crud = createTypedRegistryMethods({
+    label: "Cache",
+    entries: definitions,
+    assertEntryId: assertId,
+    normalize(id, definition) {
+      return normalizeDefinition(definition === undefined ? defineCache() : definition);
+    },
+    result: () => registryApi
+  });
+
   const registryApi = attachRegistryInspection({
-    register(id, definition = defineCache()) {
-      assertId(id);
-      const normalized = normalizeDefinition(definition);
-      if (definitions.has(id)) {
-        throw new Error(`Cache "${id}" is already registered.`);
-      }
-      definitions.set(id, normalized);
-      return id;
-    },
-
-    registerMany(map) {
-      for (const [id, definition] of Object.entries(map ?? {})) {
-        registryApi.register(id, definition);
-      }
-      return registryApi;
-    },
-
-    unregister(id) {
-      assertId(id);
-      return definitions.delete(id);
-    },
+    ...crud,
 
     resolve(id) {
       assertId(id);
@@ -139,15 +129,6 @@ export function createCacheRegistry(initialMap = {}, { now = () => Date.now(), r
 
     entryEntries() {
       return registryStore.entries(`${type}.entries`);
-    },
-
-    _adoptMany(map = {}) {
-      for (const [id, definition] of Object.entries(map ?? {})) {
-        if (!definitions.has(id)) {
-          registryApi.register(id, definition);
-        }
-      }
-      return registryApi;
     }
   }, registryStore, type);
 

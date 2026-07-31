@@ -1,5 +1,6 @@
 import {
   createApp as createBaseApp,
+  createAppFeatureSet as mergeFeatures,
   defineApp as defineBaseApp,
   readSnapshot
 } from "./app.js";
@@ -36,25 +37,3 @@ export function defineApp(initial, options = {}) {
 
 export const Async = defineApp();
 export { readSnapshot };
-
-function mergeFeatures(...featureSets) {
-  const merged = {};
-  for (const featureSet of featureSets) {
-    if (!featureSet) {
-      continue;
-    }
-    if (featureSet.flow) {
-      merged.flow = {
-        ...(merged.flow ?? {}),
-        ...featureSet.flow
-      };
-    }
-    if (featureSet.router) {
-      merged.router = {
-        ...(merged.router ?? {}),
-        ...featureSet.router
-      };
-    }
-  }
-  return merged;
-}

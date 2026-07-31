@@ -88,6 +88,39 @@ export function normalizeRegistryAssets(options = {}) {
   };
 }
 
+// Shared lazy-descriptor invocation wrapper. Handlers, partials, components,
+// and async signals all wrap descriptors in the same resolve -> typecheck ->
+// apply shape; the label only affects the error message.
+// Deliberate duplicate of errors.js errorMessage: lazy-registry rides in the
+// stream bundle via signals.js, and importing errors.js here would drag
+// AsyncError, codes, and diagnostics (~1.7KB gzip) into stream.min.js.
+function errorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (error && typeof error === "object" && typeof error.message === "string") {
+    return error.message;
+  }
+  return String(error);
+}
+
+export function createLazyInvoker(lazyRegistry, type, id, descriptor, label) {
+  async function invokeLazy(...args) {
+    const resolved = await lazyRegistry.resolve(type, id, descriptor);
+    if (typeof resolved !== "function") {
+      throw new TypeError(`${label} "${id}" did not resolve to a function.`);
+    }
+    return resolved.apply(this, args);
+  }
+  // The wrapper's function name is observable (e.g. renderComponent error
+  // messages read Component.name), so keep the historical Lazy<Label> names.
+  Object.defineProperty(invokeLazy, "name", {
+    configurable: true,
+    value: `Lazy${label.replaceAll(" ", "")}`
+  });
+  return invokeLazy;
+}
+
 export function isLazyDescriptor(value) {
   return Boolean(
     value &&
@@ -206,9 +239,6 @@ function isAbsoluteUrl(value) {
   return /^[A-Za-z][A-Za-z\d+.-]*:/.test(value);
 }
 
-function errorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function stableStringify(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

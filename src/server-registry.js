@@ -1,5 +1,5 @@
 import { readRequestContext } from "./request-context.js";
-import { attachRegistryInspection, createRegistryStore } from "./registry-store.js";
+import { attachRegistryInspection, createRegistryStore, createTypedRegistryMethods } from "./registry-store.js";
 import { assertServerId, consumeServerResult, createServerNamespace, createServerResultContext, createSignalReader } from "./server.js";
 
 export function createServerRegistry(initialMap = {}, options = {}) {
@@ -8,30 +8,20 @@ export function createServerRegistry(initialMap = {}, options = {}) {
   const entries = registryStore._map(type);
   const defaults = {};
 
-  const registry = attachRegistryInspection({
-    register(id, fn) {
-      assertServerId(id);
+  const crud = createTypedRegistryMethods({
+    label: "Server function",
+    entries,
+    assertEntryId: assertServerId,
+    validate(id, fn) {
       if (typeof fn !== "function") {
         throw new TypeError(`Server function "${id}" must be a function.`);
       }
-      if (entries.has(id)) {
-        throw new Error(`Server function "${id}" is already registered.`);
-      }
-      entries.set(id, fn);
-      return id;
     },
+    result: () => registry
+  });
 
-    registerMany(map) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        registry.register(id, fn);
-      }
-      return registry;
-    },
-
-    unregister(id) {
-      assertServerId(id);
-      return entries.delete(id);
-    },
+  const registry = attachRegistryInspection({
+    ...crud,
 
     resolve(id) {
       assertServerId(id);
@@ -72,15 +62,6 @@ export function createServerRegistry(initialMap = {}, options = {}) {
 
     _setContext(context = {}) {
       Object.assign(defaults, context);
-      return registry;
-    },
-
-    _adoptMany(map = {}) {
-      for (const [id, fn] of Object.entries(map ?? {})) {
-        if (!entries.has(id)) {
-          registry.register(id, fn);
-        }
-      }
       return registry;
     }
   }, registryStore, type);

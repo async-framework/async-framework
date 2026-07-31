@@ -164,9 +164,11 @@ test("snapshot restore writes Flow writable refs and recomputes computed refs", 
 
   assert.equal(runtime.signals.get("cart.count"), 1);
   assert.equal(document.querySelector("#count").textContent, "1");
+  // Computed bridges no longer serialize: the incoming snapshot's stale
+  // cart.count 99 was ignored (recomputed to 1 above) and the outgoing
+  // snapshot carries only real state.
   assert.deepEqual(runtime.signals.snapshot(), {
-    "cart.items": [{ id: "sku_123" }],
-    "cart.count": 1
+    "cart.items": [{ id: "sku_123" }]
   });
   runtime.destroy();
 });
@@ -524,5 +526,43 @@ test("async signal metadata bridge paths are read-only and flowSignal declaratio
 
   runtime.signals.set("product.name", "framework");
   assert.equal(runtime.signals.get("product.name"), "framework");
+  runtime.destroy();
+});
+
+test("derived flow bridges stay out of page snapshots", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<main async:container></main>`;
+  const app = defineApp({
+    flow: {
+      cart: flow({
+        store: {
+          items: [],
+          count: flowComputed(function countItems() {
+            return this.items.length;
+          }),
+          pricing: flowAsyncSignal(async () => ({ total: 0 }))
+        }
+      })
+    }
+  });
+  const runtime = createApp(app, { root: document.body }).start();
+  await delay(0);
+
+  const snapshot = runtime.signals.snapshot();
+  // Real state serializes: the writable ref and the async ref's canonical
+  // snapshot (value/status/version).
+  assert.equal(Object.hasOwn(snapshot, "cart.items"), true);
+  assert.equal(Object.hasOwn(snapshot, "cart.pricing"), true);
+  // Derived values recompute on resume — they are dead weight in the page
+  // payload, and the .error metadata bridge would embed raw error objects.
+  assert.equal(Object.hasOwn(snapshot, "cart.count"), false);
+  for (const metadata of ["loading", "error", "ready", "status", "version"]) {
+    assert.equal(Object.hasOwn(snapshot, `cart.pricing.${metadata}`), false, `cart.pricing.${metadata}`);
+  }
+
+  // Live reads still work for every derived path.
+  assert.equal(runtime.signals.get("cart.count"), 0);
+  assert.equal(runtime.signals.get("cart.pricing.loading"), false);
   runtime.destroy();
 });

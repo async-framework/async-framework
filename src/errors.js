@@ -159,7 +159,7 @@ function safeContext(context) {
   return Object.freeze(safe);
 }
 
-function reportUnhandled(error) {
+export function reportUnhandled(error) {
   if (typeof globalThis.reportError === "function") {
     globalThis.reportError(error);
   } else {
@@ -167,6 +167,29 @@ function reportUnhandled(error) {
       throw error;
     });
   }
+}
+
+// Error-normalization micro-utils. These were re-implemented across server,
+// boundary-receiver, router, and lazy-registry (with drift); errors.js is
+// the hub every runtime module already imports.
+export function toError(value) {
+  if (value instanceof Error) {
+    return value;
+  }
+  if (value && typeof value === "object" && typeof value.message === "string") {
+    return Object.assign(new Error(value.message), value);
+  }
+  return new Error(String(value));
+}
+
+export function errorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (error && typeof error === "object" && typeof error.message === "string") {
+    return error.message;
+  }
+  return String(error);
 }
 
 function defineStable(owner, key, value) {

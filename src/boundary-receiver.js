@@ -1,6 +1,6 @@
 import { normalizeAttributeConfig, readAttribute } from "./attributes.js";
-import { renderTemplate } from "./html.js";
 import { defaultRevealOrder, normalizeRevealTail, revealOrders, revealTails } from "./reveal-policy.js";
+import { boundaryIdFor, elementsIn, findBoundaryElement as findBoundaryInScope, toFragment } from "./dom-utils.js";
 
 const defaultRecentLimit = 50;
 const builtBackpatchAttribute = "data-async-backpatch";
@@ -313,7 +313,7 @@ export function createBoundaryReceiver(options = {}) {
         (element) => element.getAttribute?.(pendingTargetAttribute) === replacement.target,
         `Pending replacement target "${replacement.target}"`
       );
-      const fragment = toFragment(replacement.html, ownerDocumentOf(boundaryElement));
+      const fragment = toFragment(replacement.html, ownerDocumentOf(boundaryElement), { clone: true });
       const inserted = [...fragment.childNodes];
       target.replaceWith(fragment);
       for (const node of inserted) {
@@ -937,6 +937,9 @@ function withPatchMetadata(result, attrs, replacementCount) {
   return result;
 }
 
+// Deliberate duplicate of errors.js toError: the stream slice stays free of
+// the errors.js module (AsyncError, codes, diagnostics) so stream.min.js
+// ships lean. If the shapes diverge, prefer updating errors.js and mirroring.
 function toStableError(value) {
   if (value instanceof Error) {
     return value;
@@ -975,19 +978,11 @@ function toRecentEntry(result) {
 }
 
 function findBoundaryElement(root, boundaryId, attributes, options = {}) {
-  const boundary = elementsIn(root)
-    .find((element) => boundaryIdFor(element, attributes) === String(boundaryId));
+  const boundary = findBoundaryInScope(root, boundaryId, attributes);
   if (!boundary && options.required !== false) {
     throw new Error(`Boundary "${boundaryId}" was not found.`);
   }
-  return boundary ?? null;
-}
-
-function boundaryIdFor(element, attributes) {
-  if (element?.tagName === "ASYNC-SUSPENSE" && element.hasAttribute?.("for")) {
-    return element.getAttribute("for");
-  }
-  return readAttribute(element, attributes, "async", "boundary");
+  return boundary;
 }
 
 function directChildBoundaryElements(container, attributes) {
@@ -1040,31 +1035,7 @@ function ownerDocumentOf(element) {
   return element.ownerDocument ?? globalThis.document;
 }
 
-function toFragment(value, documentRef) {
-  if (value?.nodeType === 11) {
-    return value.cloneNode(true);
-  }
-  if (value?.tagName === "TEMPLATE") {
-    return value.content.cloneNode(true);
-  }
-  if (value?.nodeType) {
-    const fragment = documentRef.createDocumentFragment();
-    fragment.append(value.cloneNode(true));
-    return fragment;
-  }
-  const template = documentRef.createElement("template");
-  template.innerHTML = typeof value === "string" ? value : renderTemplate(value);
-  return template.content.cloneNode(true);
-}
 
-function elementsIn(scope) {
-  const elements = [];
-  if (scope?.nodeType === 1) {
-    elements.push(scope);
-  }
-  elements.push(...(scope?.querySelectorAll?.("*") ?? []));
-  return elements;
-}
 
 function isElementLike(value) {
   return Boolean(value?.nodeType === 1 && typeof value.textContent === "string");

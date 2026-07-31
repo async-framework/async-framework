@@ -384,6 +384,12 @@ function createFlowReadonlyBridge(ref, { path, read }) {
       return ref.subscribe(() => fn(read()));
     },
 
+    // Derived read-only metadata (loading/error/ready/status/version) stays
+    // out of page snapshots: the async ref itself already snapshots the
+    // canonical state, restore recomputes these, and serializing ref.error
+    // here would leak the raw error object into the page.
+    _snapshotExempt: true,
+
     snapshot() {
       return read();
     },
@@ -399,8 +405,13 @@ function createFlowReadonlyBridge(ref, { path, read }) {
 }
 
 function createFlowSignalBridge(ref, { path, writable }) {
+  const kind = flowRefType(ref);
   return {
-    kind: flowRefType(ref),
+    kind,
+
+    // Computed refs recompute from their sources on resume; their values are
+    // dead weight in page snapshots.
+    _snapshotExempt: kind === "computed",
 
     get value() {
       return ref.get();

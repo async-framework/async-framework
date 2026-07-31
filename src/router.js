@@ -1,5 +1,5 @@
 import { Loader } from "./loader.js";
-import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, isAsyncError, reportAsyncError } from "./errors.js";
+import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, errorMessage, isAsyncError, reportAsyncError } from "./errors.js";
 import { createHandlerRegistry } from "./handlers.js";
 import { createScheduler } from "./scheduler.js";
 import { createSignalRegistry } from "./signals.js";
@@ -717,7 +717,7 @@ export function createRouter(options = {}) {
         ? error
         : new AsyncError({
             code: asyncErrorCodes.navigationFailed,
-            message: messageForError(error),
+            message: errorMessage(error),
             context: { mode, source: "event" },
             cause: error
           });
@@ -1131,16 +1131,6 @@ function shouldSwapRouteResult(result) {
       !result.boundary &&
       !result.redirect
   );
-}
-
-function messageForError(error) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && typeof error.message === "string") {
-    return error.message;
-  }
-  return String(error);
 }
 
 function escapeRegExp(value) {

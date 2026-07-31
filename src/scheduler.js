@@ -1,3 +1,5 @@
+import { reportUnhandled } from "./errors.js";
+
 const defaultPhases = ["binding", "lifecycle", "effect", "async", "commit", "post", "background"];
 
 export function createScheduler(options = {}) {
@@ -418,13 +420,7 @@ export function createScheduler(options = {}) {
   }
 
   function reportAutomaticFlushError(error) {
-    if (typeof globalThis.reportError === "function") {
-      globalThis.reportError(error);
-      return;
-    }
-    setTimeout(() => {
-      throw error;
-    }, 0);
+    reportUnhandled(error);
   }
 
   function hasJobs() {

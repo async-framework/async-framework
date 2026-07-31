@@ -1,10 +1,11 @@
 import { renderComponent } from "./component.js";
 import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, reportAsyncError } from "./errors.js";
 import { createHandlerRegistry } from "./handlers.js";
-import { childrenFragment, rawHtml, renderTemplate } from "./html.js";
+import { childrenFragment, fragmentMarkerData, rawHtml, renderTemplate } from "./html.js";
 import { createScheduler } from "./scheduler.js";
 import { createSignalRegistry, isSignalRef } from "./signals.js";
 import { matchAttribute, normalizeAttributeConfig, readAttribute } from "./attributes.js";
+import { boundaryIdFor, elementsIn, findBoundaryElement as findBoundary, isAsyncSuspense, toFragment } from "./dom-utils.js";
 
 const inlineBindingPrefix = "__async:inline:";
 
@@ -458,7 +459,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       attach: swapOptions.attach ?? "preserve"
     };
     const scanRoots = swapOptions.strategy === "morph"
-      ? morphChildren(boundary, toFragment(fragmentOrTemplate, documentRef, templateRenderOptions()), morphOptions)
+      ? morphChildren(boundary, toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(templateRenderOptions())), morphOptions)
       : replaceBoundaryChildren(boundary, fragmentOrTemplate);
     if (snapshot != null) {
       swapSnapshots.set(boundary, snapshot);
@@ -823,7 +824,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
 
   function replaceBoundaryChildren(boundary, fragmentOrTemplate) {
     cleanupChildren(boundary);
-    boundary.replaceChildren(toFragment(fragmentOrTemplate, documentRef, templateRenderOptions()));
+    boundary.replaceChildren(toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(templateRenderOptions())));
     return [];
   }
 
@@ -1438,8 +1439,8 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   }
 
   function findFragmentBounds(target, marker) {
-    const startData = `async:${marker}:start`;
-    const endData = `async:${marker}:end`;
+    const startData = fragmentMarkerData(marker, "start");
+    const endData = fragmentMarkerData(marker, "end");
     let start = null;
     const comments = commentNodesIn(target);
     for (const comment of comments) {
@@ -1791,74 +1792,8 @@ function updateProperty(element, prop, value) {
   element[prop] = value;
 }
 
-function selectAll(scope, selector, options = {}) {
-  const elements = [];
-  if (options.includeRoot !== false && scope?.nodeType === 1 && scope.matches?.(selector)) {
-    elements.push(scope);
-  }
-  elements.push(...(scope?.querySelectorAll?.(selector) ?? []));
-  return elements;
-}
-
-// Enumerate every element under `scope` with a single TreeWalker instead of
-// querySelectorAll("*"), which avoids materializing a NodeList per pass and
-// lets callers share one walk. Equivalent set to querySelectorAll("*") plus
-// the optional root. Falls back to selectAll where TreeWalker is unavailable.
-function walkElements(scope, options = {}) {
-  if (!scope) return [];
-  const doc = scope.nodeType === 9 ? scope : scope.ownerDocument;
-  if (!doc?.createTreeWalker) return selectAll(scope, "*", options);
-  const elements = [];
-  if (options.includeRoot !== false && scope.nodeType === 1) {
-    elements.push(scope);
-  }
-  const walker = doc.createTreeWalker(scope, 0x1 /* NodeFilter.SHOW_ELEMENT */);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    elements.push(node);
-  }
-  return elements;
-}
-
-function elementsIn(scope, options) {
-  // A pre-collected list (options.elements) lets one walk serve several passes.
-  return options?.elements !== undefined ? options.elements : walkElements(scope, options);
-}
-
-function findBoundary(root, boundaryId, attributeConfig) {
-  for (const element of elementsIn(root)) {
-    if (boundaryIdFor(element, attributeConfig) === String(boundaryId)) {
-      return element;
-    }
-  }
-  return null;
-}
-
-function boundaryIdFor(element, attributeConfig) {
-  if (isAsyncSuspense(element) && element.hasAttribute?.("for")) {
-    return element.getAttribute("for");
-  }
-  return readAttribute(element, attributeConfig, "async", "boundary");
-}
-
-function isAsyncSuspense(element) {
-  return element?.tagName === "ASYNC-SUSPENSE";
-}
-
-function toFragment(value, documentRef, renderOptions = {}) {
-  if (value?.nodeType === 11) {
-    return value;
-  }
-  if (value?.tagName === "TEMPLATE") {
-    return value.content.cloneNode(true);
-  }
-  if (value?.nodeType) {
-    const fragment = documentRef.createDocumentFragment();
-    fragment.append(value);
-    return fragment;
-  }
-  const template = documentRef.createElement("template");
-  template.innerHTML = renderSwapHtml(value, renderOptions);
-  return template.content.cloneNode(true);
+function swapFragmentOptionsFor(renderOptions) {
+  return { renderHtml: (value) => renderSwapHtml(value, renderOptions) };
 }
 
 function snapshotSwapValue(value, documentRef, renderOptions = {}) {

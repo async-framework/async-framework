@@ -1,4 +1,4 @@
-import { AsyncError, asyncErrorCodes } from "./errors.js";
+import { AsyncError, asyncErrorCodes, errorMessage, toError } from "./errors.js";
 
 const serverEnvelopeKind = Symbol.for("@async/framework.serverResult");
 const serverEnvelopeWireKey = "__async_server_result__";
@@ -481,20 +481,6 @@ export function isServerEnvelope(value) {
   }
   return value[serverEnvelopeKind] === true
     || value[serverEnvelopeWireKey] === serverEnvelopeWireVersion;
-}
-
-function toError(value) {
-  if (value instanceof Error) {
-    return value;
-  }
-  if (value && typeof value === "object" && typeof value.message === "string") {
-    return Object.assign(new Error(value.message), value);
-  }
-  return new Error(String(value));
-}
-
-function errorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
 }
 
 export function assertServerId(id) {
