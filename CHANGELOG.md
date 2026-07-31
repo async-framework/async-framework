@@ -76,7 +76,7 @@
 - Rendering an inline template binding without a Loader now throws the same
   clear error the component renderer raises, instead of silently emitting
   `[object Object]` into the attribute.
-- Review hardening: completion jobs (awaited commits) reject their awaiter
+- Completion and recovery hardening: completion jobs (awaited commits) reject their awaiter
   without double-reporting through the scheduler `onError` bridge; inline
   binding comparison tokens JSON-escape keys and leaves so differently-shaped
   values cannot collide into a skipped swap; a content retry now recovers an
