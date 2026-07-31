@@ -103,7 +103,11 @@ export async function applyServerResult(result, context = {}) {
     context.cache.restore(result.cache.browser);
   }
 
-  if (result.boundary && Object.hasOwn(result, "html")) {
+  // Match the router's swap accounting (didSwapNavigationResult): an envelope
+  // with html: undefined or status 204 declares "nothing to swap" — blanking
+  // the boundary here while the router warns it "was not swapped" is the
+  // divergence this guard closes.
+  if (result.boundary && Object.hasOwn(result, "html") && result.html !== undefined && result.status !== 204) {
     const swapped = context.loader?.swap?.(result.boundary, result.html);
     await context.loader?._whenCommitted?.(swapped);
   }
@@ -469,7 +473,9 @@ function joinEndpoint(endpoint, id) {
   return `${String(endpoint).replace(/\/$/, "")}/${encodeURIComponent(id)}`;
 }
 
-function isServerEnvelope(value) {
+// Exported so consumers (router.js) share one envelope predicate instead of
+// re-typing the wire key with drifted version checks.
+export function isServerEnvelope(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }

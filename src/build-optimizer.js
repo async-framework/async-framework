@@ -1,3 +1,5 @@
+import { defaultRevealOrder, revealOrders, revealTails } from "./reveal-policy.js";
+
 export const OPTIMIZER_ARTIFACT_VERSION = 1;
 
 export const OPTIMIZER_PASSES = Object.freeze([
@@ -46,8 +48,11 @@ const omittedRuntimeSystems = Object.freeze([
   "boundary-receiver"
 ]);
 
-const validRevealOrders = new Set(["as-ready", "forwards", "backwards", "together"]);
-const validRevealTails = new Set(["visible", "collapsed", "hidden"]);
+// Reveal vocabulary is owned by the runtime receiver (the protocol the
+// optimizer must emit); restating it here is how buildtime and runtime
+// drifted apart before.
+const validRevealOrders = revealOrders;
+const validRevealTails = revealTails;
 const validHandlerModes = new Set(["inline", "direct-import", "eager-chunk", "lazy-chunk"]);
 
 export function createOptimizerArtifactSet(input = {}) {
@@ -581,7 +586,7 @@ export function lowerSuspenseReveal(semanticGraph = {}, options = {}) {
 
   const revealGroups = [];
   for (const [index, policy] of arrayOf(semanticGraph.revealPolicies).entries()) {
-    const order = policy.order ?? "as-ready";
+    const order = policy.order ?? defaultRevealOrder;
     const tail = policy.tail ?? "visible";
     const groupId = policy.groupId ?? `reveal:${index}`;
     const boundaryIds = arrayOf(policy.boundaryIds);

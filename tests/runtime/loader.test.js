@@ -1351,3 +1351,62 @@ test("boundary swap rejects invalid scan options", () => {
 
   loader.destroy();
 });
+
+test("signal:class and class attributes share one class-token writer", async () => {
+  const window = new Window();
+  const { document } = window;
+  // No static class attribute here: happy-dom 20.x mis-stores double-colon
+  // attribute names (signal:class:selected), which freezes every writer for
+  // an existing class attribute. Real browsers treat the colons literally.
+  document.body.innerHTML = `
+    <main async:container>
+      <button id="both" signal:class:selected="ui.selected" class:selected="ui.selected"></button>
+    </main>
+  `;
+  const signals = createSignalRegistry({
+    ui: signal({ selected: false })
+  });
+  const loader = Loader({ root: document.body, signals }).start();
+  const button = document.querySelector("#both");
+
+  // Both forms register the same binding key; they previously carried
+  // divergent writers (classList.toggle vs class-token rewrite), so behavior
+  // depended on which scan pass won.
+  assert.equal(button.classList.contains("selected"), false);
+
+  signals.set("ui.selected", true);
+  await delay(0);
+  assert.equal(button.classList.contains("selected"), true);
+
+  signals.set("ui.selected", false);
+  await delay(0);
+  assert.equal(button.classList.contains("selected"), false);
+  // The unified token writer drops the emptied class attribute, matching
+  // class:x semantics (the old signal:class toggle writer left class="").
+  assert.equal(button.hasAttribute("class"), false);
+  loader.destroy();
+});
+
+test("signal:class token removal drops an emptied class attribute", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <main async:container>
+      <button id="only" signal:class:active="ui.active"></button>
+    </main>
+  `;
+  const signals = createSignalRegistry({
+    ui: signal({ active: true })
+  });
+  const loader = Loader({ root: document.body, signals }).start();
+  const button = document.querySelector("#only");
+
+  assert.equal(button.classList.contains("active"), true);
+
+  // The unified token writer removes the class attribute entirely when the
+  // last token clears, matching class:x semantics.
+  signals.set("ui.active", false);
+  await delay(0);
+  assert.equal(button.hasAttribute("class"), false);
+  loader.destroy();
+});

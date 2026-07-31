@@ -154,6 +154,7 @@ const runtimeCopiedArtifacts = {
   viteEsm: { source: "src/vite.js", file: viteEsm },
   buildProfileEsm: { source: "src/build-profile.js", file: "build-profile.js" },
   buildOptimizerEsm: { source: "src/build-optimizer.js", file: "build-optimizer.js" },
+  revealPolicyEsm: { source: "src/reveal-policy.js", file: "reveal-policy.js" },
   runtimeEsm: { source: "src/runtime.js", file: runtimeEsm },
   runtimeSignalsEsm: { source: "src/runtime/signals.js", file: runtimeSignalsEsm },
   runtimeEventsEsm: { source: "src/runtime/events.js", file: runtimeEventsEsm },

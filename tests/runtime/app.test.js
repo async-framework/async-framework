@@ -2232,3 +2232,42 @@ test("SSR render with document: false returns the raw route fragment", async () 
   assert.match(raw.html, /<h1>Product sku-1<\/h1>/);
   runtime.destroy();
 });
+
+test("app.applySnapshot before start tolerates snapshots without a flow key", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<main async:container></main>`;
+  const app = defineApp();
+
+  // normalizeSnapshot only materializes "flow" when the snapshot carries the
+  // key; this call used to throw "Cannot convert undefined or null to object".
+  app.applySnapshot({ signal: { count: 41 } });
+
+  const runtime = app.start({ root: document.body, router: false });
+  try {
+    assert.equal(runtime.signals.get("count"), 41);
+  } finally {
+    runtime.destroy();
+  }
+});
+
+test("app.applySnapshot before start forwards browser cache to the first runtime", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<main async:container></main>`;
+  const app = defineApp();
+
+  app.applySnapshot({
+    signal: { count: 1 },
+    cache: { browser: { "products.list": ["keyboard"] } }
+  });
+
+  // The runtime applySnapshot path restores snapshot cache immediately; the
+  // pre-runtime path used to drop it on the floor.
+  const runtime = app.start({ root: document.body, router: false });
+  try {
+    assert.deepEqual(runtime.browser.cache.snapshot(), { "products.list": ["keyboard"] });
+  } finally {
+    runtime.destroy();
+  }
+});

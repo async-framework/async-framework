@@ -108,6 +108,18 @@ Resume must preserve document continuity:
   explicit error patch outcome.
 - Stale patches are ignored, not replayed.
 - Destroyed receivers reject future patch application.
+- Reveal vocabulary (orders `as-ready`, `forwards`, `backwards`, `together`;
+  tails `visible`, `collapsed`, `hidden`) is owned by `src/reveal-policy.js`
+  and shared verbatim by the receiver and the build optimizer. `visible` is
+  author vocabulary for "no tail treatment" and normalizes to an absent tail
+  before group bookkeeping.
+- An explicit error patch that carries reveal metadata settles its reveal
+  index: the boundary keeps its fallback content, the group cursor advances
+  past the index, and buffered siblings that became ready commit. Ordered and
+  `together` groups never wait forever on content that will not arrive.
+- Receivers resolved from a runtime or loader (rather than passed explicitly)
+  are shared per loader so sequence dedup and reveal buffering survive across
+  inline stream patch scripts.
 
 ## Failure Modes
 

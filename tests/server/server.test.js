@@ -11,6 +11,7 @@ import {
   delay,
   signal
 } from "../../src/index.js";
+import { isServerEnvelope } from "../../src/server.js";
 
 test("server registry runs functions with this.server for local fan-out", async () => {
   const server = createServerRegistry({
@@ -835,3 +836,32 @@ function serverEnvelope(fields = {}) {
 function unwrapEnvelope(result) {
   return Object.hasOwn(result, "value") ? result.value : undefined;
 }
+
+test("applyServerResult skips boundary swaps the router counts as not swapped", async () => {
+  const swaps = [];
+  const loader = {
+    swap(boundary, html) {
+      swaps.push([boundary, html]);
+      return { boundary };
+    },
+    async _whenCommitted() {}
+  };
+
+  // html: undefined declares "nothing to swap" (the router warns and skips);
+  // status 204 is the no-content contract. Both used to blank the boundary.
+  await applyServerResult({ __async_server_result__: 1, boundary: "route", html: undefined }, { loader });
+  await applyServerResult({ __async_server_result__: 1, boundary: "route", html: "<p>stale</p>", status: 204 }, { loader });
+  assert.deepEqual(swaps, []);
+
+  await applyServerResult({ __async_server_result__: 1, boundary: "route", html: "<p>Fresh</p>" }, { loader });
+  assert.deepEqual(swaps, [["route", "<p>Fresh</p>"]]);
+});
+
+test("isServerEnvelope accepts only the supported wire version", () => {
+  assert.equal(isServerEnvelope({ __async_server_result__: 1 }), true);
+  assert.equal(isServerEnvelope({ __async_server_result__: 2 }), false);
+  assert.equal(isServerEnvelope({ __async_server_result__: true }), false);
+  assert.equal(isServerEnvelope({}), false);
+  assert.equal(isServerEnvelope(null), false);
+  assert.equal(isServerEnvelope([1]), false);
+});

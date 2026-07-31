@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+- Fixed pre-runtime `app.applySnapshot(...)`: snapshots without a `flow` key
+  no longer throw, and snapshot browser-cache entries now reach the first
+  runtime instead of being dropped.
+- Unified the reveal vocabulary in `src/reveal-policy.js`, shared by the
+  boundary receiver and the build optimizer. The receiver now accepts the
+  optimizer's default tail `visible` (normalized to "no tail treatment")
+  instead of throwing.
+- `AsyncStream` patches resolved through a runtime or loader now share one
+  receiver per loader, so sequence dedup and reveal buffering work across
+  inline stream scripts.
+- Errored patches carrying reveal metadata settle their reveal index so
+  ordered and `together` groups commit buffered siblings instead of stalling
+  forever.
+- `applyServerResult` no longer blanks a boundary for envelopes with
+  `html: undefined` or `status: 204`, matching the router's swap accounting;
+  the router now shares the exported `isServerEnvelope` predicate instead of
+  a drifted truthy wire-key check.
+- Bare `*` route segments compile as anonymous rest splats (previously scored
+  as wildcards but compiled as the literal character `*`).
+- `signal:class:x` now delegates to the shared class-token writer, removing a
+  binding-key collision with `class:x` that silently dropped one of the two
+  bindings.
+- Expired server-route prefetch entries are swept on insert instead of
+  accumulating for the router's lifetime.
+- Removed dead code that duplicated live implementations: `parsePath` in
+  signals.js, `isAsyncSignalSnapshot` in app.js, and a no-op template branch
+  in the loader's swap HTML renderer.
+
 ## 0.19.0 - 2026-07-21
 
 - Added structured runtime diagnostics with stable error codes, `AsyncError`,

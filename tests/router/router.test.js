@@ -1902,3 +1902,53 @@ test("unmatched navigation without document fallback warns with guidance", async
     console.warn = originalWarn;
   }
 });
+
+test("bare * segments compile as anonymous rest splats", () => {
+  const routes = createRouteRegistry({
+    "*": route("fallback.page"),
+    "/files/*": route("files.page"),
+    "/files/archive": route("archive.page")
+  });
+
+  // Previously compiled as the literal character "*": routeScore ranked the
+  // pattern like a wildcard while the regex matched only the URL "/files/*".
+  const nested = routes.match("http://app.test/files/reports/2026/07.pdf");
+  assert.equal(nested.pattern, "/files/*");
+  assert.deepEqual(nested.params, {});
+
+  const single = routes.match("http://app.test/files/readme.txt");
+  assert.equal(single.pattern, "/files/*");
+
+  const literal = routes.match("http://app.test/files/archive");
+  assert.equal(literal.pattern, "/files/archive");
+
+  const unmatched = routes.match("http://app.test/files");
+  assert.equal(unmatched.pattern, "*");
+});
+
+test("bare * segments must terminate the pattern", () => {
+  assert.throws(() => createRouteRegistry({ "/a/*/b": route("x") }), /must be the last segment/);
+});
+
+test("server route partials reject unknown envelope wire versions", async () => {
+  const window = new Window({ url: "http://app.test/" });
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="page"><h1 id="page-title">home</h1></section>`;
+
+  const router = createRouter({
+    mode: "spa",
+    fallback: "error",
+    root: document.body,
+    boundary: "page",
+    // A future wire version must not pass the envelope gate and then no-op
+    // through applyServerResult's strict version check.
+    fetch: async () => fakePartialResponse({ __async_server_result__: 2, html: `<h1>v2</h1>` }),
+    routes: createRouteRegistry({
+      "/next": defineRoute({ server: true })
+    })
+  }).start();
+
+  await assert.rejects(() => router.navigate("/next"), /did not return a server envelope/);
+  assert.equal(document.querySelector("#page-title").textContent, "home");
+  router.destroy();
+});

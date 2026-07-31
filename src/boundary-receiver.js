@@ -1,11 +1,10 @@
 import { normalizeAttributeConfig, readAttribute } from "./attributes.js";
 import { renderTemplate } from "./html.js";
+import { defaultRevealOrder, normalizeRevealTail, revealOrders, revealTails } from "./reveal-policy.js";
 
 const defaultRecentLimit = 50;
 const builtBackpatchAttribute = "data-async-backpatch";
 const pendingTargetAttribute = "data-pending-id";
-const revealOrders = new Set(["as-ready", "forwards", "backwards", "together"]);
-const revealTails = new Set(["collapsed", "hidden"]);
 const structuralAttributeNames = new Set(["innerhtml", "outerhtml", "textcontent", "children", "childnodes"]);
 
 export const AsyncStream = Object.freeze({
@@ -145,6 +144,9 @@ export function createBoundaryReceiver(options = {}) {
       record.lastStatus = result.status;
       remember(result);
       onError?.(error, result, patch);
+      if (normalized.reveal) {
+        await settleErroredRevealIndex(normalized.reveal);
+      }
       if (throwOnError) {
         throw error;
       }
@@ -172,8 +174,8 @@ export function createBoundaryReceiver(options = {}) {
 
     const item = { record, normalized, patch };
     group.pending.set(index, item);
-    const ready = takeReadyRevealItems(group);
-    if (!ready.includes(item)) {
+    const results = await commitReadyRevealItems(group);
+    if (!results.has(item)) {
       const result = {
         status: "buffered",
         boundary: normalized.boundary,
@@ -182,22 +184,37 @@ export function createBoundaryReceiver(options = {}) {
       };
       record.lastStatus = result.status;
       remember(result);
-      updateRevealTail(group);
       return result;
     }
+    return results.get(item);
+  }
 
-    let currentResult;
+  async function commitReadyRevealItems(group) {
+    const ready = takeReadyRevealItems(group);
+    const results = new Map();
     for (const readyItem of ready) {
       const result = await commitBoundaryPatch(readyItem.record, readyItem.normalized, readyItem.patch, {
         stateApplied: true
       });
       group.committed.add(readyItem.normalized.reveal.index);
-      if (readyItem === item) {
-        currentResult = result;
-      }
+      results.set(readyItem, result);
     }
     updateRevealTail(group);
-    return currentResult;
+    return results;
+  }
+
+  // An errored patch settles its reveal index: ordered and "together" groups
+  // must not wait forever on content that will never arrive. The boundary
+  // keeps its fallback content, the group cursor moves past the index, and
+  // any buffered siblings that became ready commit immediately.
+  async function settleErroredRevealIndex(reveal) {
+    const group = revealGroup(reveal);
+    if (group.committed.has(reveal.index)) {
+      return;
+    }
+    group.pending.delete(reveal.index);
+    group.committed.add(reveal.index);
+    await commitReadyRevealItems(group);
   }
 
   async function commitBoundaryPatch(record, normalized, patch, options = {}) {
@@ -484,6 +501,12 @@ function applyCurrentScript(scriptOrOptions, maybeOptions) {
   return applyScript(script, options);
 }
 
+// Receivers resolved from a runtime or loader are shared per loader: seq
+// dedup and reveal buffering live on the receiver, so inline stream scripts
+// (which cannot hold a receiver reference) must land on the same instance
+// patch after patch. Explicit dependency overrides opt out of sharing.
+const sharedReceivers = new WeakMap();
+
 function resolveReceiver(options = {}) {
   if (options.receiver && typeof options.receiver.apply === "function") {
     return options.receiver;
@@ -493,7 +516,18 @@ function resolveReceiver(options = {}) {
   if (!loader) {
     throw new TypeError("AsyncStream requires receiver, loader, or runtime.loader.");
   }
-  return createBoundaryReceiver({
+  const shareable = options.signals === undefined
+    && options.cache === undefined
+    && options.scheduler === undefined
+    && options.router === undefined
+    && options.attributes === undefined;
+  if (shareable) {
+    const cached = sharedReceivers.get(loader);
+    if (cached && !cached.inspect().destroyed) {
+      return cached;
+    }
+  }
+  const receiver = createBoundaryReceiver({
     loader,
     signals: options.signals ?? runtime?.signals,
     cache: options.cache ?? runtime?.browser?.cache,
@@ -501,6 +535,10 @@ function resolveReceiver(options = {}) {
     router: options.router ?? runtime?.router,
     attributes: options.attributes ?? runtime?.attributes ?? loader.attributes
   });
+  if (shareable) {
+    sharedReceivers.set(loader, receiver);
+  }
+  return receiver;
 }
 
 function parseStreamPatch(source) {
@@ -577,8 +615,8 @@ function synthesizeRevealMetadata(patch, root, attributes) {
     group,
     index,
     count: children.length,
-    order: readAttribute(container, attributes, "async", "reveal-order") || "as-ready",
-    tail: readAttribute(container, attributes, "async", "reveal-tail") || undefined
+    order: readAttribute(container, attributes, "async", "reveal-order") || defaultRevealOrder,
+    tail: normalizeRevealTail(readAttribute(container, attributes, "async", "reveal-tail") || undefined)
   };
 }
 
@@ -586,8 +624,8 @@ function sameRevealMetadata(left, right) {
   return left?.group === right.group &&
     left?.index === right.index &&
     left?.count === right.count &&
-    (left?.order ?? "as-ready") === right.order &&
-    left?.tail === right.tail;
+    (left?.order ?? defaultRevealOrder) === right.order &&
+    normalizeRevealTail(left?.tail) === right.tail;
 }
 
 function validatePatch(patch) {
@@ -717,7 +755,7 @@ function normalizeRevealMetadata(reveal) {
   if (!isPlainObject(reveal)) {
     throw new TypeError("Boundary patch reveal metadata must be an object.");
   }
-  const order = reveal.order ?? "as-ready";
+  const order = reveal.order ?? defaultRevealOrder;
   if (typeof reveal.group !== "string" || reveal.group.length === 0) {
     throw new TypeError("Reveal group must be a non-empty string.");
   }
@@ -731,14 +769,14 @@ function normalizeRevealMetadata(reveal) {
     throw new TypeError("Reveal order must be as-ready, forwards, backwards, or together.");
   }
   if (reveal.tail !== undefined && !revealTails.has(reveal.tail)) {
-    throw new TypeError("Reveal tail must be collapsed or hidden.");
+    throw new TypeError("Reveal tail must be visible, collapsed, or hidden.");
   }
   return {
     group: reveal.group,
     index: reveal.index,
     count: reveal.count,
     order,
-    tail: reveal.tail
+    tail: normalizeRevealTail(reveal.tail)
   };
 }
 
@@ -817,16 +855,20 @@ function takeReadyRevealItems(group) {
   }
   if (group.order === "forwards") {
     const indexes = [];
-    while (group.pending.has(group.nextForward)) {
-      indexes.push(group.nextForward);
+    while (group.pending.has(group.nextForward) || group.committed.has(group.nextForward)) {
+      if (group.pending.has(group.nextForward)) {
+        indexes.push(group.nextForward);
+      }
       group.nextForward += 1;
     }
     return takePendingIndexes(group, indexes);
   }
   if (group.order === "backwards") {
     const indexes = [];
-    while (group.pending.has(group.nextBackward)) {
-      indexes.push(group.nextBackward);
+    while (group.pending.has(group.nextBackward) || group.committed.has(group.nextBackward)) {
+      if (group.pending.has(group.nextBackward)) {
+        indexes.push(group.nextBackward);
+      }
       group.nextBackward -= 1;
     }
     return takePendingIndexes(group, indexes);

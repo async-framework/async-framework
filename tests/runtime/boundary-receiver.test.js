@@ -1024,3 +1024,206 @@ test("boundary receiver ignores child patches when parent scope is destroyed", a
   assert.equal(scheduler.isScopeDestroyed("component.Parent.1"), true);
   loader.destroy();
 });
+
+test("reveal tail visible is author vocabulary for no tail treatment", async () => {
+  {
+    const window = new Window();
+    const { document } = window;
+    document.body.innerHTML = `
+      <section async:reveal="dashboard" async:reveal-order="forwards" async:reveal-tail="visible">
+        <section id="first" async:boundary="first">First fallback</section>
+        <section id="second" async:boundary="second">Second fallback</section>
+      </section>
+    `;
+    const loader = Loader({ root: document.body }).start();
+    const receiver = createBoundaryReceiver({ loader });
+
+    // The build optimizer defaults reveal policies to tail: "visible"; the
+    // receiver used to throw "Reveal tail must be collapsed or hidden" for
+    // exactly that metadata.
+    const second = await receiver.apply({
+      boundary: "second",
+      seq: 1,
+      reveal: { group: "dashboard", index: 1, count: 2, order: "forwards", tail: "visible" },
+      html: `<p>Second ready</p>`
+    });
+    assert.equal(second.status, "buffered");
+    assert.equal(document.querySelector("#first").hasAttribute("hidden"), false);
+    assert.equal(document.querySelector("#second").hasAttribute("hidden"), false);
+
+    // Omitted tail and tail: "visible" normalize identically, so mixed
+    // patches must not trip the group metadata consistency check.
+    const first = await receiver.apply({
+      boundary: "first",
+      seq: 1,
+      reveal: { group: "dashboard", index: 0, count: 2, order: "forwards" },
+      html: `<p>First ready</p>`
+    });
+    assert.equal(first.status, "applied");
+    assert.equal(document.querySelector("#second").textContent, "Second ready");
+    assert.equal(receiver.inspect().reveal.dashboard.tail, undefined);
+    loader.destroy();
+  }
+
+  {
+    const window = new Window();
+    const { document } = window;
+    document.body.innerHTML = `
+      <section async:reveal="feed" async:reveal-order="forwards" async:reveal-tail="visible">
+        <section async:boundary="story">Story fallback</section>
+      </section>
+      <script id="story-patch" type="application/json">
+        { "boundary": "story", "seq": 1, "html": "<p>Story ready</p>" }
+      </script>
+    `;
+    const loader = Loader({ root: document.body }).start();
+    const receiver = createBoundaryReceiver({ loader });
+
+    // DOM-synthesized metadata reads async:reveal-tail="visible" directly.
+    const result = await AsyncStream.applyScript(document.querySelector("#story-patch"), {
+      receiver,
+      root: document.body
+    });
+    assert.equal(result.status, "applied");
+    assert.equal(document.querySelector("[async\\:boundary='story']").textContent, "Story ready");
+    loader.destroy();
+  }
+});
+
+test("errored reveal patch settles its index so ordered siblings still commit", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="dashboard" async:reveal-order="forwards" async:reveal-tail="collapsed">
+      <section id="profile" async:boundary="profile">Profile fallback</section>
+      <section id="timeline" async:boundary="timeline">Timeline fallback</section>
+      <section id="details" async:boundary="details">Details fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const errors = [];
+  const receiver = createBoundaryReceiver({
+    loader,
+    onError(error, result) {
+      errors.push([result.boundary, error.message]);
+    }
+  });
+
+  const timeline = await receiver.apply({
+    boundary: "timeline",
+    seq: 1,
+    reveal: { group: "dashboard", index: 1, count: 3, order: "forwards", tail: "collapsed" },
+    html: `<p>Timeline ready</p>`
+  });
+  const details = await receiver.apply({
+    boundary: "details",
+    seq: 1,
+    reveal: { group: "dashboard", index: 2, count: 3, order: "forwards", tail: "collapsed" },
+    html: `<p>Details ready</p>`
+  });
+  assert.equal(timeline.status, "buffered");
+  assert.equal(details.status, "buffered");
+
+  // Index 0 fails. The group cursor previously froze here forever, leaving
+  // every buffered sibling hidden on its fallback.
+  const errored = await receiver.apply({
+    boundary: "profile",
+    seq: 1,
+    reveal: { group: "dashboard", index: 0, count: 3, order: "forwards", tail: "collapsed" },
+    error: { message: "profile failed" }
+  });
+
+  assert.equal(errored.status, "errored");
+  assert.deepEqual(errors, [["profile", "profile failed"]]);
+  assert.equal(document.querySelector("#timeline").textContent, "Timeline ready");
+  assert.equal(document.querySelector("#details").textContent, "Details ready");
+  assert.equal(document.querySelector("#profile").textContent.includes("Profile fallback"), true);
+  assert.equal(document.querySelector("#profile").hasAttribute("hidden"), false);
+  assert.equal(document.querySelector("#timeline").hasAttribute("hidden"), false);
+  assert.equal(document.querySelector("#details").hasAttribute("hidden"), false);
+
+  const inspected = receiver.inspect().reveal.dashboard;
+  assert.deepEqual(inspected.committed, [0, 1, 2]);
+  assert.deepEqual(inspected.pending, []);
+  loader.destroy();
+});
+
+test("errored reveal patch completes together groups", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="pair" async:reveal-order="together">
+      <section id="left" async:boundary="left">Left fallback</section>
+      <section id="right" async:boundary="right">Right fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const receiver = createBoundaryReceiver({ loader });
+
+  const left = await receiver.apply({
+    boundary: "left",
+    seq: 1,
+    reveal: { group: "pair", index: 0, count: 2, order: "together" },
+    html: `<p>Left ready</p>`
+  });
+  assert.equal(left.status, "buffered");
+  assert.equal(document.querySelector("#left").textContent.includes("Left fallback"), true);
+
+  const errored = await receiver.apply({
+    boundary: "right",
+    seq: 1,
+    reveal: { group: "pair", index: 1, count: 2, order: "together" },
+    error: { message: "right failed" }
+  });
+
+  // The errored index counts toward the together threshold, so the buffered
+  // sibling commits instead of waiting forever.
+  assert.equal(errored.status, "errored");
+  assert.equal(document.querySelector("#left").textContent, "Left ready");
+  assert.equal(document.querySelector("#right").textContent.includes("Right fallback"), true);
+  loader.destroy();
+});
+
+test("AsyncStream runtime-resolved patches share one receiver", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="feed" async:reveal-order="forwards">
+      <section id="hero" async:boundary="hero">Hero fallback</section>
+      <section id="sidebar" async:boundary="sidebar">Sidebar fallback</section>
+    </section>
+    <script id="sidebar-patch" type="application/json">
+      { "boundary": "sidebar", "seq": 1, "html": "<p>Sidebar ready</p>" }
+    </script>
+    <script id="hero-patch" type="application/json">
+      { "boundary": "hero", "seq": 1, "html": "<p>Hero ready</p>" }
+    </script>
+  `;
+  const app = defineApp();
+  const runtime = app.start({ root: document.body, router: false });
+  const previousAsync = globalThis.Async;
+  globalThis.Async = app;
+
+  try {
+    // Each call used to build a fresh receiver, so this buffered patch was
+    // trapped inside a discarded instance and the boundary never committed.
+    const sidebar = await AsyncStream.applyScript(document.querySelector("#sidebar-patch"));
+    assert.equal(sidebar.status, "buffered");
+
+    const hero = await AsyncStream.applyScript(document.querySelector("#hero-patch"));
+    assert.equal(hero.status, "applied");
+    assert.equal(document.querySelector("#hero").textContent, "Hero ready");
+    assert.equal(document.querySelector("#sidebar").textContent, "Sidebar ready");
+
+    // Seq dedup also lives on the shared receiver now.
+    const replay = await AsyncStream.applyScript(document.querySelector("#hero-patch"));
+    assert.equal(replay.status, "ignored-stale");
+  } finally {
+    runtime.destroy();
+    if (previousAsync === undefined) {
+      delete globalThis.Async;
+    } else {
+      globalThis.Async = previousAsync;
+    }
+  }
+});

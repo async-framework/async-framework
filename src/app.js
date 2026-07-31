@@ -23,6 +23,11 @@ export function defineApp(initial, options = {}) {
   const loaderFacade = createLoaderFacade();
   const routerFacade = createRouterFacade();
   let currentRuntime;
+  // Browser cache entries from pre-runtime applySnapshot(...) calls; the
+  // runtime path restores snapshot cache immediately (applySnapshotToRuntime),
+  // so the pre-runtime path stashes it here for the first runtime instead of
+  // silently dropping it.
+  let pendingSnapshotCache = null;
 
   const app = {
     registry,
@@ -71,7 +76,11 @@ export function defineApp(initial, options = {}) {
         currentRuntime.applySnapshot(snapshot, snapshotOptions);
         return app;
       }
-      appendSnapshotDeclarations(registry, snapshot, snapshotOptions);
+      const normalized = appendSnapshotDeclarations(registry, snapshot, snapshotOptions);
+      const browserCache = normalized.cache?.browser ?? {};
+      if (Object.keys(browserCache).length > 0) {
+        pendingSnapshotCache = { ...(pendingSnapshotCache ?? {}), ...browserCache };
+      }
       return app;
     },
 
@@ -137,6 +146,11 @@ export function defineApp(initial, options = {}) {
   function setCurrentRuntime(runtime) {
     if (runtime) {
       currentRuntime = runtime;
+      if (pendingSnapshotCache) {
+        const cacheEntries = pendingSnapshotCache;
+        pendingSnapshotCache = null;
+        runtime.browser?.cache?.restore?.(cacheEntries);
+      }
       if (runtime.router) {
         routerFacade._setCurrent(runtime.router);
       } else {
@@ -1386,10 +1400,14 @@ function appendSnapshotDeclarations(registry, snapshot = {}, options = {}) {
     registerSnapshotEntry(registry, "signal", id, createSignal(value), options);
   }
   for (const type of ["handler", "server", "partial", "route", "component", "asyncSignal", "flow"]) {
-    for (const [id, value] of Object.entries(normalized[type])) {
+    // normalizeSnapshot only materializes "flow" when the snapshot carried the
+    // key (mergeSnapshot guards the same way) — iterate the absent group as
+    // empty instead of crashing on Object.entries(undefined).
+    for (const [id, value] of Object.entries(normalized[type] ?? {})) {
       registerSnapshotEntry(registry, type, id, value, options);
     }
   }
+  return normalized;
 }
 
 function mergeRegistryEntries(runtime, type, entries, concreteRegistry, options = {}) {
@@ -1518,17 +1536,6 @@ function applySignalPatch(signals, path, value) {
   if (path !== id) {
     signals.set(path, value);
   }
-}
-
-function isAsyncSignalSnapshot(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
-  }
-  return Object.hasOwn(value, "value")
-    && (Object.hasOwn(value, "loading")
-      || Object.hasOwn(value, "error")
-      || Object.hasOwn(value, "status")
-      || Object.hasOwn(value, "version"));
 }
 
 function attachServerCache(server, cache) {

@@ -551,21 +551,6 @@ export function isSignalRef(value) {
   return Boolean(value?.[refKind]);
 }
 
-function parsePath(path, entries) {
-  if (typeof path !== "string" || path.length === 0) {
-    throw new TypeError("Signal path must be a non-empty string.");
-  }
-  const segments = path.split(".");
-  for (let end = segments.length; end > 0; end -= 1) {
-    const id = segments.slice(0, end).join(".");
-    if (entries.has(id)) {
-      return { id, parts: segments.slice(end), path };
-    }
-  }
-  const [id, ...parts] = segments;
-  return { id, parts, path };
-}
-
 function readEntry(entry, parts) {
   if (isAsyncSignal(entry) && parts[0]?.startsWith("$")) {
     const metadata = readAsyncMetadata(entry, parts[0]);

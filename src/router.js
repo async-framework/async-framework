@@ -3,7 +3,7 @@ import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, isAsyncError, rep
 import { createHandlerRegistry } from "./handlers.js";
 import { createScheduler } from "./scheduler.js";
 import { createSignalRegistry } from "./signals.js";
-import { applyServerResult } from "./server.js";
+import { applyServerResult, isServerEnvelope } from "./server.js";
 import { createRegistryStore } from "./registry-store.js";
 import { normalizeAttributeConfig } from "./attributes.js";
 
@@ -260,6 +260,7 @@ export function createRouter(options = {}) {
           if (result === documentNavigationResult || result == null) {
             return null;
           }
+          sweepExpiredPrefetches();
           serverPrefetchCache.set(target.href, {
             result,
             redirected: navigation.redirected ?? null,
@@ -585,7 +586,7 @@ export function createRouter(options = {}) {
       }
       throw new Error(`Server partial for "${target.pathname}" returned invalid JSON.`, { cause });
     }
-    if (!result || typeof result !== "object" || !result.__async_server_result__) {
+    if (!isServerEnvelope(result)) {
       if (fallback === "document") {
         return documentNavigationResult;
       }
@@ -602,6 +603,17 @@ export function createRouter(options = {}) {
 
   function prefetchNavigation() {
     return { abort: undefined, redirected: null };
+  }
+
+  // TTL was previously enforced only on consumption, so hover-prefetching N
+  // never-clicked links retained N expired envelopes for the router's
+  // lifetime. Each insert sweeps expired entries to bound the cache.
+  function sweepExpiredPrefetches(now = Date.now()) {
+    for (const [href, entry] of serverPrefetchCache) {
+      if (entry.expires < now) {
+        serverPrefetchCache.delete(href);
+      }
+    }
   }
 
   // Single-use prefetch consumption: fresh, boundary-matching entries replace
@@ -1013,6 +1025,12 @@ function compilePattern(pattern) {
   const segments = pattern.split("/");
   const source = segments
     .map((segment, index) => {
+      if (segment === "*") {
+        if (index !== segments.length - 1) {
+          throw new TypeError(`Splat segment "${segment}" must be the last segment of "${pattern}".`);
+        }
+        return "(?:.+)";
+      }
       if (segment.length > 1 && segment.startsWith("*")) {
         if (index !== segments.length - 1) {
           throw new TypeError(`Splat segment "${segment}" must be the last segment of "${pattern}".`);
@@ -1141,9 +1159,6 @@ function routeScore(pattern) {
     .split("/")
     .filter(Boolean)
     .reduce((score, segment) => {
-      if (segment === "*") {
-        return score;
-      }
       if (segment.startsWith("*")) {
         return score + 1;
       }

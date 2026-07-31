@@ -1,7 +1,7 @@
 import { renderComponent } from "./component.js";
 import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, reportAsyncError } from "./errors.js";
 import { createHandlerRegistry } from "./handlers.js";
-import { childrenFragment, isTemplateResult, rawHtml, renderTemplate } from "./html.js";
+import { childrenFragment, rawHtml, renderTemplate } from "./html.js";
 import { createScheduler } from "./scheduler.js";
 import { createSignalRegistry, isSignalRef } from "./signals.js";
 import { matchAttribute, normalizeAttributeConfig, readAttribute } from "./attributes.js";
@@ -623,13 +623,11 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
         if (signalName.startsWith("class:")) {
           const className = signalName.slice("class:".length);
           const path = element.getAttribute(name);
-          if (className === "" || className === "{}") {
-            bindClass(element, className, path);
-          } else {
-            bindSignal(element, `class:${className}:${path}`, path, (value) => {
-              element.classList.toggle(className, Boolean(value));
-            });
-          }
+          // Delegate to bindClass so one writer owns class-token semantics:
+          // this branch previously registered the same binding key with a
+          // divergent classList.toggle writer, and an element carrying both
+          // signal:class:x and class:x kept whichever pass scanned first.
+          bindClass(element, className, path);
           continue;
         }
         if (signalName === "class") {
@@ -1879,9 +1877,6 @@ function snapshotSwapValue(value, documentRef, renderOptions = {}) {
 function renderSwapHtml(value, renderOptions = {}) {
   if (typeof value === "string") {
     return value;
-  }
-  if (isTemplateResult(value)) {
-    return renderTemplate(value, renderOptions);
   }
   return renderTemplate(value, renderOptions);
 }
