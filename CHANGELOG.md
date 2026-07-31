@@ -76,13 +76,14 @@
 - Rendering an inline template binding without a Loader now throws the same
   clear error the component renderer raises, instead of silently emitting
   `[object Object]` into the attribute.
-- Completion and recovery hardening: completion jobs (awaited commits) reject their awaiter
-  without double-reporting through the scheduler `onError` bridge; inline
-  binding comparison tokens JSON-escape keys and leaves so differently-shaped
-  values cannot collide into a skipped swap; a content retry now recovers an
-  error-settled reveal index instead of rejecting as a double commit; the
-  router facade restores the original ready()-resolution order; the registry
-  store's introspection snapshot honors `_snapshotExempt`; the app-owned
+- Completion and recovery hardening: completion jobs (awaited commits) reject
+  their awaiter without double-reporting through the scheduler `onError`
+  bridge; inline binding comparison tokens JSON-escape keys and leaves so
+  differently-shaped values cannot collide into a skipped swap; a content
+  retry now recovers an error-settled reveal index instead of rejecting as a
+  double commit; the router facade restores the original ready()-resolution
+  order; the registry store's introspection snapshot honors
+  `_snapshotExempt`; the app-owned
   scheduler bridge reads `runtime.onError` at failure time.
 - Examples: the router example gains a `"*"` fallback route (first render no
   longer errors on the served URL); the ssr example resumes through the
@@ -100,7 +101,9 @@
   `async-pipeline release doctor`); the `examples` scripts run the whole
   `tests/examples/` suite; fixed the stale `benchmarks/results/` ignore
   rule; stream scenario budgets carry working headroom (47500).
-- Bundle size from bundled TypeScript source: `browser.ts` raw 279,293 B (279.3 KB / 0.279 MB), gzip 56,929 B (56.9 KB / 0.057 MB), br 46,749 B (46.7 KB / 0.047 MB) -> `browser.min.js` raw 114,672 B (114.7 KB / 0.115 MB), gzip 34,447 B (34.4 KB / 0.034 MB), br 30,225 B (30.2 KB / 0.030 MB); delta raw -164,621 B (-164.6 KB / -0.165 MB), gzip -22,482 B (-22.5 KB / -0.022 MB), br -16,524 B (-16.5 KB / -0.017 MB).
+- Updated the inlined Flow integration to `@async/flow` 0.10.5 for
+  resume-safe async-signal snapshots and cross-copy compose stops.
+- Bundle size from bundled TypeScript source: `browser.ts` raw 279,370 B (279.4 KB / 0.279 MB), gzip 56,946 B (56.9 KB / 0.057 MB), br 46,741 B (46.7 KB / 0.047 MB) -> `browser.min.js` raw 114,724 B (114.7 KB / 0.115 MB), gzip 34,458 B (34.5 KB / 0.034 MB), br 30,253 B (30.3 KB / 0.030 MB); delta raw -164,646 B (-164.6 KB / -0.165 MB), gzip -22,488 B (-22.5 KB / -0.022 MB), br -16,488 B (-16.5 KB / -0.016 MB).
 
 ## 0.19.0 - 2026-07-21
 
