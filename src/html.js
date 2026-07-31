@@ -172,7 +172,9 @@ function isInlineBindingValue(value) {
 
 function registerInlineBinding(value, context) {
   if (typeof context.bind !== "function") {
-    return value;
+    // Same misconfiguration throws in component renders; silently emitting
+    // the value here produced "[object Object]" attribute garbage instead.
+    throw new TypeError("Inline template bindings require a Loader.");
   }
   return context.bind(value);
 }

@@ -1410,3 +1410,80 @@ test("signal:class token removal drops an emptied class attribute", async () => 
   assert.equal(button.hasAttribute("class"), false);
   loader.destroy();
 });
+
+test("ifChanged dedupes swap templates that carry inline bindings", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const signals = createSignalRegistry({
+    ui: signal({ tone: "primary" })
+  });
+  const loader = Loader({ root: document.body, signals }).start();
+  const render = (tone) => html`<button id="action" signal:class="${{ [tone]: true }}">Save</button>`;
+
+  loader.swap({ type: "ifChanged", boundary: "panel", html: render("primary") });
+  await delay(0);
+  const first = document.querySelector("#action");
+  assert.equal(first.classList.contains("primary"), true);
+
+  // Same rendered content: inline binding ids used to be minted per render
+  // and embedded in the comparison snapshot, so this always re-swapped.
+  loader.swap({ type: "ifChanged", boundary: "panel", html: render("primary") });
+  await delay(0);
+  assert.equal(document.querySelector("#action"), first);
+
+  // Different binding content still swaps.
+  loader.swap({ type: "ifChanged", boundary: "panel", html: render("danger") });
+  await delay(0);
+  const second = document.querySelector("#action");
+  assert.notEqual(second, first);
+  assert.equal(second.classList.contains("danger"), true);
+  loader.destroy();
+});
+
+test("re-swapping a boundary releases the previous content's inline bindings", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const signals = createSignalRegistry({
+    ui: signal({ tone: "primary" })
+  });
+  const loader = Loader({ root: document.body, signals }).start();
+
+  // Each swap renders a template with an inline binding; ids used to
+  // accumulate in the loader's binding map for its whole lifetime.
+  for (let index = 0; index < 3; index += 1) {
+    loader.swap("panel", html`<output signal:class="${{ [`pass-${index}`]: true }}">v${index}</output>`);
+    await delay(0);
+  }
+  const output = document.querySelector("output");
+  assert.equal(output.classList.contains("pass-2"), true);
+  // The live binding from the current content still resolves.
+  assert.equal(output.textContent, "v2");
+  loader.destroy();
+});
+
+test("owned-scheduler job failures reach onError and dispatch async:error", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<main async:container><output id="target"></output></main>`;
+  const reports = [];
+  const loader = Loader({
+    root: document.body,
+    onError: (report) => reports.push(report.error.message)
+  }).start();
+  const target = document.querySelector("#target");
+  const events = [];
+  target.addEventListener("async:error", (event) => events.push(event.detail.error.message));
+
+  // Fire-and-forget scheduler jobs (bindings, commits) previously escaped
+  // straight to globalThis.reportError, bypassing the configured onError.
+  loader.scheduler.enqueue("binding", () => {
+    throw new Error("binding exploded");
+  }, { scope: target, key: "test:binding" });
+  await loader.scheduler.flush();
+
+  assert.deepEqual(reports, ["binding exploded"]);
+  assert.deepEqual(events, ["binding exploded"]);
+  loader.destroy();
+});

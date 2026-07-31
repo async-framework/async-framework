@@ -1,5 +1,5 @@
 import { renderComponent } from "./component.js";
-import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, reportAsyncError } from "./errors.js";
+import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, createSchedulerErrorBridge, reportAsyncError } from "./errors.js";
 import { createHandlerRegistry } from "./handlers.js";
 import { childrenFragment, fragmentMarkerData, rawHtml, renderTemplate } from "./html.js";
 import { createScheduler } from "./scheduler.js";
@@ -15,7 +15,12 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   const rootNode = root ?? documentRef;
   const signalRegistry = signals ?? createSignalRegistry();
   const handlerRegistry = handlers ?? createHandlerRegistry();
-  const schedulerInstance = scheduler ?? createScheduler();
+  // An owned scheduler reports job failures through the structured pipeline
+  // (api.onError, async:error events) instead of only globalThis.reportError;
+  // injected schedulers keep their creator's error wiring.
+  const schedulerInstance = scheduler ?? createScheduler({
+    onError: createSchedulerErrorBridge(() => api.onError)
+  });
   const ownsScheduler = !scheduler;
   const attributeConfig = normalizeAttributeConfig(attributes);
   const cleanups = new Set();
@@ -30,6 +35,10 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   const renderingBoundaries = new WeakSet();
   const componentBindings = new WeakSet();
   const inlineBindings = new Map();
+  // boundary -> ids minted while rendering its current committed content.
+  // Released when the boundary swaps again, so repeated swaps cannot grow
+  // the inline-binding map without bound.
+  const boundaryInlineBindings = new WeakMap();
   const scopedCleanups = new WeakMap();
   const boundaryCommitChains = new WeakMap();
   const boundaryCommits = new WeakMap();
@@ -138,6 +147,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       }
       destroyed = true;
       refreshPlans.clear();
+      inlineBindings.clear();
       markDestroyedScopes(rootNode);
       for (const cleanup of [...cleanups]) {
         runCleanup(cleanup);
@@ -256,7 +266,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
     const fragmentOrTemplate = typeof fragmentOrTemplateOrFn === "function"
       ? fragmentOrTemplateOrFn.call(api, boundaryRenderContext(boundaryId, boundary))
       : fragmentOrTemplateOrFn;
-    const snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, templateRenderOptions());
+    const snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, snapshotRenderOptions());
     if (snapshot != null && swapSnapshots.get(boundary) === snapshot) {
       return boundary;
     }
@@ -318,7 +328,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
     if (typeof fragmentOrTemplate === "function") {
       fragmentOrTemplate = fragmentOrTemplate.call(api, boundaryRenderContext(boundaryId, boundary));
     }
-    const snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, templateRenderOptions());
+    const snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, snapshotRenderOptions());
     return {
       fragmentOrTemplate,
       strategy,
@@ -361,14 +371,14 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       if (Array.isArray(options.deps)) {
         validateBindDeps(options.deps);
         fragmentOrTemplate = renderFn.call(api, boundaryRenderContext(boundaryId, boundary));
-        snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, templateRenderOptions());
+        snapshot = snapshotSwapValue(fragmentOrTemplate, documentRef, snapshotRenderOptions());
         dependencyCleanups = options.deps.map((path) => signalRegistry.subscribe(path, scheduleRun));
       } else {
         const outcome = signalRegistry._collectDependencies(() => {
           const rendered = renderFn.call(api, boundaryRenderContext(boundaryId, boundary));
           return {
             fragmentOrTemplate: rendered,
-            snapshot: snapshotSwapValue(rendered, documentRef, templateRenderOptions())
+            snapshot: snapshotSwapValue(rendered, documentRef, snapshotRenderOptions())
           };
         });
         dependencyCleanups = outcome.dependencies.map((dependency) => signalRegistry.subscribe(dependency, scheduleRun));
@@ -454,13 +464,20 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   function applyBoundarySwap(boundary, fragmentOrTemplate, swapOptions, metadata = {}) {
     const snapshot = Object.hasOwn(metadata, "snapshot")
       ? metadata.snapshot
-      : snapshotSwapValue(fragmentOrTemplate, documentRef, templateRenderOptions());
+      : snapshotSwapValue(fragmentOrTemplate, documentRef, snapshotRenderOptions());
     const morphOptions = {
       attach: swapOptions.attach ?? "preserve"
     };
+    const swapRender = swapRenderState();
     const scanRoots = swapOptions.strategy === "morph"
-      ? morphChildren(boundary, toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(templateRenderOptions())), morphOptions)
-      : replaceBoundaryChildren(boundary, fragmentOrTemplate);
+      ? morphChildren(boundary, toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(swapRender.options)), morphOptions)
+      : replaceBoundaryChildren(boundary, fragmentOrTemplate, swapRender.options);
+    // The old content's inline bindings die with the old content; without
+    // this, every swap of a binding-carrying template grew the map forever.
+    releaseBoundaryInlineBindings(boundary);
+    if (swapRender.minted.length > 0) {
+      boundaryInlineBindings.set(boundary, swapRender.minted);
+    }
     if (snapshot != null) {
       swapSnapshots.set(boundary, snapshot);
     } else {
@@ -491,6 +508,47 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       signals: signalRegistry,
       bind: api._registerBinding?.bind(api)
     };
+  }
+
+  // Comparison renders (ifChanged / bind / swap-many snapshots) must not
+  // mint registry ids: per-render ids embedded in the serialized snapshot
+  // made every comparison unequal (dedupe silently degraded to always-swap)
+  // while each comparison render leaked an entry into the binding map.
+  // Stable value tokens keep snapshots comparable and registry-free.
+  function snapshotRenderOptions() {
+    return {
+      attributes: attributeConfig,
+      signals: signalRegistry,
+      bind: stableBindingToken
+    };
+  }
+
+  // Wraps the committed-render bind so every id minted for a boundary's new
+  // content is tracked, and the previous content's ids can be released.
+  function swapRenderState() {
+    const minted = [];
+    const registerBinding = api._registerBinding.bind(api);
+    const options = {
+      attributes: attributeConfig,
+      signals: signalRegistry,
+      bind(value) {
+        const id = registerBinding(value);
+        minted.push(id);
+        return id;
+      }
+    };
+    return { options, minted };
+  }
+
+  function releaseBoundaryInlineBindings(boundary) {
+    const ids = boundaryInlineBindings.get(boundary);
+    if (!ids) {
+      return;
+    }
+    boundaryInlineBindings.delete(boundary);
+    for (const id of ids) {
+      inlineBindings.delete(id);
+    }
   }
 
   function boundaryRenderContext(boundaryId, boundary) {
@@ -822,9 +880,9 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
     }
   }
 
-  function replaceBoundaryChildren(boundary, fragmentOrTemplate) {
+  function replaceBoundaryChildren(boundary, fragmentOrTemplate, renderOptions = templateRenderOptions()) {
     cleanupChildren(boundary);
-    boundary.replaceChildren(toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(templateRenderOptions())));
+    boundary.replaceChildren(toFragment(fragmentOrTemplate, documentRef, swapFragmentOptionsFor(renderOptions)));
     return [];
   }
 
@@ -1807,6 +1865,34 @@ function snapshotSwapValue(value, documentRef, renderOptions = {}) {
     return serializeNode(value);
   }
   return renderSwapHtml(value, renderOptions);
+}
+
+// Deterministic representation of an inline binding value for snapshot
+// comparison. Signal refs compare by identity (their id) — live bindings
+// update in place, so a ref's current value does not require a re-swap.
+function stableBindingToken(value, seen = new WeakSet()) {
+  if (isSignalRef(value)) {
+    return `__async:inline-token:ref:${value.id}`;
+  }
+  if (typeof value === "function") {
+    return "__async:inline-token:fn";
+  }
+  if (Array.isArray(value)) {
+    if (seen.has(value)) {
+      return "__async:inline-token:cycle";
+    }
+    seen.add(value);
+    return `[${value.map((item) => stableBindingToken(item, seen)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    if (seen.has(value)) {
+      return "__async:inline-token:cycle";
+    }
+    seen.add(value);
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((key) => `${key}:${stableBindingToken(value[key], seen)}`).join(",")}}`;
+  }
+  return `${typeof value}:${String(value)}`;
 }
 
 function renderSwapHtml(value, renderOptions = {}) {

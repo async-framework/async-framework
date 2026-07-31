@@ -11,7 +11,7 @@ import { createRegistryStore } from "./registry-store.js";
 import { attributeName, normalizeAttributeConfig } from "./attributes.js";
 import { createLazyRegistry, defineRegistrySnapshot, sameRegistryValue } from "./lazy-registry.js";
 import { createDeclarationBus, system } from "./declaration-bus.js";
-import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes } from "./errors.js";
+import { AsyncError, assertAsyncErrorHandler, asyncErrorCodes, createSchedulerErrorBridge } from "./errors.js";
 
 const registryTypes = new Set(["signal", "handler", "server", "partial", "route", "component", "asyncSignal", "flow"]);
 // Loader-facade method surface, shared by the app loader facade and the
@@ -178,7 +178,8 @@ export function createApp(appOrDefinition = Async, options = {}) {
   const hasOnError = typeof options.onError === "function";
   const onError = hasOnError ? options.onError : options.loader?.onError;
   const scheduler = options.scheduler ?? options.loader?.scheduler ?? createScheduler({
-    strategy: target === "server" ? "manual" : "microtask"
+    strategy: target === "server" ? "manual" : "microtask",
+    onError: createSchedulerErrorBridge(() => onError)
   });
   const ownsScheduler = !options.scheduler && !options.loader?.scheduler;
   const attributes = normalizeAttributeConfig(options.attributes);
@@ -306,10 +307,15 @@ export function createApp(appOrDefinition = Async, options = {}) {
       }
       if (root == null) {
         const detachedLoaders = [...new Set(rootLoaders.values())];
-        for (const rootLoader of new Set(rootLoaders.values())) {
+        for (const rootLoader of detachedLoaders) {
           rootLoader.destroy?.();
         }
         rootLoaders.clear();
+        // Mirror destroy(): a supplied loader that never registered into
+        // rootLoaders (detach before start()) must not be orphaned running.
+        if (loader && !detachedLoaders.includes(loader)) {
+          loader.destroy?.();
+        }
         router?.destroy?.();
         if (router) {
           app.router._clearCurrent(router);

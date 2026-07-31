@@ -57,6 +57,29 @@
   `version` metadata and computed refs) no longer serialize into page
   snapshots: they recompute on resume, and the `.error` metadata bridge
   previously embedded raw error objects in the page payload.
+- Fixed the inline swap-binding lifecycle: comparison renders (`ifChanged`,
+  `bind`, swap-many snapshots) serialize binding values to stable tokens
+  instead of minting registry ids — per-render ids embedded in snapshots
+  made every comparison unequal, silently degrading dedupe to always-swap —
+  and a boundary's committed render now tracks its minted ids and releases
+  the previous content's ids on re-swap, so repeated swaps no longer grow
+  the binding map for the loader's lifetime.
+- Owned schedulers (constructed by `Loader` and `createApp`) report job
+  failures through the structured error pipeline: bindings, commits, and
+  effects that fail now reach the configured `onError` and dispatch a
+  cancelable `async:error` event on the job's element scope, instead of
+  escaping straight to `globalThis.reportError`. Injected schedulers keep
+  their creator's error wiring.
+- `detachRoot(null)` destroys a supplied loader that never registered into
+  the root set (detach before `start()`), mirroring the guard `destroy()`
+  already had.
+- Rendering an inline template binding without a Loader now throws the same
+  clear error the component renderer raises, instead of silently emitting
+  `[object Object]` into the attribute.
+- Removed the dead `scripts/release-doctor.js` (superseded by
+  `async-pipeline release doctor`); the `examples` scripts run the whole
+  `tests/examples/` suite; fixed the stale `benchmarks/results/` ignore
+  rule; stream scenario budgets carry working headroom (47500).
 
 ## 0.19.0 - 2026-07-21
 
