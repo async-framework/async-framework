@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.19.1 - 2026-07-31
+
 - Fixed pre-runtime `app.applySnapshot(...)`: snapshots without a `flow` key
   no longer throw, and snapshot browser-cache entries now reach the first
   runtime instead of being dropped.
