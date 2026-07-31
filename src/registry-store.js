@@ -284,6 +284,12 @@ function isHiddenInBrowser(type, target) {
 function snapshotSignals(map) {
   const snapshot = {};
   for (const [id, entry] of map) {
+    // Same exemption the signal registry honors: derived entries (flow
+    // metadata/computed bridges) recompute on resume and must not serialize
+    // through this introspection path either.
+    if (entry?._snapshotExempt) {
+      continue;
+    }
     snapshot[id] = typeof entry?.snapshot === "function" ? entry.snapshot() : entry?.value ?? entry;
   }
   return snapshot;

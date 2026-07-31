@@ -179,7 +179,11 @@ export function createApp(appOrDefinition = Async, options = {}) {
   const onError = hasOnError ? options.onError : options.loader?.onError;
   const scheduler = options.scheduler ?? options.loader?.scheduler ?? createScheduler({
     strategy: target === "server" ? "manual" : "microtask",
-    onError: createSchedulerErrorBridge(() => onError)
+    // Read at failure time via the runtime object (construction is fully
+    // synchronous, so no job can fail before `runtime` initializes) — a
+    // post-construction `runtime.onError = fn` reassignment is honored, the
+    // same live-read contract the Loader bridge keeps.
+    onError: createSchedulerErrorBridge(() => runtime.onError)
   });
   const ownsScheduler = !options.scheduler && !options.loader?.scheduler;
   const attributes = normalizeAttributeConfig(options.attributes);
@@ -620,18 +624,29 @@ function createPendingFacade({ methods, getCurrent, awaitCommit, inspect }) {
   }
 
   const internals = {
-    flush(target) {
+    resolveWaiters(target) {
       if (!target) {
         return;
       }
       while (readyWaiters.length > 0) {
         readyWaiters.shift().resolve(target);
       }
+    },
+
+    flushPending(target) {
+      if (!target) {
+        return;
+      }
       while (pending.length > 0) {
         const operation = pending.shift();
         invoke(target, operation.method, operation.args)
           .then(operation.resolve, operation.reject);
       }
+    },
+
+    flush(target) {
+      internals.resolveWaiters(target);
+      internals.flushPending(target);
     },
 
     rejectPending(error) {
@@ -735,10 +750,12 @@ function createRouterFacade() {
           return;
         }
         current = router;
-        // Loader operations flush before queued router navigations, matching
-        // the original facade ordering.
+        // Original facade ordering: router ready() waiters resolve first,
+        // then queued loader operations flush, then queued router
+        // navigations run.
+        internals.resolveWaiters(router);
         loaderFacade._flush(router);
-        internals.flush(router);
+        internals.flushPending(router);
       }
     },
     _clearCurrent: {

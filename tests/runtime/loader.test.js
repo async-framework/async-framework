@@ -1487,3 +1487,32 @@ test("owned-scheduler job failures reach onError and dispatch async:error", asyn
   assert.deepEqual(events, ["binding exploded"]);
   loader.destroy();
 });
+
+test("ifChanged tokens cannot collide across differently-shaped binding values", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const signals = createSignalRegistry({
+    ui: signal({ on: true })
+  });
+  const loader = Loader({ root: document.body, signals }).start();
+
+  // Under unescaped serialization these two values produced the same
+  // comparison token, so the second swap was wrongly skipped.
+  loader.swap({
+    type: "ifChanged",
+    boundary: "panel",
+    html: html`<button id="one" signal:class="${{ a: 1, b: 2 }}">One</button>`
+  });
+  await delay(0);
+  assert.equal(document.querySelector("#one")?.id, "one");
+
+  loader.swap({
+    type: "ifChanged",
+    boundary: "panel",
+    html: html`<button id="two" signal:class="${{ "a:number:1,b": 2 }}">Two</button>`
+  });
+  await delay(0);
+  assert.equal(document.querySelector("#two")?.id, "two");
+  loader.destroy();
+});

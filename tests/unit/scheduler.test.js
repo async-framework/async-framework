@@ -478,3 +478,50 @@ test("microtask scheduler flushes automatically", async () => {
   await delay(0);
   assert.equal(flushed, true);
 });
+
+test("completion job failures reject their awaiter without double-reporting through onError", async () => {
+  const previousFrame = globalThis.requestAnimationFrame;
+  const previousReportError = globalThis.reportError;
+  globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+  const globallyReported = [];
+  globalThis.reportError = (error) => globallyReported.push(error.message);
+  const reported = [];
+  const scheduler = createScheduler({
+    onError: (error, job) => reported.push(`${job.phase}:${error.message}`)
+  });
+  try {
+    // Completion jobs propagate to the awaiting caller — that IS their error
+    // channel; onError must not see the same failure a second time.
+    await assert.rejects(
+      () => scheduler.commit(() => {
+        throw new Error("commit exploded");
+      }),
+      /commit exploded/
+    );
+    assert.deepEqual(reported, []);
+
+    // Fire-and-forget jobs have no awaiter; onError is their only channel.
+    scheduler.enqueue("binding", () => {
+      throw new Error("binding exploded");
+    });
+    await scheduler.flush();
+    assert.deepEqual(reported, ["binding:binding exploded"]);
+    // The completion failure still surfaces on the global channel (for
+    // callers that never await), exactly as before the onError bridge —
+    // just not through onError a second time.
+    await delay(0);
+    assert.deepEqual(globallyReported, ["commit exploded"]);
+  } finally {
+    scheduler.destroy();
+    if (previousFrame === undefined) {
+      delete globalThis.requestAnimationFrame;
+    } else {
+      globalThis.requestAnimationFrame = previousFrame;
+    }
+    if (previousReportError === undefined) {
+      delete globalThis.reportError;
+    } else {
+      globalThis.reportError = previousReportError;
+    }
+  }
+});

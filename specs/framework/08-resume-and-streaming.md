@@ -116,7 +116,9 @@ Resume must preserve document continuity:
 - An explicit error patch that carries reveal metadata settles its reveal
   index: the boundary keeps its fallback content, the group cursor advances
   past the index, and buffered siblings that became ready commit. Ordered and
-  `together` groups never wait forever on content that will not arrive.
+  `together` groups never wait forever on content that will not arrive. A
+  later content patch for an error-settled index commits as recovery; only
+  content-committed indexes reject repeat patches as double commits.
 - Receivers resolved from a runtime or loader (rather than passed explicitly)
   are shared per loader so sequence dedup and reveal buffering survive across
   inline stream patch scripts.

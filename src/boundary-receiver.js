@@ -166,6 +166,13 @@ export function createBoundaryReceiver(options = {}) {
     const group = revealGroup(normalized.reveal);
     const index = normalized.reveal.index;
     if (group.committed.has(index)) {
+      if (group.settledErrors.has(index)) {
+        // Recovery: a later content patch for an error-settled index commits
+        // directly. The group cursor already advanced past this index when
+        // the error settled it, so no buffering or ordering work remains.
+        group.settledErrors.delete(index);
+        return await commitBoundaryPatch(record, normalized, patch, { stateApplied: true });
+      }
       throw new TypeError(`Reveal group "${group.id}" already committed index ${index}.`);
     }
     if (group.pending.has(index)) {
@@ -214,6 +221,7 @@ export function createBoundaryReceiver(options = {}) {
     }
     group.pending.delete(reveal.index);
     group.committed.add(reveal.index);
+    group.settledErrors.add(reveal.index);
     await commitReadyRevealItems(group);
   }
 
@@ -391,6 +399,7 @@ export function createBoundaryReceiver(options = {}) {
       tail: reveal.tail,
       pending: new Map(),
       committed: new Set(),
+      settledErrors: new Set(),
       nextForward: 0,
       nextBackward: reveal.count - 1
     };

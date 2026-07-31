@@ -1872,9 +1872,11 @@ function snapshotSwapValue(value, documentRef, renderOptions = {}) {
 // update in place, so a ref's current value does not require a re-swap.
 function stableBindingToken(value, seen = new WeakSet()) {
   if (isSignalRef(value)) {
-    return `__async:inline-token:ref:${value.id}`;
+    return `__async:inline-token:ref:${JSON.stringify(String(value.id))}`;
   }
   if (typeof value === "function") {
+    // Function identity is inert for binding semantics (writers only
+    // Boolean() them), so all functions compare equal on purpose.
     return "__async:inline-token:fn";
   }
   if (Array.isArray(value)) {
@@ -1889,8 +1891,19 @@ function stableBindingToken(value, seen = new WeakSet()) {
       return "__async:inline-token:cycle";
     }
     seen.add(value);
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) {
+      // Non-plain objects (Date, Map, ...) have no stable key walk; tag with
+      // their type and string form rather than colliding on empty {}.
+      return `__async:inline-token:other:${Object.prototype.toString.call(value)}:${JSON.stringify(String(value))}`;
+    }
+    // JSON.stringify each key and leaf so user data cannot forge the
+    // structural separators ({}[],:) and collide two different values.
     const keys = Object.keys(value).sort();
-    return `{${keys.map((key) => `${key}:${stableBindingToken(value[key], seen)}`).join(",")}}`;
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableBindingToken(value[key], seen)}`).join(",")}}`;
+  }
+  if (typeof value === "string") {
+    return `string:${JSON.stringify(value)}`;
   }
   return `${typeof value}:${String(value)}`;
 }

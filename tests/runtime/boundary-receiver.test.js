@@ -1227,3 +1227,105 @@ test("AsyncStream runtime-resolved patches share one receiver", async () => {
     }
   }
 });
+
+test("a content retry recovers an error-settled reveal index", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="dash" async:reveal-order="forwards">
+      <section id="alpha" async:boundary="alpha">Alpha fallback</section>
+      <section id="beta" async:boundary="beta">Beta fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const receiver = createBoundaryReceiver({ loader });
+
+  const errored = await receiver.apply({
+    boundary: "alpha",
+    seq: 1,
+    reveal: { group: "dash", index: 0, count: 2, order: "forwards" },
+    error: { message: "alpha failed" }
+  });
+  assert.equal(errored.status, "errored");
+
+  const beta = await receiver.apply({
+    boundary: "beta",
+    seq: 1,
+    reveal: { group: "dash", index: 1, count: 2, order: "forwards" },
+    html: `<p>Beta ready</p>`
+  });
+  assert.equal(beta.status, "applied");
+
+  // A later retry for the errored index commits instead of throwing
+  // "already committed" — the settle only marked it as no-longer-blocking.
+  const recovered = await receiver.apply({
+    boundary: "alpha",
+    seq: 2,
+    reveal: { group: "dash", index: 0, count: 2, order: "forwards" },
+    html: `<p>Alpha recovered</p>`
+  });
+  assert.equal(recovered.status, "applied");
+  assert.equal(document.querySelector("#alpha").textContent, "Alpha recovered");
+  assert.equal(document.querySelector("#beta").textContent, "Beta ready");
+
+  // A genuine double-commit still throws.
+  await assert.rejects(
+    () => receiver.apply({
+      boundary: "beta",
+      seq: 2,
+      reveal: { group: "dash", index: 1, count: 2, order: "forwards" },
+      html: `<p>Beta again</p>`
+    }),
+    /already committed index 1/
+  );
+  loader.destroy();
+});
+
+test("progressive document end to end: shuffled inline patches, error settle, recovery", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <main async:container>
+      <section async:reveal="feed" async:reveal-order="forwards" async:reveal-tail="collapsed">
+        <section id="news" async:boundary="feed-news"><p>Loading news…</p></section>
+        <section id="stats" async:boundary="feed-stats"><p>Loading stats…</p></section>
+        <section id="tips" async:boundary="feed-tips"><p>Loading tips…</p></section>
+      </section>
+      <script type="application/json" data-stream-patch>
+        { "boundary": "feed-stats", "seq": 1, "html": "<p>42 sales</p>" }
+      </script>
+      <script type="application/json" data-stream-patch>
+        { "boundary": "feed-news", "seq": 1, "error": { "message": "news offline" } }
+      </script>
+      <script type="application/json" data-stream-patch>
+        { "boundary": "feed-tips", "seq": 1, "html": "<p>Tip: stream boundaries</p>" }
+      </script>
+      <script type="application/json" data-stream-patch>
+        { "boundary": "feed-news", "seq": 2, "html": "<p>News recovered</p>" }
+      </script>
+    </main>
+  `;
+  const app = defineApp();
+  const runtime = app.start({ root: document.body, router: false });
+
+  try {
+    const statuses = [];
+    // The exact adapter loop a streaming page runs: patch scripts in document
+    // order, no receiver instance anywhere — the shared per-loader receiver
+    // carries seq dedup, reveal buffering, and error settling across calls.
+    for (const script of document.querySelectorAll('script[type="application/json"][data-stream-patch]')) {
+      const result = await AsyncStream.applyScript(script, { runtime });
+      statuses.push(result.status);
+    }
+
+    assert.deepEqual(statuses, ["buffered", "errored", "applied", "applied"]);
+    assert.equal(document.querySelector("#news").textContent.trim(), "News recovered");
+    assert.equal(document.querySelector("#stats").textContent.trim(), "42 sales");
+    assert.equal(document.querySelector("#tips").textContent.trim(), "Tip: stream boundaries");
+    for (const id of ["news", "stats", "tips"]) {
+      assert.equal(document.querySelector(`#${id}`).hasAttribute("hidden"), false, id);
+    }
+  } finally {
+    runtime.destroy();
+  }
+});
