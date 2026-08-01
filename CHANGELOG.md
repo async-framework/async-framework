@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.19.2 - 2026-07-31
+
+- Reveal commits are retry-safe after DOM or scheduler failures: failed patches
+  can reuse their sequence, buffered siblings remain queued, and failed
+  recovery keeps the settled-error marker until the replacement commits.
+- Completion failures reject only their own waiter without dropping sibling
+  work. Loader-owned, unobserved frame commits enter structured error reporting
+  exactly once, while observed commits and injected schedulers retain their
+  existing error ownership.
+- Signal refs now retain registry provenance for inline bindings and
+  `ifChanged` snapshots. Same-id refs from separate registries subscribe and
+  compare independently, including composite bindings and legacy refs.
+- Removing an outer boundary now releases inline binding ids owned by nested
+  boundaries instead of leaving stale values reachable by later scans.
+- Updated the Framework integration to `@async/flow` 0.10.6.
+- Refreshed the two streaming scenario budgets to 48,000 B after the reviewed
+  recovery and ownership fixes; current closures are 47,613 B and 47,679 B
+  gzip.
+- Bundle size from bundled TypeScript source: `browser.ts` raw 281,608 B (281.6 KB / 0.282 MB), gzip 57,605 B (57.6 KB / 0.058 MB), br 47,220 B (47.2 KB / 0.047 MB) -> `browser.min.js` raw 115,320 B (115.3 KB / 0.115 MB), gzip 34,608 B (34.6 KB / 0.035 MB), br 30,437 B (30.4 KB / 0.030 MB); delta raw -166,288 B (-166.3 KB / -0.166 MB), gzip -22,997 B (-23.0 KB / -0.023 MB), br -16,783 B (-16.8 KB / -0.017 MB).
+
 ## 0.19.1 - 2026-07-31
 
 - Fixed pre-runtime `app.applySnapshot(...)`: snapshots without a `flow` key
