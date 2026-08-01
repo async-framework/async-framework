@@ -1148,6 +1148,52 @@ test("errored reveal patch settles its index so ordered siblings still commit", 
   loader.destroy();
 });
 
+test("a buffered sibling that fails during error settling can retry the same sequence", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="dash" async:reveal-order="forwards">
+      <section async:boundary="alpha">Alpha fallback</section>
+      <section async:boundary="beta">Beta fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const receiver = createBoundaryReceiver({ loader });
+  const beta = {
+    boundary: "beta",
+    seq: 1,
+    reveal: { group: "dash", index: 1, count: 2, order: "forwards" },
+    html: `<p>Beta ready</p>`
+  };
+
+  assert.equal((await receiver.apply(beta)).status, "buffered");
+  const originalSwap = loader.swap.bind(loader);
+  let attempts = 0;
+  loader.swap = (...args) => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw new Error("beta swap failed");
+    }
+    return originalSwap(...args);
+  };
+
+  await assert.rejects(receiver.apply({
+    boundary: "alpha",
+    seq: 1,
+    reveal: { group: "dash", index: 0, count: 2, order: "forwards" },
+    error: { message: "alpha failed" }
+  }), /beta swap failed/);
+
+  assert.deepEqual(receiver.inspect().reveal.dash.committed, [0]);
+  assert.equal(receiver.inspect().boundaries.beta.lastSeq, -Infinity);
+  const result = await receiver.apply(beta);
+
+  assert.equal(result.status, "applied");
+  assert.deepEqual(receiver.inspect().reveal.dash.committed, [0, 1]);
+  assert.equal(document.querySelector("[async\\:boundary='beta']").textContent, "Beta ready");
+  loader.destroy();
+});
+
 test("errored reveal patch completes together groups", async () => {
   const window = new Window();
   const { document } = window;
@@ -1278,6 +1324,99 @@ test("a content retry recovers an error-settled reveal index", async () => {
     }),
     /already committed index 1/
   );
+  loader.destroy();
+});
+
+test("a failed reveal recovery keeps its error marker for the same-sequence retry", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="dash" async:reveal-order="forwards">
+      <section async:boundary="alpha">Alpha fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const receiver = createBoundaryReceiver({ loader });
+
+  await receiver.apply({
+    boundary: "alpha",
+    seq: 1,
+    reveal: { group: "dash", index: 0, count: 1, order: "forwards" },
+    error: { message: "alpha failed" }
+  });
+
+  const originalSwap = loader.swap.bind(loader);
+  let attempts = 0;
+  loader.swap = (...args) => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw new Error("recovery swap failed");
+    }
+    return originalSwap(...args);
+  };
+  const recovery = {
+    boundary: "alpha",
+    seq: 2,
+    reveal: { group: "dash", index: 0, count: 1, order: "forwards" },
+    html: `<p>Alpha recovered</p>`
+  };
+
+  await assert.rejects(receiver.apply(recovery), /recovery swap failed/);
+  const result = await receiver.apply(recovery);
+
+  assert.equal(result.status, "applied");
+  assert.equal(document.querySelector("[async\\:boundary='alpha']").textContent, "Alpha recovered");
+  loader.destroy();
+});
+
+test("a failed ordered reveal commit keeps later siblings buffered for retry", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:reveal="dash" async:reveal-order="forwards">
+      <section async:boundary="alpha">Alpha fallback</section>
+      <section async:boundary="beta">Beta fallback</section>
+      <section async:boundary="gamma">Gamma fallback</section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+  const receiver = createBoundaryReceiver({ loader });
+
+  for (const [boundary, index] of [["beta", 1], ["gamma", 2]]) {
+    const result = await receiver.apply({
+      boundary,
+      seq: 1,
+      reveal: { group: "dash", index, count: 3, order: "forwards" },
+      html: `<p>${boundary} ready</p>`
+    });
+    assert.equal(result.status, "buffered");
+  }
+
+  const originalSwap = loader.swap.bind(loader);
+  let attempts = 0;
+  loader.swap = (...args) => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw new Error("alpha swap failed");
+    }
+    return originalSwap(...args);
+  };
+  const alpha = {
+    boundary: "alpha",
+    seq: 1,
+    reveal: { group: "dash", index: 0, count: 3, order: "forwards" },
+    html: `<p>alpha ready</p>`
+  };
+
+  await assert.rejects(receiver.apply(alpha), /alpha swap failed/);
+  assert.deepEqual(receiver.inspect().reveal.dash.pending, [1, 2]);
+
+  const result = await receiver.apply(alpha);
+  assert.equal(result.status, "applied");
+  assert.deepEqual(receiver.inspect().reveal.dash.pending, []);
+  assert.deepEqual(receiver.inspect().reveal.dash.committed, [0, 1, 2]);
+  assert.equal(document.querySelector("[async\\:boundary='beta']").textContent, "beta ready");
+  assert.equal(document.querySelector("[async\\:boundary='gamma']").textContent, "gamma ready");
   loader.destroy();
 });
 

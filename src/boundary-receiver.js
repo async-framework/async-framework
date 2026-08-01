@@ -170,8 +170,9 @@ export function createBoundaryReceiver(options = {}) {
         // Recovery: a later content patch for an error-settled index commits
         // directly. The group cursor already advanced past this index when
         // the error settled it, so no buffering or ordering work remains.
+        const result = await commitBoundaryPatch(record, normalized, patch, { stateApplied: true });
         group.settledErrors.delete(index);
-        return await commitBoundaryPatch(record, normalized, patch, { stateApplied: true });
+        return result;
       }
       throw new TypeError(`Reveal group "${group.id}" already committed index ${index}.`);
     }
@@ -197,14 +198,26 @@ export function createBoundaryReceiver(options = {}) {
   }
 
   async function commitReadyRevealItems(group) {
-    const ready = takeReadyRevealItems(group);
+    const ready = readyRevealItems(group);
     const results = new Map();
     for (const readyItem of ready) {
-      const result = await commitBoundaryPatch(readyItem.record, readyItem.normalized, readyItem.patch, {
-        stateApplied: true
-      });
-      group.committed.add(readyItem.normalized.reveal.index);
-      results.set(readyItem, result);
+      const index = readyItem.normalized.reveal.index;
+      try {
+        const result = await commitBoundaryPatch(readyItem.record, readyItem.normalized, readyItem.patch, {
+          stateApplied: true
+        });
+        group.pending.delete(index);
+        group.committed.add(index);
+        results.set(readyItem, result);
+      } catch (error) {
+        // The failed patch must be resubmittable with the same sequence. Keep
+        // later ready siblings buffered and leave the cursor at this index.
+        group.pending.delete(index);
+        if (group.order === "forwards") group.nextForward = index;
+        if (group.order === "backwards") group.nextBackward = index;
+        updateRevealTail(group);
+        throw error;
+      }
     }
     updateRevealTail(group);
     return results;
@@ -858,29 +871,25 @@ async function followRedirect(redirect, router, loader) {
   location?.assign?.(redirect);
 }
 
-function takeReadyRevealItems(group) {
+function readyRevealItems(group) {
   if (group.order === "as-ready") {
-    return takePendingIndexes(group, [...group.pending.keys()].sort((left, right) => left - right));
+    return pendingItems(group, [...group.pending.keys()].sort((left, right) => left - right));
   }
   if (group.order === "forwards") {
     const indexes = [];
     while (group.pending.has(group.nextForward) || group.committed.has(group.nextForward)) {
-      if (group.pending.has(group.nextForward)) {
-        indexes.push(group.nextForward);
-      }
+      if (group.pending.has(group.nextForward)) indexes.push(group.nextForward);
       group.nextForward += 1;
     }
-    return takePendingIndexes(group, indexes);
+    return pendingItems(group, indexes);
   }
   if (group.order === "backwards") {
     const indexes = [];
     while (group.pending.has(group.nextBackward) || group.committed.has(group.nextBackward)) {
-      if (group.pending.has(group.nextBackward)) {
-        indexes.push(group.nextBackward);
-      }
+      if (group.pending.has(group.nextBackward)) indexes.push(group.nextBackward);
       group.nextBackward -= 1;
     }
-    return takePendingIndexes(group, indexes);
+    return pendingItems(group, indexes);
   }
   if (group.committed.size + group.pending.size < group.count) {
     return [];
@@ -891,15 +900,14 @@ function takeReadyRevealItems(group) {
       indexes.push(index);
     }
   }
-  return takePendingIndexes(group, indexes);
+  return pendingItems(group, indexes);
 }
 
-function takePendingIndexes(group, indexes) {
+function pendingItems(group, indexes) {
   const items = [];
   for (const index of indexes) {
     const item = group.pending.get(index);
     if (item) {
-      group.pending.delete(index);
       items.push(item);
     }
   }
