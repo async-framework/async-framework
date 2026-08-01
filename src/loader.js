@@ -8,6 +8,7 @@ import { matchAttribute, normalizeAttributeConfig, readAttribute } from "./attri
 import { boundaryIdFor, elementsIn, findBoundaryElement as findBoundary, isAsyncSuspense, toFragment } from "./dom-utils.js";
 
 const inlineBindingPrefix = "__async:inline:";
+const signalRefKind = Symbol.for("@async/framework.signalRef");
 
 export function Loader({ root, signals, handlers, server, router, cache, components, attributes, scheduler, onError, commitStallWarningMs = 2000 } = {}) {
   assertAsyncErrorHandler(onError, "Loader({ onError })");
@@ -18,9 +19,8 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   // An owned scheduler reports job failures through the structured pipeline
   // (api.onError, async:error events) instead of only globalThis.reportError;
   // injected schedulers keep their creator's error wiring.
-  const schedulerInstance = scheduler ?? createScheduler({
-    onError: createSchedulerErrorBridge(() => api.onError)
-  });
+  const schedulerErrorBridge = createSchedulerErrorBridge(() => api.onError);
+  const schedulerInstance = scheduler ?? createScheduler({ onError: schedulerErrorBridge });
   const ownsScheduler = !scheduler;
   const attributeConfig = normalizeAttributeConfig(attributes);
   const cleanups = new Set();
@@ -35,6 +35,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   const renderingBoundaries = new WeakSet();
   const componentBindings = new WeakSet();
   const inlineBindings = new Map();
+  const inlineRefRegistryTokens = new WeakMap();
   // boundary -> ids minted while rendering its current committed content.
   // Released when the boundary swaps again, so repeated swaps cannot grow
   // the inline-binding map without bound.
@@ -42,12 +43,14 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
   const scopedCleanups = new WeakMap();
   const boundaryCommitChains = new WeakMap();
   const boundaryCommits = new WeakMap();
+  const observedCommits = new WeakSet();
   const pendingCommits = new Set();
   // boundary id -> WeakRef(element), validated on every hit (connected + id
   // intact). Weak so a replaced boundary's detached subtree can be collected
   // instead of being pinned until the id is next resolved.
   const boundaryElementCache = new Map();
   let inlineBindingCounter = 0;
+  let inlineRefRegistryCounter = 0;
   let boundaryBindingCounter = 0;
   let destroyed = false;
   let removedMountPseudoEventWarned = false;
@@ -154,6 +157,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       }
       cleanups.clear();
       if (ownsScheduler) {
+        for (const commit of pendingCommits) observedCommits.add(commit);
         schedulerInstance.destroy();
       }
     },
@@ -435,7 +439,17 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
         });
       }
     }
-    commit.catch(() => {});
+    commit.catch((error) => {
+      queueMicrotask(() => {
+        if (ownsScheduler && !observedCommits.has(commit)) {
+          schedulerErrorBridge(error, {
+            phase: "commit",
+            scope: scopes.length === 1 ? scopes[0] : undefined,
+            boundary: metadata.boundary
+          });
+        }
+      });
+    });
     tracked.catch(() => {});
     return commit;
   }
@@ -448,12 +462,15 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
     if (isBoundaryLike(result)) {
       const commit = boundaryCommits.get(result);
       if (commit) {
+        observedCommits.add(commit);
         await commit;
       }
       return;
     }
     if (pendingCommits.size > 0) {
-      await Promise.all([...pendingCommits]);
+      const commits = [...pendingCommits];
+      for (const commit of commits) observedCommits.add(commit);
+      await Promise.all(commits);
     }
   }
 
@@ -519,8 +536,20 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
     return {
       attributes: attributeConfig,
       signals: signalRegistry,
-      bind: stableBindingToken
+      bind: snapshotBindingToken
     };
+  }
+
+  function snapshotBindingToken(value) {
+    return stableBindingToken(value, new WeakSet(), (ref) => {
+      const owner = ref[signalRefKind];
+      const registry = owner && (typeof owner === "object" || typeof owner === "function") ? owner : ref;
+      const existing = inlineRefRegistryTokens.get(registry);
+      if (existing) return existing;
+      const token = ++inlineRefRegistryCounter;
+      inlineRefRegistryTokens.set(registry, token);
+      return token;
+    });
   }
 
   // Wraps the committed-render bind so every id minted for a boundary's new
@@ -1618,6 +1647,7 @@ export function Loader({ root, signals, handlers, server, router, cache, compone
       return;
     }
     for (const element of elementsIn(node)) {
+      releaseBoundaryInlineBindings(element);
       runScopedCleanups(element);
       schedulerInstance.markScopeDestroyed(element);
     }
@@ -1719,23 +1749,25 @@ function resolveInlineValue(value) {
   return value;
 }
 
-function collectSignalRefs(value, refs = new Map()) {
+function collectSignalRefs(value, refs = new Set()) {
   if (isSignalRef(value)) {
-    refs.set(value.id, value);
-    return [...refs.values()];
+    // Ref ids are registry-local. Identity dedupe keeps repeated uses of the
+    // same ref lean without collapsing same-id refs from different owners.
+    refs.add(value);
+    return [...refs];
   }
   if (Array.isArray(value)) {
     for (const item of value) {
       collectSignalRefs(item, refs);
     }
-    return [...refs.values()];
+    return [...refs];
   }
   if (value && typeof value === "object") {
     for (const item of Object.values(value)) {
       collectSignalRefs(item, refs);
     }
   }
-  return [...refs.values()];
+  return [...refs];
 }
 
 function isInlineBinding(value) {
@@ -1868,11 +1900,11 @@ function snapshotSwapValue(value, documentRef, renderOptions = {}) {
 }
 
 // Deterministic representation of an inline binding value for snapshot
-// comparison. Signal refs compare by identity (their id) — live bindings
-// update in place, so a ref's current value does not require a re-swap.
-function stableBindingToken(value, seen = new WeakSet()) {
+// comparison. Signal refs compare by registry provenance plus id — live
+// bindings update in place, so a ref's current value does not require a swap.
+function stableBindingToken(value, seen = new WeakSet(), refRegistryToken = () => "unknown") {
   if (isSignalRef(value)) {
-    return `__async:inline-token:ref:${JSON.stringify(String(value.id))}`;
+    return `__async:inline-token:ref:${refRegistryToken(value)}:${JSON.stringify(String(value.id))}`;
   }
   if (typeof value === "function") {
     // Function identity is inert for binding semantics (writers only
@@ -1884,7 +1916,7 @@ function stableBindingToken(value, seen = new WeakSet()) {
       return "__async:inline-token:cycle";
     }
     seen.add(value);
-    return `[${value.map((item) => stableBindingToken(item, seen)).join(",")}]`;
+    return `[${value.map((item) => stableBindingToken(item, seen, refRegistryToken)).join(",")}]`;
   }
   if (value && typeof value === "object") {
     if (seen.has(value)) {
@@ -1900,7 +1932,7 @@ function stableBindingToken(value, seen = new WeakSet()) {
     // JSON.stringify each key and leaf so user data cannot forge the
     // structural separators ({}[],:) and collide two different values.
     const keys = Object.keys(value).sort();
-    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableBindingToken(value[key], seen)}`).join(",")}}`;
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableBindingToken(value[key], seen, refRegistryToken)}`).join(",")}}`;
   }
   if (typeof value === "string") {
     return `string:${JSON.stringify(value)}`;

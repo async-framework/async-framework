@@ -4,6 +4,7 @@ import { attributeName, matchAttribute, normalizeAttributeConfig } from "./attri
 const templateKind = Symbol.for("@async/framework.template");
 const rawKind = Symbol.for("@async/framework.rawHtml");
 const childrenKind = Symbol.for("@async/framework.children");
+const signalRefKind = Symbol.for("@async/framework.signalRef");
 
 export function html(strings, ...values) {
   return {
@@ -148,7 +149,12 @@ function readAttributeContext(source) {
 
 function signalPathFor(value, context) {
   if (isSignalRef(value)) {
-    return value.id;
+    // Ref ids are registry-local. A ref from the active registry can use the
+    // compact named path; a foreign ref must stay an inline binding so reads,
+    // writes, and subscriptions continue to target its owning registry.
+    return context.signals === undefined || value[signalRefKind] === context.signals
+      ? value.id
+      : null;
   }
   if (typeof value === "string" && context.signals?.has?.(value)) {
     return value;

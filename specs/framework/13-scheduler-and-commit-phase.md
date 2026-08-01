@@ -104,6 +104,8 @@ work.
   deferred.
 - Independent boundaries may prepare or commit independently unless a caller
   explicitly batches them.
+- A failed completion job rejects only its own completion promise. It does not
+  cancel or drop unrelated runnable jobs already selected for the same phase.
 - Post callbacks do not resolve before earlier phase work created by a commit
   has had a chance to drain.
 - Background work never gates boundary correctness.
@@ -127,5 +129,7 @@ work.
   synchronous commit fallback behavior.
 - Same-boundary frame commits serialize so a later swap cannot commit before an
   earlier in-flight swap finishes.
+- Independent completion jobs in one phase still run when a sibling completion
+  job fails.
 - Streamed boundary patches report success only after the scheduled loader
   commit finishes.

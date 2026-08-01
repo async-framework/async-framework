@@ -506,11 +506,8 @@ test("completion job failures reject their awaiter without double-reporting thro
     });
     await scheduler.flush();
     assert.deepEqual(reported, ["binding:binding exploded"]);
-    // The completion failure still surfaces on the global channel (for
-    // callers that never await), exactly as before the onError bridge —
-    // just not through onError a second time.
     await delay(0);
-    assert.deepEqual(globallyReported, ["commit exploded"]);
+    assert.deepEqual(globallyReported, []);
   } finally {
     scheduler.destroy();
     if (previousFrame === undefined) {
@@ -524,4 +521,35 @@ test("completion job failures reject their awaiter without double-reporting thro
       globalThis.reportError = previousReportError;
     }
   }
+});
+
+test("a failed completion rejects only its waiter and does not drop runnable siblings", async () => {
+  const frames = [];
+  const scheduler = createScheduler({
+    strategy: "manual",
+    requestAnimationFrame(callback) {
+      frames.push(callback);
+      return frames.length;
+    }
+  });
+  const seen = [];
+
+  const failed = scheduler.commit(() => {
+    seen.push("failed");
+    throw new Error("first commit failed");
+  });
+  const succeeded = scheduler.commit(() => {
+    seen.push("succeeded");
+    return "second result";
+  });
+  const flushed = scheduler.flush();
+
+  await delay(0);
+  frames.shift()(16);
+  await flushed;
+
+  await assert.rejects(failed, /first commit failed/);
+  assert.equal(await succeeded, "second result");
+  assert.deepEqual(seen, ["failed", "succeeded"]);
+  scheduler.destroy();
 });

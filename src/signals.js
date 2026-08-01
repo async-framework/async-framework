@@ -477,7 +477,7 @@ function isSignalLike(value) {
 
 function createRef(registry, id) {
   return {
-    [refKind]: true,
+    [refKind]: registry,
     kind: "signal-ref",
     id,
 

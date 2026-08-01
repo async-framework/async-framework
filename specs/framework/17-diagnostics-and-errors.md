@@ -78,9 +78,12 @@ The callback and event both run so application-level handling and DOM-level
 observation remain available. If the callback throws, its exception is reported
 and the original error remains unhandled unless the event is canceled.
 
-Direct calls such as `handlerRegistry.run(...)`, `router.navigate(...)`,
-`loader.swap(...)`, partial rendering, and server proxy calls throw or reject to
-their caller and do not enter this reporting path automatically.
+Direct calls such as `handlerRegistry.run(...)`, `router.navigate(...)`, the
+promise-returning app-level loader facade, partial rendering, and server proxy
+calls throw or reject to their caller and do not enter this reporting path
+automatically. The concrete loader keeps synchronous swap validation on the
+caller. Its later frame commit is reported only when no integration observes
+that completion promise.
 
 ## Ownership And Precedence
 
@@ -91,8 +94,13 @@ their caller and do not enter this reporting path automatically.
   explicit app callback becomes the shared callback for that runtime.
 - A standalone router uses its explicit callback, otherwise it reuses the
   supplied loader callback.
-- Scheduler errors continue using scheduler ownership and are not routed
-  through this contract.
+- Fire-and-forget jobs on a loader-owned scheduler use the loader's structured
+  reporting bridge. Observed completion jobs reject only their own waiter and
+  do not also enter the structured reporting path. An unobserved concrete
+  loader commit has no promise-returning caller, so its failure uses the same
+  structured bridge exactly once.
+- An injected scheduler retains the reporting policy selected by its creator;
+  the loader does not replace that scheduler's error ownership.
 
 ## Snapshot Boundary
 

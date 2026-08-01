@@ -376,7 +376,12 @@ export function createScheduler(options = {}) {
         // caller (whenCommitted / navigation); routing them through onError
         // as well double-reports the same error. Fire-and-forget jobs are
         // the ones with no other channel.
-        if (onError && !job.completion) {
+        if (job.completion) {
+          // The completion wrapper records the failure for its own waiter.
+          // Do not abort the phase: runnable siblings were already removed
+          // from the queue and still own independent completion promises.
+          annotateSchedulerError(error, job);
+        } else if (onError) {
           onError(error, job);
         } else {
           throw annotateSchedulerError(error, job);

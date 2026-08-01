@@ -1441,6 +1441,88 @@ test("ifChanged dedupes swap templates that carry inline bindings", async () => 
   loader.destroy();
 });
 
+test("ifChanged distinguishes same-id signal refs from different registries", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const firstSignals = createSignalRegistry({ flag: signal(false) });
+  const secondSignals = createSignalRegistry({ flag: signal(true) });
+  const loader = Loader({ root: document.body, signals: firstSignals }).start();
+
+  loader.swap({
+    type: "ifChanged",
+    boundary: "panel",
+    html: html`<button id="action" signal:class:active="${firstSignals.ref("flag")}">Save</button>`
+  });
+  await delay(0);
+  const first = document.querySelector("#action");
+  assert.equal(first.classList.contains("active"), false);
+
+  loader.swap({
+    type: "ifChanged",
+    boundary: "panel",
+    html: html`<button id="action" signal:class:active="${secondSignals.ref("flag")}">Save</button>`
+  });
+  await delay(0);
+  const second = document.querySelector("#action");
+
+  assert.notEqual(second, first);
+  assert.equal(second.classList.contains("active"), true);
+  secondSignals.set("flag", false);
+  await delay(0);
+  assert.equal(second.classList.contains("active"), false);
+  firstSignals.set("flag", true);
+  await delay(0);
+  assert.equal(second.classList.contains("active"), false);
+
+  const legacyRef = {
+    [Symbol.for("@async/framework.signalRef")]: true,
+    id: "flag",
+    value: true,
+    subscribe() {
+      return () => {};
+    }
+  };
+  loader.swap({
+    type: "ifChanged",
+    boundary: "panel",
+    html: html`<button id="action" signal:class:active="${legacyRef}">Save</button>`
+  });
+  await delay(0);
+  assert.equal(document.querySelector("#action").classList.contains("active"), true);
+  loader.destroy();
+});
+
+test("inline composites subscribe to same-id refs from different registries", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const localSignals = createSignalRegistry({ flag: signal(false) });
+  const foreignSignals = createSignalRegistry({ flag: signal(true) });
+  const loader = Loader({ root: document.body, signals: localSignals }).start();
+
+  loader.swap(
+    "panel",
+    html`<output id="status" signal:class="${{
+      local: localSignals.ref("flag"),
+      foreign: foreignSignals.ref("flag")
+    }}">status</output>`
+  );
+  await delay(0);
+  const status = document.querySelector("#status");
+  assert.equal(status.className, "foreign");
+
+  localSignals.set("flag", true);
+  await delay(0);
+  assert.equal(status.classList.contains("local"), true);
+  assert.equal(status.classList.contains("foreign"), true);
+
+  foreignSignals.set("flag", false);
+  await delay(0);
+  assert.equal(status.className, "local");
+  loader.destroy();
+});
+
 test("re-swapping a boundary releases the previous content's inline bindings", async () => {
   const window = new Window();
   const { document } = window;
@@ -1460,6 +1542,33 @@ test("re-swapping a boundary releases the previous content's inline bindings", a
   assert.equal(output.classList.contains("pass-2"), true);
   // The live binding from the current content still resolves.
   assert.equal(output.textContent, "v2");
+  loader.destroy();
+});
+
+test("removing an outer boundary releases bindings owned by nested boundaries", async () => {
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `
+    <section async:boundary="outer">
+      <section async:boundary="inner"></section>
+    </section>
+  `;
+  const loader = Loader({ root: document.body }).start();
+
+  loader.swap("inner", html`<output id="nested" signal:class="${{ leaked: true }}">nested</output>`);
+  await delay(0);
+  const staleBindingId = document.querySelector("#nested").getAttribute("signal:class");
+  assert.match(staleBindingId, /^__async:inline:/);
+
+  loader.swap("outer", `<p>outer replaced</p>`);
+  await delay(0);
+
+  const probe = document.createElement("output");
+  probe.setAttribute("signal:class", staleBindingId);
+  document.body.append(probe);
+  loader.scan(probe);
+
+  assert.equal(probe.classList.contains("leaked"), false);
   loader.destroy();
 });
 
@@ -1486,6 +1595,101 @@ test("owned-scheduler job failures reach onError and dispatch async:error", asyn
   assert.deepEqual(reports, ["binding exploded"]);
   assert.deepEqual(events, ["binding exploded"]);
   loader.destroy();
+});
+
+test("an unobserved frame-backed loader commit uses owned structured reporting", async () => {
+  const previousFrame = globalThis.requestAnimationFrame;
+  const frames = [];
+  globalThis.requestAnimationFrame = (callback) => {
+    frames.push(callback);
+    return frames.length;
+  };
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const reports = [];
+  let loader;
+  try {
+    loader = Loader({
+      root: document.body,
+      onError: (report) => reports.push(report.error.message)
+    }).start();
+  } finally {
+    if (previousFrame === undefined) delete globalThis.requestAnimationFrame;
+    else globalThis.requestAnimationFrame = previousFrame;
+  }
+
+  loader.swap("panel", `<div async:component="missing"></div>`);
+  await delay(0);
+  frames.shift()(16);
+  await delay(0);
+
+  assert.deepEqual(reports, ["Component \"missing\" cannot be attached because no component registry is available."]);
+  await delay(0);
+  loader.destroy();
+});
+
+test("an observed frame-backed loader commit rejects without structured duplicate reporting", async () => {
+  const previousFrame = globalThis.requestAnimationFrame;
+  const frames = [];
+  globalThis.requestAnimationFrame = (callback) => {
+    frames.push(callback);
+    return frames.length;
+  };
+  const window = new Window();
+  const { document } = window;
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const reports = [];
+  let loader;
+  try {
+    loader = Loader({ root: document.body, onError: (report) => reports.push(report) }).start();
+  } finally {
+    if (previousFrame === undefined) delete globalThis.requestAnimationFrame;
+    else globalThis.requestAnimationFrame = previousFrame;
+  }
+
+  const boundary = loader.swap("panel", `<div async:component="missing"></div>`);
+  const committed = loader._whenCommitted(boundary);
+
+  await delay(0);
+  frames.shift()(16);
+  await assert.rejects(committed, /no component registry is available/);
+  await delay(0);
+
+  assert.deepEqual(reports, []);
+  await delay(0);
+  loader.destroy();
+});
+
+test("an injected frame-backed scheduler retains completion error ownership", async () => {
+  const window = new Window();
+  const { document } = window;
+  const frames = [];
+  const schedulerReports = [];
+  const loaderReports = [];
+  const scheduler = createScheduler({
+    requestAnimationFrame(callback) {
+      frames.push(callback);
+      return frames.length;
+    },
+    onError(error) {
+      schedulerReports.push(error.message);
+    }
+  });
+  document.body.innerHTML = `<section async:boundary="panel"></section>`;
+  const loader = Loader({ root: document.body, scheduler, onError: (report) => loaderReports.push(report) }).start();
+  const boundary = loader.swap("panel", `<div async:component="missing"></div>`);
+  const committed = loader._whenCommitted(boundary);
+
+  await delay(0);
+  frames.shift()(16);
+  await assert.rejects(committed, /no component registry is available/);
+  await delay(0);
+
+  assert.deepEqual(schedulerReports, []);
+  assert.deepEqual(loaderReports, []);
+  loader.destroy();
+  scheduler.destroy();
 });
 
 test("ifChanged tokens cannot collide across differently-shaped binding values", async () => {

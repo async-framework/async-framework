@@ -131,6 +131,25 @@ test("frame-timed commits stay first-in first-out", async () => {
   scheduler.destroy();
 });
 
+test("a failed frame-timed commit does not prevent a sibling commit in the same frame", async () => {
+  const scheduler = createScheduler({ requestAnimationFrame: frame(), frameFallbackMs: 25 });
+  const order = [];
+
+  const failed = scheduler.commit(() => {
+    order.push("failed");
+    throw new Error("frame commit failed");
+  });
+  const succeeded = scheduler.commit(() => {
+    order.push("succeeded");
+    return "committed";
+  });
+
+  await assert.rejects(withTimeout(failed, "failed frame commit"), /frame commit failed/);
+  assert.equal(await withTimeout(succeeded, "sibling frame commit"), "committed");
+  assert.deepEqual(order, ["failed", "succeeded"]);
+  scheduler.destroy();
+});
+
 test("flush() drains frame-timed commits while frames are suspended", async () => {
   const scheduler = createScheduler({ requestAnimationFrame: NEVER, frameFallbackMs: 10 });
 

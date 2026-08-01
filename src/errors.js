@@ -112,8 +112,8 @@ export function reportAsyncError({ target, error, onError, code, hint, context }
   return report;
 }
 
-// Routes scheduler job failures (bindings, commits, effects — the
-// fire-and-forget paths) into the structured error pipeline instead of
+// Routes scheduler job failures from fire-and-forget paths into the
+// structured error pipeline instead of
 // letting them escape straight to globalThis.reportError. The element scope
 // of the failed job becomes the async:error event target, and getOnError is
 // read at failure time so late-assigned handlers still receive reports.
